@@ -9,7 +9,7 @@ Messages from the injected page have an additional `tag: 'webAudioExtension'`
 property to ID those messages as coming from the extension.
 
 Most messages (the ones related to updating the audio graph) from the bg script
-to the dev panel have a 'frameId' field to indicate which frame they stem from.
+to the dev panel have a `frameId` field to indicate which frame they stem from.
 
 ```
 // Indicates a new edge from an AudioNode (to an AudioNode or an AudioParam).
