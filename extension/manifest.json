@@ -11,7 +11,7 @@
     {
       "matches": ["<all_urls>"],
       "run_at" : "document_start",
-      "js": ["new-tab-content-script.js.js"],
+      "js": ["new-tab-content-script.js"],
       "all_frames": false
     },
     // This script instruments a page so we start tracking web audio.
