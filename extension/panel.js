@@ -1,19 +1,29 @@
 /**
  * This script controls the functionality and UI for the Web Audio panel in
  * Chrome dev tools.
+ * TODO: Move the bulk (maybe all) of the tracking logic to dev-tools.js.
  */
 
 
 /**
  * @typedef {{
- *   
- * }}
+ *   audioParam: string|undefined,
+ *   destId: number
+ * }} 
+ */
+var AudioGraphEdge;
+
+
+/**
+ * For now, lets say an audio graph is a mapping from node ID to a mapping from
+ * (edge ID -> Edge).
+ * @typedef {!Object.<number, !Object.<number, !AudioGraphEdge>>}
  */
 var AudioGraph;
 
 
 /**
- * A mapping from frame ID to audio graph. We 
+ * A mapping from frame ID to audio graph. // TODO: Construct the graph.
  * @type {!Object.<number, !AudioGraph>}
  */
 var audioGraphs = {};
