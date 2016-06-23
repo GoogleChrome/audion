@@ -67,14 +67,52 @@ function handleNewFrameListenersReady(port) {
  * Handles a new connection made with the content script in a newly made frame.
  * The connection might not actually be able to receive messages yet.
  * @param {!Port} port The port for the connection.
+ * @param {!Object} message The message indicating the audio update (from the
+ *     injected content script for a frame)
+ */
+function handleAudioUpdate(port, message) {
+  var tabId = port.sender.tab.id;
+  var panelConnection = panelConnections[tabId];
+  if (!panelConnection) {
+    // The panel is not open at this time. When the panel opens, it will not
+    // have all the updated web audio data.
+    // TODO: Possibly detect when we miss audio updates and inform the panel so
+    // it can show a warning.
+    return;
+  }
+  // Include in the message which frame the message came from.
+  message['frameId'] = port.frameId;
+  panelConnection.postMessage(message);
+}
+
+
+/**
+ * Handles a new connection made with the content script in a newly made frame.
+ * The connection might not actually be able to receive messages yet.
+ * @param {!Port} port The port for the connection.
  */
 function handleNewFrameConnection(port) {
+  var tab = port.sender.tab;
+  if (!tab || !tab.id) {
+    // We know not what tab this connection is coming from. It is degenerate.
+    return;
+  }
+
   // Listen to messages from the content script for the frame.
-  var tabId = port.sender.tab.id;
   port.onMessage.addListener(function(message) {
     switch (message['type']) {
       case 'listeners_ready':
         handleNewFrameListenersReady(port);
+        break;
+      case 'new_context':
+        // A new AudioContext has been created.
+      case 'add_node':
+        // A node has been added to the audio graph.
+      case 'add_edge':
+        // An edge has been added to the audio graph.
+      case 'remove_edge':
+        // An edge has been removed from the audio graph.
+        handleAudioUpdate(port, message);
         break;
     }
   });
@@ -86,9 +124,14 @@ function handleNewFrameConnection(port) {
  * indicating that it is ready to receive messages. We store a reference to the
  * port for that connection.
  * @param {!Port} port The port for the connection.
+ * @param {!Object} message The message sent.
  */
-function handleNewDevPanelListenersReady(port) {
-  var tabId = port.sender.tab.id;
+function handleNewDevPanelListenersReady(port, message) {
+  var tabId = message['inspectedTabId'];
+  if (!tabId) {
+    // We do not know which tab we are inspecting. This might be degenerate.
+    return;
+  }
   panelConnections[tabId] = port;
   port.onDisconnect.addListener(function() {
     // Remove the connection once the page is closed.
@@ -108,7 +151,7 @@ function handleNewDevPanelConnection(port) {
   port.onMessage.addListener(function(message) {
     switch (message['type']) {
       case 'listeners_ready':
-        handleNewDevPanelListenersReady(port);
+        handleNewDevPanelListenersReady(port, message);
         break;
     }
   });
@@ -118,15 +161,10 @@ function handleNewDevPanelConnection(port) {
 // Handle connections to the background on case-by-case basis. A connection
 // allows for future exchange of data.
 chrome.runtime.onConnect.addListener(function(port) {
-  var tab = port.sender.tab;
-  if (!tab || !tab.id) {
-    // We know not what tab this connection is coming from. It is degenerate.
-    return;
-  }
-
   // Each connection to the background script has a unique port name designating
   // what it generally is responsible for.
   var portName = port.name;
+  
 
   switch (portName) {
     case 'init_frame':
@@ -145,7 +183,7 @@ chrome.runtime.onConnect.addListener(function(port) {
 // message without making a connection out of convenience (perhaps it does not
 // need a 2-way connection).
 chrome.runtime.onMessage.addListener(function(message, sender) {
-  if (!sender.tab || !sender.tab.id)) {
+  if (!sender.tab || !sender.tab.id) {
     // The sender lacks a tab. Hmm, seems degenerate.
     return;
   }

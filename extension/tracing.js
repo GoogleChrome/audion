@@ -84,7 +84,7 @@
     // TODO: Figure out what happens if we connect with something falsy (or
     // nothing at all). Do we disconnect?
     if (originalArguments.length == 0 || !originalArguments[0]) {
-      return results;
+      return result;
     }
     
     var otherNodeId = nodeIds.get(originalArguments[0]);
@@ -118,7 +118,7 @@
           type: 'remove_edge',
           sourceId: nodeIds.get(this)
         });
-      return results;
+      return result;
     }
 
     var otherNodeId = nodeIds.get(originalArguments[0]);
@@ -141,14 +141,19 @@
    */
   function instrumentNode(node) {
     var nodeId = nextAvailableId++;
-    nodeIds[node] = nodeId;
+    nodeIds.set(node, nodeId);
     for (var prop in node) {
       if (node[prop] instanceof AudioParam) {
         // Store the ID of the node the param belongs to. And the param name.
-        nodeIds[node[prop]] = nodeId;
-        paramToType[node[prop]] = prop;
+        nodeIds.set(node[prop], nodeId);
+        paramToType.set(node[prop], prop);
       }
     }
+    postToContentScript({
+      type: 'add_node',
+      nodeId: nodeId,
+      nodeType: node.constructor.name
+    });
   }
 
 

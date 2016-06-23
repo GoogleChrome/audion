@@ -17,7 +17,15 @@ to the dev panel have a `frameId` field to indicate which frame they stem from.
   type: 'add_edge',
   sourceId: {number}, // The ID of the source node.
   destId: {number}, // The ID of the destination node.
-  audioParam: {string=} // The name of the param connected do. Undefined if NA.
+  audioParam: {string=}, // The name of the param connected do. Undefined if NA.
+}
+
+
+// Indicates the creation of a new AudioNode.
+{
+  type: 'add_node',
+  nodeId: {number},
+  nodeType: {string},
 }
 
 
@@ -25,7 +33,10 @@ to the dev panel have a `frameId` field to indicate which frame they stem from.
 // messages. The background script uses this message to determine when it is
 // able to route messages to a script.
 {
-  type: 'listeners_ready'
+  type: 'listeners_ready',
+  // The ID of inspected tab. Included if message is from panel JS since
+  // port.sender.tab is undefined for messages from panels.
+  inspectedTabId: {number=}, 
 }
 
 
