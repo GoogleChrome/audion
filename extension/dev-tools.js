@@ -46,13 +46,6 @@ var panelWindow = null;
 var panelShown = false;
 
 
-/**
- * The container for the graph visualization.
- * @type {!Element}
- */
-var graphContainer = document.getElementById('graph');
-
-
 // Connect with the background page so that it can relay web audio updates to
 // this panel.
 var backgroundPageConnection = chrome.runtime.connect({
