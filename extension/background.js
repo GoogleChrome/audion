@@ -29,6 +29,15 @@ var panelConnections = {};
 
 
 /**
+ * A set of IDs of tabs that received web audio updates. Used to determine
+ * whether a dev tools instance for a tab might have missed audio graph updates.
+ * The values for all keys is 1.
+ * @type {!Object.<number, number>}
+ */
+var tabsWithAudioUpdates = {}; 
+
+
+/**
  * Determines if an object is empty.
  * @param {!Object} obj The object.
  * @return {boolean} Whether the object is empty.
@@ -72,6 +81,10 @@ function handleNewFrameListenersReady(port) {
  */
 function handleAudioUpdate(port, message) {
   var tabId = port.sender.tab.id;
+  
+  // Remember that this tab has received web audio updates.
+  tabsWithAudioUpdates[tabId] = 1;
+  
   var panelConnection = panelConnections[tabId];
   if (!panelConnection) {
     // The panel is not open at this time. When the panel opens, it will not
@@ -137,6 +150,14 @@ function handleNewDevPanelListenersReady(port, message) {
     // Remove the connection once the page is closed.
     delete panelConnections[tabId];
   });
+
+  // If the tab has received web audio updates, tell the dev tools instance that
+  // it is missing prior web audio updates.
+  if (tabsWithAudioUpdates[tabId]) {
+    panelConnections[tabId].postMessage({
+      'type': 'missing_updates'
+    })
+  }
 }
 
 
@@ -155,6 +176,18 @@ function handleNewDevPanelConnection(port) {
         break;
     }
   });
+}
+
+
+/**
+ * Handles what happens when a tab closes.
+ * @param {number} tabId The ID of the tab that closed.
+ */
+function handleTabClose(tabId) {
+  // Remove the tab ID from our memory of which tabs had received web audio
+  // updates. We no longer have to warn the dev tools instance if this tab had
+  // received web audio updates before the dev tools instance opened.
+  delete tabsWithAudioUpdates[tabId];
 }
 
 
@@ -190,6 +223,9 @@ chrome.runtime.onMessage.addListener(function(message, sender) {
   var tabId = sender.tab.id;
   switch(message['type']) {
     case 'page_changed':
+      // The page reset in the tab. No web audio updates so far.
+      delete tabsWithAudioUpdates[tabId];
+
       if (panelConnections[tabId]) {
         // Tell the panel that the top-level page for the tab has changed.
         panelConnections[tabId].postMessage(message);
@@ -197,3 +233,6 @@ chrome.runtime.onMessage.addListener(function(message, sender) {
       break;
   }
 });
+
+
+chrome.tabs.onRemoved.addListener(handleTabClose);

@@ -40,11 +40,25 @@ to the dev panel have a `frameId` field to indicate which frame they stem from.
 }
 
 
+// Notifies the panel that it is missing web audio updates that occurred before
+// the dev tools instance opened.
+{
+  'type': 'missing_updates'
+}
+
+
 // Indicates the creation of a new AudioContext. Context IDs are unique within a
 // frame.
 {
   type: 'new_context',
   contextId: {number}
+}
+
+
+// Sent from dev-tools.js to panel.js. Tells panel to redraw the audio graph.
+// The graph itself is store in panelWindow.audioGraph.
+{
+  type: 'redraw_graph'
 }
 
 
