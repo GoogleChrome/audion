@@ -5,12 +5,78 @@
 
 
 /**
+ * A renderer used to layout and render the graph.
+ * @type {!dagreD3.render}
+ */
+var renderDagreGraph = new dagreD3.render();
+
+
+/**
+ * The SVG container for the audio graph visualization.
+ * @type {!SVGElement}
+ */
+var svgGraphContainer = d3.select("#graph svg");
+
+
+/**
+ * The inner (g) SVG container for the audio graph visualization.
+ * @type {!SVGElement}
+ */
+var svgGraphInnerContainer = d3.select("#graph svg g");
+
+
+/**
+ * If true, a redraw is pending. No need to request a new one.
+ * @type {boolean}
+ */
+var redrawPending = false;
+
+
+/**
+ * Runs pending redraw tasks. Run by requestAnimationFrame to be in sync with
+ * the vsync thread.
+ */
+function runPendingRedrawCallbacks() {
+  redrawPending = false;
+  layoutAndDrawGraph();
+}
+
+
+/**
+ * Requests a redraw on the next animation frame.
+ */
+function requestRedraw() {
+  if (redrawPending) {
+    // A redraw is already pending. No need to request another one.
+    return;
+  }
+  redrawPending = true;
+  requestAnimationFrame(runPendingRedrawCallbacks);
+}
+
+
+/**
+ * Does graph layout and then renders the graph.
+ */
+function layoutAndDrawGraph() {
+  renderDagreGraph(svgGraphInnerContainer, audioGraph);
+
+  // Center the graph.
+  svgGraphContainer.attr('width', audioGraph.graph().width + 100);
+  var xCenterOffset = audioGraph.graph().width / 2;
+  svgGraphContainer.attr('transform', 'translate(' + xCenterOffset + ', 20)');
+  svgGraphContainer.attr('height', audioGraph.graph().height + 100);
+}
+
+
+/**
  * Handles a request to redraw the audio graph, perhaps for instance after an
  * update to the graph.
- */ 
+ */
 function handleRequestGraphRedraw(message) {
   // TODO: Redraw the graph using the global audioGraph variable, which
-  // stores a graphlib.Graph.
+  // stores a graphlib.Graph (set in dev-tools.js).
+  requestRedraw();
 }
 
 
@@ -18,7 +84,7 @@ function handleRequestGraphRedraw(message) {
 /**
  * Handles what happens if web audio updates occurred before the dev tools
  * instance opened.
- */ 
+ */
 function handleMissingAudioUpdates(message) {
   document.getElementById('warningMessage').innerHTML =
       'This visualization ignores web audio updates before dev tools opened. ' +
@@ -28,7 +94,7 @@ function handleMissingAudioUpdates(message) {
 
 /**
  * Handles what happens when the page within the tab changes.
- */ 
+ */
 function handlePageChangeWithinTab(message) {
   // Clear all warnings. We basically begin with a new clean slate.
   document.getElementById('warningMessage').innerHTML = '';

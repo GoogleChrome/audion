@@ -84,7 +84,7 @@ function handleTabPageChange(message) {
   // Clear all audio graphs.
   audioGraph = createEmptyAudioGraph();
   if (panelWindow) {
-    // Update the panel's audio graph reference to this new, reset one. 
+    // Update the panel's audio graph reference to this new, reset one.
     panelWindow.audioGraph = audioGraph;
 
     // Tell the panel that the page had been reset.
@@ -94,6 +94,18 @@ function handleTabPageChange(message) {
   }
   requestGraphRedraw();
 };
+
+
+/**
+ * Computes a unique ID for a node.
+ * @param {string} frameId The ID of a frame.
+ * @param {number} nodeId The ID of the node. Unique within the space of the
+ *     frame.
+ * @return {string} An ID unique to the node throughout the extension.
+ */
+function computeNodeId(frameId, nodeId) {
+  return String(frameId + '$' + nodeId);
+}
 
 
 /**
@@ -110,9 +122,30 @@ function handleNewContext(message) {
  * @param {!Object} message The message indicating the update.
  */
 function handleAddNode(message) {
-  // TODO: Update graph.
+  // TODO: Track the node's params.
+  audioGraph.setNode(
+      computeNodeId(message.frameId, message.nodeId),
+      {
+        label: message.nodeType + ' ' + message.nodeId
+      });
   requestGraphRedraw();
 };
+
+
+/**
+ * Computes a unique ID for an edge.
+ * @param {string} frameId An ID unique to a frame.
+ * @param {string} sourceId The ID of the source node. Unique within the frame.
+ * @param {string} destId The ID of the dest node. Unique within the frame.
+ * @param {string=} opt_paramName Optional AudioParam name.
+ */
+function computeEdgeId(frameId, sourceId, destId, opt_paramName) {
+  var id = '' + frameId + '$' + sourceId + '$' + destId;
+  if (opt_paramName) {
+    id += '$' + opt_paramName
+  }
+  return id;
+}
 
 
 /**
@@ -120,7 +153,26 @@ function handleAddNode(message) {
  * @param {!Object} message The message indicating the update.
  */
 function handleAddEdge(message) {
-  // TODO: Update graph.
+  var sourceNodeId = computeNodeId(message.frameId, message.sourceId);
+  if (!audioGraph.node(sourceNodeId)) {
+    return;
+  }
+  var destNodeId = computeNodeId(message.frameId, message.destId);
+  if (!audioGraph.node(destNodeId)) {
+    return;
+  }
+  audioGraph.setEdge(
+      sourceNodeId,
+      destNodeId,
+      // Label the edge with audio param if it exists.
+      {
+        label: message.audioParam
+      },
+      // Compute an ID unique to the edge.
+      computeEdgeId(
+          message.frameId, message.sourceId, message.destId, message.audioParam
+        )
+    );
   requestGraphRedraw();
 };
 
@@ -130,7 +182,41 @@ function handleAddEdge(message) {
  * @param {!Object} message The message indicating the update.
  */
 function handleRemoveEdge(message) {
-  // TODO: Update graph.
+  if (message.destId) {
+    // Remove a specific edge.
+    var sourceNodeId = computeNodeId(message.frameId, message.sourceId);
+    if (!audioGraph.node(sourceNodeId)) {
+      return;
+    }
+    var destNodeId = computeNodeId(message.frameId, message.destId);
+    if (!audioGraph.node(destNodeId)) {
+      return;
+    }
+    audioGraph.removeEdge(
+      sourceNodeId,
+      destNodeId,
+      computeEdgeId(
+          message.frameId,
+          message.sourceId,
+          message.destId,
+          message.audioParam)
+    );
+  } else {
+    // Remove all edges emanating out of the source node.
+    var edges = audioGraph.outEdges(
+        computeNodeId(message.frameId, message.sourceId));
+    for (var i = 0; i < edges.length; i++) {
+      audioGraph.removeEdge(
+        computeNodeId(message.frameId, edges[i].v),
+        computeNodeId(message.frameId, edges[i].w),
+        computeEdgeId(
+            message.frameId,
+            edges[i].v,
+            edges[i].w,
+            edges[i]['name'])
+      );
+    }
+  }
   requestGraphRedraw();
 };
 
