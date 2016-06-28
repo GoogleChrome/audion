@@ -274,7 +274,7 @@
 
   /** @override */
   AudioContext.prototype.createStereoPanner = wrapNativeFunction(
-      AudioContext.prototype.createPanner, newNodeDecorator);
+      AudioContext.prototype.createStereoPanner, newNodeDecorator);
 
   // Instrument the native AudioContext constructor. Patch the prototype chain.
   AudioContext = wrappedAudioContextConstructor;
