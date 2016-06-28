@@ -1,3 +1,35 @@
+var GRAPH_OPTIONS = {
+  nodesep: 28,
+  rankdir: 'LR',
+  ranksep: 28,
+  marginx: 14,
+  marginy: 14
+};
+
+var NODE_OPTIONS = {
+  label: null,
+  labelType: 'html',
+  style: 'fill: #999',
+  labelStyle: 'color: white; font-family: Arial;',
+  rx: 2,
+  ry: 2
+};
+
+var EDGE_OPTIONS = {
+  lineInterpolate: 'basis',
+  style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
+  arrowheadStyle: 'fill: #90A4AE',
+  width: 35
+};
+
+var PARAM_OPTIONS = {
+  lineInterpolate: 'linear',
+  style: 'stroke-width: 2.5px; stroke-dasharray: 2.5, 2.5;stroke: #B0BEC5; fill: none;',
+  arrowheadStyle: 'fill: none',
+  width: 1
+};
+
+
 /**
  * This script runs when the dev panel opens. It creates a Web Audio panel. It
  * owns (keeps up to date) the audio graph and controls the UI based on updates.
@@ -13,7 +45,7 @@ function createEmptyAudioGraph() {
         compound: true,
         multigraph: true
       })
-      .setGraph({})
+      .setGraph(GRAPH_OPTIONS)
       .setDefaultEdgeLabel(function() {return {};});
 };
 
@@ -123,11 +155,18 @@ function handleNewContext(message) {
  */
 function handleAddNode(message) {
   // TODO: Track the node's params.
+  var options = {
+    labelType: 'html',
+    label: '<span>' + message.nodeType + ' ' + message.nodeId + '</span>',
+    style: 'fill: #999',
+    labelStyle: 'color: white; font-family: Arial;',
+    rx: 2,
+    ry: 2
+  };
+
   audioGraph.setNode(
       computeNodeId(message.frameId, message.nodeId),
-      {
-        label: message.nodeType + ' ' + message.nodeId
-      });
+      options);
   requestGraphRedraw();
 };
 
@@ -161,13 +200,21 @@ function handleAddEdge(message) {
   if (!audioGraph.node(destNodeId)) {
     return;
   }
+
+  // Label the edge with audio param if it exists.
+  // EDGE_OPTIONS.label = message.audioParam;
+
+  var options = {
+    lineInterpolate: 'basis',
+    style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
+    arrowheadStyle: 'fill: #90A4AE; stroke: none;',
+    width: 35
+  };
+
   audioGraph.setEdge(
       sourceNodeId,
       destNodeId,
-      // Label the edge with audio param if it exists.
-      {
-        label: message.audioParam
-      },
+      options,
       // Compute an ID unique to the edge.
       computeEdgeId(
           message.frameId, message.sourceId, message.destId, message.audioParam
