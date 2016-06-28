@@ -140,6 +140,7 @@ function handleNewFrameConnection(port) {
  * @param {!Object} message The message sent.
  */
 function handleNewDevPanelListenersReady(port, message) {
+  // TODO: Determine what it means for the tab ID to be -1. It sometimes is.
   var tabId = message['inspectedTabId'];
   if (!tabId) {
     // We do not know which tab we are inspecting. This might be degenerate.
@@ -168,7 +169,6 @@ function handleNewDevPanelListenersReady(port, message) {
  */
 function handleNewDevPanelConnection(port) {
   // Listen to messages from the dev panel that just opened up.
-  var tabId = port.sender.tab.id;
   port.onMessage.addListener(function(message) {
     switch (message['type']) {
       case 'listeners_ready':
