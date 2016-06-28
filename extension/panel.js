@@ -61,11 +61,17 @@ function requestRedraw() {
 function layoutAndDrawGraph() {
   renderDagreGraph(svgGraphInnerContainer, audioGraph);
 
+  var graphDimensions = audioGraph.graph();
+  if (!isFinite(graphDimensions.width) || !isFinite(graphDimensions.height)) {
+    // The computed dimensions are awry. Perhaps the graph lacks nodes.
+    return;
+  }
+
   // Center the graph.
-  svgGraphContainer.attr('width', audioGraph.graph().width + 100);
-  var xCenterOffset = audioGraph.graph().width / 2;
+  svgGraphContainer.attr('width', graphDimensions.width + 100);
+  var xCenterOffset = graphDimensions.width / 2;
   svgGraphContainer.attr('transform', 'translate(' + xCenterOffset + ', 20)');
-  svgGraphContainer.attr('height', audioGraph.graph().height + 100);
+  svgGraphContainer.attr('height', graphDimensions.height + 100);
 }
 
 
