@@ -206,15 +206,7 @@ function handleRemoveEdge(message) {
     var edges = audioGraph.outEdges(
         computeNodeId(message.frameId, message.sourceId));
     for (var i = 0; i < edges.length; i++) {
-      audioGraph.removeEdge(
-        computeNodeId(message.frameId, edges[i].v),
-        computeNodeId(message.frameId, edges[i].w),
-        computeEdgeId(
-            message.frameId,
-            edges[i].v,
-            edges[i].w,
-            edges[i]['name'])
-      );
+      audioGraph.removeEdge(edges[i]);
     }
   }
   requestGraphRedraw();
