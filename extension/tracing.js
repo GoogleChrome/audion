@@ -3,7 +3,7 @@
  * run at the beginning of the frame. It runs in the context of the web page; we
  * wrap all logic in a closure to avoid namespace collisions...
  *
- * except of course those stemming from us overriding web audio calls. 
+ * except of course those stemming from us overriding web audio calls.
  */
 
 
@@ -25,7 +25,7 @@
   /**
    * A mapping from resource (such as node object) to ID. AudioNodes map to
    * their IDs. AudioParams map to the IDs of their AudioNodes.
-   * 
+   *
    * WeakMap keys are weakly referenced: These keys get GC-ed if the node is
    * GC-ed.
    * @type {!WeakMap.<*, number>}
@@ -80,13 +80,13 @@
    */
   function connectDecorator(nativeConnect, originalArguments) {
     var result = nativeConnect.apply(this, originalArguments);
-    
+
     // TODO: Figure out what happens if we connect with something falsy (or
     // nothing at all). Do we disconnect?
     if (originalArguments.length == 0 || !originalArguments[0]) {
       return result;
     }
-    
+
     var otherNodeId = nodeIds.get(originalArguments[0]);
     if (otherNodeId) {
       // We connect with either an AudioNode or an AudioParam.
@@ -158,7 +158,7 @@
 
 
   /**
-   * Wraps the creation of new AudioNodes. 
+   * Wraps the creation of new AudioNodes.
    * @param {function(...*):*} nativeMethod
    * @param {!Array.<*>} originalArguments
    * @return {!AudioNode}
@@ -272,6 +272,9 @@
   AudioContext.prototype.createPanner = wrapNativeFunction(
       AudioContext.prototype.createPanner, newNodeDecorator);
 
+  /** @override */
+  AudioContext.prototype.createStereoPanner = wrapNativeFunction(
+      AudioContext.prototype.createPanner, newNodeDecorator);
 
   // Instrument the native AudioContext constructor. Patch the prototype chain.
   AudioContext = wrappedAudioContextConstructor;
