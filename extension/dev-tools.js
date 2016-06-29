@@ -123,10 +123,15 @@ function handleNewContext(message) {
  */
 function handleAddNode(message) {
   // TODO: Track the node's params.
+  // Remove 'Node' from the label.
+  var nodeName = message.nodeType;
+  if (nodeName.indexOf('Node') == nodeName.length - 4) {
+    nodeName = nodeName.substring(0, nodeName.length - 4);
+  }
   audioGraph.setNode(
       computeNodeId(message.frameId, message.nodeId),
       {
-        label: message.nodeType + ' ' + message.nodeId
+        label: nodeName + ' ' + message.nodeId
       });
   requestGraphRedraw();
 };
