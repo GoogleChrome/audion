@@ -18,7 +18,7 @@ var NODE_OPTIONS = {
 var EDGE_OPTIONS = {
   lineInterpolate: 'basis',
   style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
-  arrowheadStyle: 'fill: #90A4AE',
+  arrowheadStyle: 'fill: #90A4AE; stroke: none;',
   width: 35
 };
 
@@ -29,6 +29,7 @@ var PARAM_OPTIONS = {
   width: 1
 };
 
+var __NULLFN__ = function () { return {}; };
 
 /**
  * This script runs when the dev panel opens. It creates a Web Audio panel. It
@@ -46,7 +47,7 @@ function createEmptyAudioGraph() {
         multigraph: true
       })
       .setGraph(GRAPH_OPTIONS)
-      .setDefaultEdgeLabel(function() {return {};});
+      .setDefaultEdgeLabel(__NULLFN__);
 };
 
 
@@ -202,8 +203,6 @@ function handleAddEdge(message) {
   }
 
   // Label the edge with audio param if it exists.
-  // EDGE_OPTIONS.label = message.audioParam;
-
   var options = {
     lineInterpolate: 'basis',
     style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
