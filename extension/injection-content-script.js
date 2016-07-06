@@ -9,11 +9,10 @@
 
 
 // Execute the instrumentation script by attaching then removing a script tag.
-var scriptTag = document.createElement('script');
-scriptTag.src = chrome.extension.getURL('tracing.js');
-(document.head || document.documentElement).appendChild(scriptTag);
-scriptTag.remove();
-
+// var scriptTag = document.createElement('script');
+// scriptTag.src = chrome.extension.getURL('tracing.js');
+// (document.head || document.documentElement).appendChild(scriptTag);
+// scriptTag.remove();
 
 // Connect with the background page so that it can relay web audio updates to
 // the panel JS.

@@ -156,9 +156,15 @@ function handleNewContext(message) {
  */
 function handleAddNode(message) {
   // TODO: Track the node's params.
+  // Remove 'Node' from the label.
+  var nodeName = message.nodeType;
+  if (nodeName.indexOf('Node') == nodeName.length - 4) {
+    nodeName = nodeName.substring(0, nodeName.length - 4);
+  }
+
   var options = {
     labelType: 'html',
-    label: '<span>' + message.nodeType + ' ' + message.nodeId + '</span>',
+    label: '<span>' + nodeName + ' ' + message.nodeId + '</span>',
     style: 'fill: #999',
     labelStyle: 'color: white; font-family: Arial;',
     rx: 2,
@@ -168,6 +174,7 @@ function handleAddNode(message) {
   audioGraph.setNode(
       computeNodeId(message.frameId, message.nodeId),
       options);
+
   requestGraphRedraw();
 };
 
