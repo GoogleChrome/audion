@@ -92,18 +92,30 @@ function handleRequestGraphRedraw(message) {
  * instance opened.
  */
 function handleMissingAudioUpdates(message) {
-  document.getElementById('warningMessage').innerHTML =
-      'This visualization ignores web audio updates before dev tools opened. ' +
-      'Refresh to track a comprehensive graph.';
+  var divWarning = document.getElementById('warningMessage');
+  var divGraph = document.getElementById('graph');
+  var divDebug = document.getElementById('debuggingText');
+  
+  divGraph.style.display = divDebug.style.display = 'none';
+  divWarning.style.display = 'block'
+  divWarning.innerHTML =
+      'This visualization ignores web audio updates before dev tools opened.' +
+      '<br><strong>Refresh</strong> to track a comprehensive graph.';
 }
 
 
 /**
  * Handles what happens when the page within the tab changes.
  */
-function handlePageChangeWithinTab(message) {
+function handlePageChangeWithinTab() {
   // Clear all warnings. We basically begin with a new clean slate.
-  document.getElementById('warningMessage').innerHTML = '';
+  var divWarning = document.getElementById('warningMessage');
+  var divGraph = document.getElementById('graph');
+  var divDebug = document.getElementById('debuggingText');
+
+  divWarning.style.display = 'none';
+  divWarning.innerHTML = '';
+  divGraph.style.display = divDebug.style.display = 'block';
 }
 
 
@@ -116,7 +128,7 @@ window.addEventListener('message', function(event) {
       break;
     case 'page_changed':
       // The tab changed pages.
-      handlePageChangeWithinTab(message);
+      handlePageChangeWithinTab();
       break;
     case 'redraw_graph':
       handleRequestGraphRedraw(message);

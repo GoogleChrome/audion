@@ -4,15 +4,17 @@
   <link rel='stylesheet' type='text/css' href='panel.css'>
 </head>
 <body>
-  <div id='warningMessage'></div>
-  <div id='graph'>
-    <svg xmlns="http://www.w3.org/2000/svg">
-       <g stroke="black" fill="white" stroke-width="1">
-       </g>
-    </svg>
+  <div id='container'>
+    <div id='warningMessage'></div>
+    <div id='graph'>
+      <svg xmlns="http://www.w3.org/2000/svg">
+         <g stroke="black" fill="white" stroke-width="1">
+         </g>
+      </svg>
+    </div>
+    <div id='debuggingText'></div>
   </div>
-  <div id='debuggingText'></div>
-
+  
   <script src='third-party/d3.v3.min.js'></script>
   <script src='third-party/dagre-d3.js'></script>
   <script src='panel.js'></script>
