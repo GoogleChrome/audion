@@ -1,36 +1,3 @@
-var GRAPH_OPTIONS = {
-  nodesep: 28,
-  rankdir: 'LR',
-  ranksep: 28,
-  marginx: 14,
-  marginy: 14
-};
-
-var NODE_OPTIONS = {
-  label: null,
-  labelType: 'html',
-  style: 'fill: #999',
-  labelStyle: 'color: white; font-family: Arial;',
-  rx: 2,
-  ry: 2
-};
-
-var EDGE_OPTIONS = {
-  lineInterpolate: 'basis',
-  style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
-  arrowheadStyle: 'fill: #90A4AE; stroke: none;',
-  width: 35
-};
-
-var PARAM_OPTIONS = {
-  lineInterpolate: 'linear',
-  style: 'stroke-width: 2.5px; stroke-dasharray: 2.5, 2.5;stroke: #B0BEC5; fill: none;',
-  arrowheadStyle: 'fill: none',
-  width: 1
-};
-
-var __NULLFN__ = function () { return {}; };
-
 /**
  * This script runs when the dev panel opens. It creates a Web Audio panel. It
  * owns (keeps up to date) the audio graph and controls the UI based on updates.
@@ -46,8 +13,8 @@ function createEmptyAudioGraph() {
         compound: true,
         multigraph: true
       })
-      .setGraph(GRAPH_OPTIONS)
-      .setDefaultEdgeLabel(__NULLFN__);
+      .setGraph(getGraphOptions())
+      .setDefaultEdgeLabel(function () { return {}; });
 };
 
 
@@ -156,24 +123,16 @@ function handleNewContext(message) {
  */
 function handleAddNode(message) {
   // TODO: Track the node's params.
+
   // Remove 'Node' from the label.
   var nodeName = message.nodeType;
   if (nodeName.indexOf('Node') == nodeName.length - 4) {
     nodeName = nodeName.substring(0, nodeName.length - 4);
   }
 
-  var options = {
-    labelType: 'html',
-    label: '<span>' + nodeName + ' ' + message.nodeId + '</span>',
-    style: 'fill: #999',
-    labelStyle: 'color: white; font-family: Arial;',
-    rx: 2,
-    ry: 2
-  };
-
   audioGraph.setNode(
       computeNodeId(message.frameId, message.nodeId),
-      options);
+      getNodeOptions(nodeName, message.nodeId));
 
   requestGraphRedraw();
 };
@@ -209,18 +168,10 @@ function handleAddEdge(message) {
     return;
   }
 
-  // Label the edge with audio param if it exists.
-  var options = {
-    lineInterpolate: 'basis',
-    style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
-    arrowheadStyle: 'fill: #90A4AE; stroke: none;',
-    width: 35
-  };
-
   audioGraph.setEdge(
       sourceNodeId,
       destNodeId,
-      options,
+      getEdgeOptions(),
       // Compute an ID unique to the edge.
       computeEdgeId(
           message.frameId, message.sourceId, message.destId, message.audioParam
@@ -368,6 +319,89 @@ function handlePanelCreated(extensionPanel) {
     extensionPanel.onShown.removeListener(callback);
   };
   extensionPanel.onShown.addListener(callback);
+}
+
+
+/**
+ * Produces a graph option object.
+ * @return {Object} An object for the graph layout style.
+ */
+function getGraphOptions() {
+  return {
+    nodesep: 28,
+    rankdir: 'LR',
+    ranksep: 28,
+    marginx: 14,
+    marginy: 14
+  };
+}
+
+
+// A color scheme for various AudioNodes.
+var NODE_COLOR = {
+  'Analyser': '#607D88',
+  'AudioBufferSource': '#4CAF50',
+  'AudioDestination': '#37474F',
+  'BiquadFilter': '#8BC34A',
+  'ChannelMerger': '#607D8B',
+  'ChannelSplitter': '#607D8B',
+  'Convolver': '#8BC34A',
+  'Delay': '#8BC34A',
+  'DynamicsCompressor': '#8BC34A',
+  'Gain': '#607D8B',
+  'IIRFilter': '#8BC34A',
+  'Oscillator': '#4CAF50',
+  'Panner': '#8BC34A',
+  'ScriptProcessor': '#607D88',
+  'SpatialPanner': '#8BC34A',
+  'StereoPanner': '#8BC34A',
+  'WaveShaper': '#8BC34A',
+  'AudioParam': '#B0BEC5'
+};
+
+
+/**
+ * Produces a node option object with an argument of the node label.
+ * @param  {String} nodeName A name (type) of the AudioNode.
+ * @param  {String} nodeId A unique ID of the AudioNode.
+ * @return {Object} A node option object filled with the style properties and
+ *                  the label.
+ */
+function getNodeOptions(nodeName, nodeId) {
+  return {
+    labelType: 'html',
+    label: '<span>' + nodeName + ' ' + nodeId + '</span>',
+    style: 'stroke: none; fill: ' + NODE_COLOR[nodeName] + ';',
+    labelStyle: 'color: white; font-family: Arial;',
+    rx: 2,
+    ry: 2
+  };
+}
+
+
+/**
+ * Produces a edge option object for styling.
+ * @return {Object} A node option object filled with the style properties.
+ */
+function getEdgeOptions() {
+  return {
+    lineInterpolate: 'basis',
+    style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
+    arrowheadStyle: 'fill: #90A4AE; stroke: none;',
+    width: 35
+  };
+}
+
+
+/**
+ * Produces a edge option object for styling between an AudioNode to an
+ * AudioParam.
+ * @return {Object} A node option object filled with the style properties.
+ */
+function getParamEdgeOptions() {
+  // TODO: create the options for the connection from an AudioNode to an
+  // AudioParam.
+  return {};
 }
 
 
