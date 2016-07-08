@@ -15,7 +15,7 @@ var renderDagreGraph = new dagreD3.render();
  * The SVG container for the audio graph visualization.
  * @type {!SVGElement}
  */
-var svgGraphContainer = d3.select("#graph svg");
+var svgGraphContainer = d3.select('#graph svg');
 
 
 /**
@@ -23,6 +23,26 @@ var svgGraphContainer = d3.select("#graph svg");
  * @type {!SVGElement}
  */
 var svgGraphInnerContainer = d3.select("#graph svg g");
+
+
+/**
+ * The previous scale value.
+ * @type {number}
+ */
+var lastScaleValue = 1;
+
+
+/**
+ * The previous translate value.
+ * @type {!Array<number>}
+ */
+var lastTranslateValue = [0, 0];
+
+
+// Allow the user to zoom via mouse wheel.
+var zoomListener = d3.behavior.zoom().on('zoom', handleZoom);
+// Actually attach the listener.
+svgGraphContainer.call(zoomListener);
 
 
 /**
@@ -56,9 +76,35 @@ function requestRedraw() {
 
 
 /**
+ * Handles a d3 zoom event. Assumes d3.event is defined.
+ */
+function handleZoom() {
+  lastScaleValue = d3.event.scale;
+  lastTranslateValue = d3.event.translate;
+  scaleAndTranslateGraph(lastScaleValue, lastTranslateValue);
+}
+
+
+/**
+ * Applies a scale and a translate to the inner SVG element of the graph.
+ * @param {number} scale
+ * @param {number} translate
+ */
+function scaleAndTranslateGraph(scale, translate) {
+  svgGraphInnerContainer.attr(
+      'transform',
+      'translate(' + translate + ')' + 'scale(' + scale + ')'
+    );
+}
+
+
+/**
  * Does graph layout and then renders the graph.
  */
 function layoutAndDrawGraph() {
+  // Remove the scaling if we had one. Compute graph dimensions assuming scaling
+  // 1. We re-apply the scaling later.
+  scaleAndTranslateGraph(1, lastTranslateValue);
   renderDagreGraph(svgGraphInnerContainer, audioGraph);
 
   var graphDimensions = audioGraph.graph();
@@ -72,6 +118,7 @@ function layoutAndDrawGraph() {
   var xCenterOffset = graphDimensions.width / 2;
   svgGraphContainer.attr('transform', 'translate(' + xCenterOffset + ', 20)');
   svgGraphContainer.attr('height', graphDimensions.height + 100);
+  scaleAndTranslateGraph(lastScaleValue, lastTranslateValue);
 }
 
 
