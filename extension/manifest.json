@@ -3,6 +3,9 @@
   "name": "Audio API Tracer",
   "description": "A web audio debugging utility.",
   "version": "0.1",
+  "permissions" : [
+    "activeTab"
+  ],
   "background": {
     "scripts": ["background.js"]
   },

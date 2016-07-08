@@ -13,8 +13,8 @@ function createEmptyAudioGraph() {
         compound: true,
         multigraph: true
       })
-      .setGraph({})
-      .setDefaultEdgeLabel(function() {return {};});
+      .setGraph(getGraphOptions())
+      .setDefaultEdgeLabel(function () { return {}; });
 };
 
 
@@ -123,16 +123,17 @@ function handleNewContext(message) {
  */
 function handleAddNode(message) {
   // TODO: Track the node's params.
+
   // Remove 'Node' from the label.
   var nodeName = message.nodeType;
   if (nodeName.indexOf('Node') == nodeName.length - 4) {
     nodeName = nodeName.substring(0, nodeName.length - 4);
   }
+
   audioGraph.setNode(
       computeNodeId(message.frameId, message.nodeId),
-      {
-        label: nodeName + ' ' + message.nodeId
-      });
+      getNodeOptions(nodeName, message.nodeId));
+
   requestGraphRedraw();
 };
 
@@ -166,13 +167,11 @@ function handleAddEdge(message) {
   if (!audioGraph.node(destNodeId)) {
     return;
   }
+
   audioGraph.setEdge(
       sourceNodeId,
       destNodeId,
-      // Label the edge with audio param if it exists.
-      {
-        label: message.audioParam
-      },
+      getEdgeOptions(),
       // Compute an ID unique to the edge.
       computeEdgeId(
           message.frameId, message.sourceId, message.destId, message.audioParam
@@ -320,6 +319,89 @@ function handlePanelCreated(extensionPanel) {
     extensionPanel.onShown.removeListener(callback);
   };
   extensionPanel.onShown.addListener(callback);
+}
+
+
+/**
+ * Produces a graph option object.
+ * @return {Object} An object for the graph layout style.
+ */
+function getGraphOptions() {
+  return {
+    nodesep: 28,
+    rankdir: 'LR',
+    ranksep: 28,
+    marginx: 14,
+    marginy: 14
+  };
+}
+
+
+// A color scheme for various AudioNodes.
+var NODE_COLOR = {
+  'Analyser': '#607D88',
+  'AudioBufferSource': '#4CAF50',
+  'AudioDestination': '#37474F',
+  'BiquadFilter': '#8BC34A',
+  'ChannelMerger': '#607D8B',
+  'ChannelSplitter': '#607D8B',
+  'Convolver': '#8BC34A',
+  'Delay': '#8BC34A',
+  'DynamicsCompressor': '#8BC34A',
+  'Gain': '#607D8B',
+  'IIRFilter': '#8BC34A',
+  'Oscillator': '#4CAF50',
+  'Panner': '#8BC34A',
+  'ScriptProcessor': '#607D88',
+  'SpatialPanner': '#8BC34A',
+  'StereoPanner': '#8BC34A',
+  'WaveShaper': '#8BC34A',
+  'AudioParam': '#B0BEC5'
+};
+
+
+/**
+ * Produces a node option object with an argument of the node label.
+ * @param  {String} nodeName A name (type) of the AudioNode.
+ * @param  {String} nodeId A unique ID of the AudioNode.
+ * @return {Object} A node option object filled with the style properties and
+ *                  the label.
+ */
+function getNodeOptions(nodeName, nodeId) {
+  return {
+    labelType: 'html',
+    label: '<span>' + nodeName + ' ' + nodeId + '</span>',
+    style: 'stroke: none; fill: ' + NODE_COLOR[nodeName] + ';',
+    labelStyle: 'color: white; font-family: Arial;',
+    rx: 2,
+    ry: 2
+  };
+}
+
+
+/**
+ * Produces a edge option object for styling.
+ * @return {Object} A node option object filled with the style properties.
+ */
+function getEdgeOptions() {
+  return {
+    lineInterpolate: 'basis',
+    style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
+    arrowheadStyle: 'fill: #90A4AE; stroke: none;',
+    width: 35
+  };
+}
+
+
+/**
+ * Produces a edge option object for styling between an AudioNode to an
+ * AudioParam.
+ * @return {Object} A node option object filled with the style properties.
+ */
+function getParamEdgeOptions() {
+  // TODO: create the options for the connection from an AudioNode to an
+  // AudioParam.
+  return {};
 }
 
 
