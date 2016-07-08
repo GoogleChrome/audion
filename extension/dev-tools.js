@@ -393,6 +393,9 @@ var NODE_COLOR = {
   'DynamicsCompressor': '#8BC34A',
   'Gain': '#607D8B',
   'IIRFilter': '#8BC34A',
+  'MediaElementAudioSource': '#4CAF50',
+  'MediaStreamAudioDestination': '#37474F',
+  'MediaStreamAudioSource': '#4CAF50',
   'Oscillator': '#4CAF50',
   'Panner': '#8BC34A',
   'ScriptProcessor': '#607D88',
@@ -448,7 +451,7 @@ function getEdgeOptions(opt_edgeType) {
       case 'PARAM_TO_NODE':
         return {
           lineInterpolate: 'linear',
-          style: 'stroke-width: 2.5px; stroke-dasharray: 2.5, 2.5;stroke: #B0BEC5; fill: none;',
+          style: 'stroke-width: 2.5px; stroke-dasharray: 2.5, 2.5; stroke: #B0BEC5; fill: none;',
           arrowheadStyle: 'fill: none; stroke: none;',
           width: 1
         };

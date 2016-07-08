@@ -249,6 +249,11 @@
 
 
   /** @override */
+  AudioContext.prototype.createIIRFilter = wrapNativeFunction(
+      AudioContext.prototype.createIIRFilter, newNodeDecorator);
+
+
+  /** @override */
   AudioContext.prototype.createMediaElementSource = wrapNativeFunction(
       AudioContext.prototype.createMediaElementSource, newNodeDecorator);
 
@@ -272,9 +277,11 @@
   AudioContext.prototype.createPanner = wrapNativeFunction(
       AudioContext.prototype.createPanner, newNodeDecorator);
 
+
   /** @override */
   AudioContext.prototype.createStereoPanner = wrapNativeFunction(
       AudioContext.prototype.createStereoPanner, newNodeDecorator);
+
 
   // Instrument the native AudioContext constructor. Patch the prototype chain.
   AudioContext = wrappedAudioContextConstructor;
