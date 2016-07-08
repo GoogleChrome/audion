@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test | Time Warp FX (AudioParam modulation)</title>
+</head>
+<body>
+  <a href="index.html">Index</a>
+  <h1>Time Warp FX (AudioParam modulation)</h1>
+  <script type="text/javascript">
+    console.log('hey');
+    var context = new AudioContext();
+
+    var saw = context.createOscillator();
+    var lfo = context.createOscillator();
+    var lfoDepth = context.createGain();
+    var lpf = context.createBiquadFilter();
+    var amp = context.createGain();
+
+    saw.connect(lpf);
+    lfo.connect(lfoDepth);
+    lfoDepth.connect(saw.frequency);
+    lfoDepth.connect(lpf.frequency);
+    lpf.connect(amp);
+    amp.connect(context.destination);
+
+    saw.type = 'sawtooth';
+    lpf.frequency.value = 2000;
+    lpf.Q.value = 8;
+    amp.gain.value = 0.5;
+
+    lfo.frequency.setValueAtTime(1, 0.0);
+    lfo.frequency.exponentialRampToValueAtTime(20, 3.0);
+
+    lfoDepth.gain.setValueAtTime(0.1, 0.0);
+    lfoDepth.gain.linearRampToValueAtTime(1900, 3.0);
+
+    saw.start();
+    lfo.start();
+
+    saw.stop(context.currentTime + 5);
+  </script>
+</body>
+</html>
