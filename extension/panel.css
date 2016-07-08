@@ -1,0 +1,30 @@
+body, div {
+  margin: 0;
+  padding: 0; 
+}
+
+body {
+  background-color: #EEEEEE;
+  height: 100vh;
+}
+
+#container {
+  align-items: center;
+  display: flex;
+  height: 100vh;
+  justify-content: center;
+}
+
+#warningMessage {
+  /* By default, the warning message is hidden. */
+  display: none; 
+  background-color: #FFFFFF;
+  border-radius: 3px;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
+  color: #263238;
+  font-size: 1.4em;
+  line-height: 1.6em;
+  max-width: 100%;
+  padding: 20px;
+  text-align: center;
+}
