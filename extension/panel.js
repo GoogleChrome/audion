@@ -34,9 +34,9 @@ var lastScaleValue = 1;
 
 /**
  * The previous translate value.
- * @type {number}
+ * @type {!Array<number>}
  */
-var lastTranslateValue = 0;
+var lastTranslateValue = [0, 0];
 
 
 // Allow the user to zoom via mouse wheel.
