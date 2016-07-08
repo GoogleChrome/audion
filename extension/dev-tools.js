@@ -26,6 +26,22 @@ var audioGraph = createEmptyAudioGraph();
 
 
 /**
+ * An type of object that stores data about an AudioNode.
+ * @typedef {{
+ *   type: string,
+ * }}
+ */
+var AudioNodeData;
+
+
+/**
+ * A mapping from graph node ID to data on the AudioNode it refers to.
+ * @type {!Object<string, !AudioNodeData>}
+ */
+var audioNodes = {};
+
+
+/**
  * Whether web audio updates occurred before this dev tools instance opened.
  * @type {boolean}
  */
@@ -101,10 +117,12 @@ function handleTabPageChange(message) {
  * @param {string} frameId The ID of a frame.
  * @param {number} nodeId The ID of the node. Unique within the space of the
  *     frame.
+ * @param {stirng=} opt_audioParam The audio param if this node is for an
+ *     AudioParam.
  * @return {string} An ID unique to the node throughout the extension.
  */
-function computeNodeId(frameId, nodeId) {
-  return String(frameId + '$' + nodeId);
+function computeNodeId(frameId, nodeId, opt_audioParam) {
+  return String(frameId + '$' + nodeId + '$' + (opt_audioParam || ''));
 }
 
 
@@ -130,27 +148,26 @@ function handleAddNode(message) {
     nodeName = nodeName.substring(0, nodeName.length - 4);
   }
 
-  audioGraph.setNode(
-      computeNodeId(message.frameId, message.nodeId),
-      getNodeOptions(nodeName, message.nodeId));
+  var graphNodeId = computeNodeId(message.frameId, message.nodeId);
+  audioNodes[graphNodeId] = {
+    type: nodeName
+  };
+  audioGraph.setNode(graphNodeId, getNodeOptions(nodeName, message.nodeId));
 
   requestGraphRedraw();
 };
 
 
 /**
- * Computes a unique ID for an edge.
- * @param {string} frameId An ID unique to a frame.
- * @param {string} sourceId The ID of the source node. Unique within the frame.
- * @param {string} destId The ID of the dest node. Unique within the frame.
- * @param {string=} opt_paramName Optional AudioParam name.
+ * Computes an ID unique to the edge within the d3-dagre audio graph.
+ * @param {string} sourceGraphNodeId The ID of the source node. Unique within
+ *     the graph. Node: This differs from the integer node ID from the frame. 
+ * @param {string} destGraphNodeId The ID of the destination node. Unique within
+ *     the graph. Node: This differs from the integer node ID from the frame. 
+ * @return {string} An ID unique to this edge.
  */
-function computeEdgeId(frameId, sourceId, destId, opt_paramName) {
-  var id = '' + frameId + '$' + sourceId + '$' + destId;
-  if (opt_paramName) {
-    id += '$' + opt_paramName
-  }
-  return id;
+function computeEdgeId(sourceGraphNodeId, destGraphNodeId) {
+  return sourceGraphNodeId + '|' + destGraphNodeId;
 }
 
 
@@ -161,11 +178,36 @@ function computeEdgeId(frameId, sourceId, destId, opt_paramName) {
 function handleAddEdge(message) {
   var sourceNodeId = computeNodeId(message.frameId, message.sourceId);
   if (!audioGraph.node(sourceNodeId)) {
+    // The source node is not tracked. Perhaps that node was made before dev
+    // tools opened.
     return;
   }
+
   var destNodeId = computeNodeId(message.frameId, message.destId);
   if (!audioGraph.node(destNodeId)) {
+    // The node the edge points to is not tracked. Perhaps that node was made
+    // before dev tools opened.
     return;
+  }
+
+  if (message.audioParam) {
+    // If this edge connects to an AudioParam, create a node for the AudioParam
+    // if that node does not exist yet.
+    var audioNodeId = destNodeId;
+    destNodeId = computeNodeId(
+        message.frameId, message.destId, message.audioParam);
+    if (!audioGraph.node(destNodeId)) {
+      audioGraph.setNode(destNodeId, getNodeOptions(
+          audioNodes[audioNodeId].type, message.destId, message.audioParam));
+      // Connect this new node (for the newfound AudioParam) to its AudioNode.
+      audioGraph.setEdge(
+          destNodeId,
+          audioNodeId,
+          getEdgeOptions('PARAM_TO_NODE'),
+          // Compute an ID unique to the edge.
+          computeEdgeId(destNodeId, audioNodeId)
+        );
+    }
   }
 
   audioGraph.setEdge(
@@ -173,9 +215,7 @@ function handleAddEdge(message) {
       destNodeId,
       getEdgeOptions(),
       // Compute an ID unique to the edge.
-      computeEdgeId(
-          message.frameId, message.sourceId, message.destId, message.audioParam
-        )
+      computeEdgeId(sourceNodeId, destNodeId)
     );
   requestGraphRedraw();
 };
@@ -197,14 +237,10 @@ function handleRemoveEdge(message) {
       return;
     }
     audioGraph.removeEdge(
-      sourceNodeId,
-      destNodeId,
-      computeEdgeId(
-          message.frameId,
-          message.sourceId,
-          message.destId,
-          message.audioParam)
-    );
+        sourceNodeId,
+        destNodeId,
+        computeEdgeId(sourceNodeId, destNodeId)
+      );
   } else {
     // Remove all edges emanating out of the source node.
     var edges = audioGraph.outEdges(
@@ -337,6 +373,13 @@ function getGraphOptions() {
 }
 
 
+/**
+ * The fill color for AudioParam nodes.
+ * @type @const {string}
+ */
+var AUDIO_PARAM_NODE_COLOR = '#B0BEC5';
+
+
 // A color scheme for various AudioNodes.
 var NODE_COLOR = {
   'Analyser': '#607D88',
@@ -362,12 +405,26 @@ var NODE_COLOR = {
 
 /**
  * Produces a node option object with an argument of the node label.
- * @param  {String} nodeName A name (type) of the AudioNode.
- * @param  {String} nodeId A unique ID of the AudioNode.
+ * @param {string} nodeName A name (type) of the AudioNode.
+ * @param {string} nodeId A unique ID of the AudioNode.
+ * @param {string=} opt_audioParam The audio param. Applicable if this node
+ *     is for an AudioParam (not an AudioNode). 
  * @return {Object} A node option object filled with the style properties and
  *                  the label.
  */
-function getNodeOptions(nodeName, nodeId) {
+function getNodeOptions(nodeName, nodeId, opt_audioParam) {
+  if (opt_audioParam) {
+    // Use the options for a graph node for an AudioParam.
+    return {
+        labelType: 'html',
+        label: opt_audioParam,
+        style: 'stroke: none; fill: ' + AUDIO_PARAM_NODE_COLOR,
+        labelStyle: 'color: black; font-family: Arial; text-transform: uppercase;',
+        rx: 20,
+        ry: 20
+      };
+  }
+  // Use the options for a graph node for an AudioNode.
   return {
     labelType: 'html',
     label: '<span>' + nodeName + ' ' + nodeId + '</span>',
@@ -381,9 +438,22 @@ function getNodeOptions(nodeName, nodeId) {
 
 /**
  * Produces a edge option object for styling.
+ * @param {string=} opt_edgeType One of 'NODE_TO_NODE', 'PARAM_TO_NODE',
+ *     'NODE_TO_CHANNEL', or 'CHANNEL_TO_NODE'. Defaults to 'NODE_TO_NODE'.
  * @return {Object} A node option object filled with the style properties.
  */
-function getEdgeOptions() {
+function getEdgeOptions(opt_edgeType) {
+  if (opt_edgeType) {
+    switch (opt_edgeType) {
+      case 'PARAM_TO_NODE':
+        return {
+          lineInterpolate: 'linear',
+          style: 'stroke-width: 2.5px; stroke-dasharray: 2.5, 2.5;stroke: #B0BEC5; fill: none;',
+          arrowheadStyle: 'fill: none; stroke: none;',
+          width: 1
+        };
+    }
+  }
   return {
     lineInterpolate: 'basis',
     style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
