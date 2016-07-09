@@ -39,6 +39,13 @@ var lastScaleValue = 1;
 var lastTranslateValue = [0, 0];
 
 
+/**
+ * The most recently computed X and Y offset required to center the graph
+ * assuming a user translation (from panning) of [0, 0] and scale of 1.
+ */
+var xyGraphOffset = [0, 0];
+
+
 // Allow the user to zoom via mouse wheel.
 var zoomListener = d3.behavior.zoom().on('zoom', handleZoom);
 // Actually attach the listener.
@@ -86,14 +93,19 @@ function handleZoom() {
 
 
 /**
- * Applies a scale and a translate to the inner SVG element of the graph.
+ * Applies a scale and a translation to the inner SVG element of the graph.
  * @param {number} scale
- * @param {number} translate
+ * @param {Array<number, number>} translation Format: X, Y
  */
-function scaleAndTranslateGraph(scale, translate) {
+function scaleAndTranslateGraph(scale, translation) {
+  // Take into account initial graph centering.
+  var rawTranslation = [
+      translation[0] + xyGraphOffset[0] * scale,
+      translation[1] + xyGraphOffset[1] * scale
+    ];
   svgGraphInnerContainer.attr(
       'transform',
-      'translate(' + translate + ')' + 'scale(' + scale + ')'
+      'translate(' + rawTranslation + ')' + 'scale(' + scale + ')'
     );
 }
 
@@ -113,11 +125,14 @@ function layoutAndDrawGraph() {
     return;
   }
 
-  // Center the graph.
-  svgGraphContainer.attr('width', graphDimensions.width + 100);
-  var xCenterOffset = graphDimensions.width / 2;
-  svgGraphContainer.attr('transform', 'translate(' + xCenterOffset + ', 20)');
-  svgGraphContainer.attr('height', graphDimensions.height + 100);
+  // Store the graph dimensions for later recentering.
+  var graphContainerDimensions =
+      svgGraphContainer.node().getBoundingClientRect();
+  xyGraphOffset[0] =
+      (graphContainerDimensions.width - graphDimensions.width) / 2;
+  xyGraphOffset[1] =
+      (graphContainerDimensions.height - graphDimensions.height) / 2;
+
   scaleAndTranslateGraph(lastScaleValue, lastTranslateValue);
 }
 
@@ -163,6 +178,10 @@ function handlePageChangeWithinTab() {
   divWarning.style.display = 'none';
   divWarning.innerHTML = '';
   divGraph.style.display = divDebug.style.display = 'block';
+
+  // Reset panning and zooming.
+  lastScaleValue = 1;
+  lastTranslateValue = [0, 0];
 }
 
 

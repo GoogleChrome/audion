@@ -28,3 +28,9 @@ body {
   padding: 20px;
   text-align: center;
 }
+
+#graph {
+  height: 100%;
+  overflow: hidden;
+  width: 100%;
+}
