@@ -92,6 +92,7 @@ function handleZoom() {
   lastScaleValue = d3.event.scale;
   lastTranslateValue = d3.event.translate;
   scaleAndTranslateGraph(lastScaleValue, lastTranslateValue);
+  userPannedOrZoomed = true;
 }
 
 
@@ -116,7 +117,6 @@ function makeWholeGraphViewable() {
     return;
   }
 
-  userPannedOrZoomed = false;
   centerGraph();
 }
 
@@ -185,11 +185,12 @@ function centerGraph() {
         (graphContainerDimensions.width - graphDimensions.width * scale) / 2;
   }
 
-  // Center the graph.
+  // Center the graph. Then reset the detection for user interaction.
   zoomListener
       .translate(translation)
       .scale(scale)
       .event(svgGraphInnerContainer);
+  userPannedOrZoomed = false;
 }
 
 
