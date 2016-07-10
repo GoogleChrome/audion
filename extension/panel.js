@@ -217,7 +217,7 @@ function handleMissingAudioUpdates(message) {
   divGraph.style.display = divDebug.style.display = 'none';
   divWarning.style.display = 'block'
   divWarning.innerHTML =
-      'This visualization ignores web audio updates before dev tools opened.' +
+      'Web audio updates occurred before dev tools opened.' +
       '<br><strong>Refresh</strong> to track a comprehensive graph.';
 }
 
