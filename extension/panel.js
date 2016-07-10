@@ -40,10 +40,13 @@ var lastTranslateValue = [0, 0];
 
 
 /**
- * The most recently computed X and Y offset required to center the graph
- * assuming a user translation (from panning) of [0, 0] and scale of 1.
+ * Whether the user had panned or zoomed since the last tab refresh. Used to
+ * determine whether we can directly re-center and re-scale the graph after a
+ * layout. If we re-orient the graph after the user already interacted, we could
+ * be overriding a desirable orientation of the user.
+ * @type {boolean}
  */
-var xyGraphOffset = [0, 0];
+var userPannedOrZoomed = false;
 
 
 // Allow the user to zoom via mouse wheel.
@@ -98,15 +101,23 @@ function handleZoom() {
  * @param {Array<number, number>} translation Format: X, Y
  */
 function scaleAndTranslateGraph(scale, translation) {
-  // Take into account initial graph centering.
-  var rawTranslation = [
-      translation[0] + xyGraphOffset[0] * scale,
-      translation[1] + xyGraphOffset[1] * scale
-    ];
   svgGraphInnerContainer.attr(
       'transform',
-      'translate(' + rawTranslation + ')' + 'scale(' + scale + ')'
+      'translate(' + translation + ')' + 'scale(' + scale + ')'
     );
+}
+
+
+/**
+ * Scales and repositions so that the entire graph is visible.
+ */
+function makeWholeGraphViewable() {
+  if (!graphHasValidDimensions()) {
+    return;
+  }
+
+  userPannedOrZoomed = false;
+  centerGraph();
 }
 
 
@@ -119,21 +130,66 @@ function layoutAndDrawGraph() {
   scaleAndTranslateGraph(1, lastTranslateValue);
   renderDagreGraph(svgGraphInnerContainer, audioGraph);
 
-  var graphDimensions = audioGraph.graph();
-  if (!isFinite(graphDimensions.width) || !isFinite(graphDimensions.height)) {
-    // The computed dimensions are awry. Perhaps the graph lacks nodes.
+  if (!graphHasValidDimensions()) {
     return;
   }
 
-  // Store the graph dimensions for later recentering.
+  if (userPannedOrZoomed) {
+    // The user already panned or zoomed. Maintain the user's current
+    // configuration of translation and scaling.
+    scaleAndTranslateGraph(lastScaleValue, lastTranslateValue);
+  } else {
+    // The user had not panned or zoomed yet. Center and scale the graph so that
+    // the user can see the whole graph.
+    centerGraph();
+  }
+}
+
+
+/**
+ * Determines if the graph has valid dimensions. It may not if it lacks nodes.
+ * Assumes that layout and rendering already occurred.
+ * @return {boolean}
+ */
+function graphHasValidDimensions() {
+  var graphDimensions = audioGraph.graph();
+  return isFinite(graphDimensions.width) && isFinite(graphDimensions.height);
+}
+
+
+/**
+ * Centers the graph and scales it so that it fits completely within the panel
+ * page.
+ */
+function centerGraph() {
+  // The dimensions of the DOM container of the graph.
   var graphContainerDimensions =
       svgGraphContainer.node().getBoundingClientRect();
-  xyGraphOffset[0] =
-      (graphContainerDimensions.width - graphDimensions.width) / 2;
-  xyGraphOffset[1] =
-      (graphContainerDimensions.height - graphDimensions.height) / 2;
 
-  scaleAndTranslateGraph(lastScaleValue, lastTranslateValue);
+  // The min dimenions needed to render the graph.
+  var graphDimensions = audioGraph.graph();
+
+  var widthRatio = graphContainerDimensions.width / graphDimensions.width;
+  var heightRatio = graphContainerDimensions.height / graphDimensions.height;
+  var scale;
+  var translation = [0, 0];
+  if (widthRatio < heightRatio) {
+    // We are limited by width.
+    scale = widthRatio;
+    translation[1] =
+        (graphContainerDimensions.height - graphDimensions.height * scale) / 2;
+  } else {
+    // We are limited by height.
+    scale = heightRatio;
+    translation[0] =
+        (graphContainerDimensions.width - graphDimensions.width * scale) / 2;
+  }
+
+  // Center the graph.
+  zoomListener
+      .translate(translation)
+      .scale(scale)
+      .event(svgGraphInnerContainer);
 }
 
 
@@ -182,6 +238,7 @@ function handlePageChangeWithinTab() {
   // Reset panning and zooming.
   lastScaleValue = 1;
   lastTranslateValue = [0, 0];
+  userPannedOrZoomed = false;
 }
 
 
@@ -201,3 +258,7 @@ window.addEventListener('message', function(event) {
       break;
   }
 });
+
+// Make the whole graph fit in the viewport when the user clicks on the button.
+document.getElementById('viewEntireGraphButton').addEventListener(
+    'click', makeWholeGraphViewable);

@@ -8,7 +8,7 @@ body {
   height: 100vh;
 }
 
-#container {
+#all {
   align-items: center;
   display: flex;
   height: 100vh;
@@ -33,4 +33,22 @@ body {
   height: 100%;
   overflow: hidden;
   width: 100%;
+}
+
+#lowerLeftUtilityMenu {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
+}
+
+#viewEntireGraphButton {
+  opacity: 0.5;
+  cursor: pointer;
+  height: 35px;
+  transition: opacity 0.3s
+  width: 35px;
+}
+
+#viewEntireGraphButton:hover {
+  opacity: 1;
 }
