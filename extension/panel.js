@@ -215,7 +215,7 @@ function handleMissingAudioUpdates(message) {
   var divDebug = document.getElementById('debuggingText');
   
   divGraph.style.display = divDebug.style.display = 'none';
-  divWarning.style.display = 'block'
+  divWarning.style.display = 'block';
   divWarning.innerHTML =
       'Web audio updates occurred before dev tools opened.' +
       '<br><strong>Refresh</strong> to track a comprehensive graph.';
