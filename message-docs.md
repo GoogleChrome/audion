@@ -12,6 +12,14 @@ Most messages (the ones related to updating the audio graph) from the bg script
 to the dev panel have a `frameId` field to indicate which frame they stem from.
 
 ```
+// Indicates that the dev panel updated the active AudioNode (the one being
+// inspected). This could mean that the active audio node was cleared.
+{
+  type: 'active_audio_node_updated',
+  // Data on the AudioNode. If null, then the active audio node was cleared.
+  audioNodeData: {?Object}
+}
+
 // Indicates a new edge from an AudioNode (to an AudioNode or an AudioParam).
 {
   type: 'add_edge',
@@ -77,4 +85,14 @@ to the dev panel have a `frameId` field to indicate which frame they stem from.
 {
   type: 'page_changed'  
 }
+
+// Indicates to dev-tools to change the active AudioNode to inspect. Sent by the
+// panel after user interaction.
+{
+  type: 'update_active_audio_node',
+  // The graph node ID of the node that the user selected. If this none, the
+  // request is to clear the currently active AudioNode.
+  graphNodeId: {string} 
+}
+
 ```

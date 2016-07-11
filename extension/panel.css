@@ -8,6 +8,10 @@ body {
   height: 100vh;
 }
 
+.hidden {
+  display: none;
+}
+
 #container {
   align-items: center;
   display: flex;
@@ -27,4 +31,31 @@ body {
   max-width: 100%;
   padding: 20px;
   text-align: center;
+}
+
+.closeButton {
+  cursor: pointer;
+  height: 25px;
+  opacity: 0.7;
+  width: 25px;
+}
+
+.closeButton:hover {
+  opacity: 1;
+}
+
+#pane {
+  background: #fff;
+  bottom: 0;
+  box-sizing: border-box;
+  padding: 20px;
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 300px;
+}
+
+#pane h1 {
+  font-size: 20px;
+  font-weight: normal;
 }

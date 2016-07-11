@@ -12,11 +12,17 @@
          </g>
       </svg>
     </div>
+    <div id='pane' class='hidden'>
+      <img alt='Close' class='closeButton' src='images/close-button.svg'>
+      <h1></h1>
+      <div id='paneContent'></div>
+    </div>
     <div id='debuggingText'></div>
   </div>
   
   <script src='third-party/d3.v3.min.js'></script>
   <script src='third-party/dagre-d3.js'></script>
+  <script src='pane-controller.js'></script>
   <script src='panel.js'></script>
 </body>
 </html>

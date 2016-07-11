@@ -28,17 +28,27 @@ var audioGraph = createEmptyAudioGraph();
 /**
  * An type of object that stores data about an AudioNode.
  * @typedef {{
- *   type: string,
+ *   type: string, // The type of the AudioNode.
+ *   audioNodeId: string // An ID unique to the AudioNode within its frame.
  * }}
  */
 var AudioNodeData;
 
 
 /**
- * A mapping from graph node ID to data on the AudioNode it refers to.
+ * A mapping from graph node ID (unique to the AudioNode across all frames) to
+ * data on the AudioNode it refers to.
  * @type {!Object<string, !AudioNodeData>}
  */
 var audioNodes = {};
+
+
+/**
+ * The graph node ID (unique to the AudioNode across all frames) of the active
+ * AudioNode (the one being inspected at the moment). Empty if none.
+ * @type {string}
+ */
+activeAudioNodeGraphId = '';
 
 
 /**
@@ -150,9 +160,12 @@ function handleAddNode(message) {
 
   var graphNodeId = computeNodeId(message.frameId, message.nodeId);
   audioNodes[graphNodeId] = {
-    type: nodeName
+    type: nodeName,
+    audioNodeId: message.nodeId
   };
-  audioGraph.setNode(graphNodeId, getNodeOptions(nodeName, message.nodeId));
+  audioGraph.setNode(
+      graphNodeId,
+      getNodeOptions(nodeName, message.nodeId, graphNodeId));
 
   requestGraphRedraw();
 };
@@ -197,8 +210,13 @@ function handleAddEdge(message) {
     destNodeId = computeNodeId(
         message.frameId, message.destId, message.audioParam);
     if (!audioGraph.node(destNodeId)) {
-      audioGraph.setNode(destNodeId, getNodeOptions(
-          audioNodes[audioNodeId].type, message.destId, message.audioParam));
+      audioGraph.setNode(
+          destNodeId,
+          getNodeOptions(
+              audioNodes[audioNodeId].type,
+              message.destId,
+              audioNodeId,
+              message.audioParam));
       // Connect this new node (for the newfound AudioParam) to its AudioNode.
       audioGraph.setEdge(
           destNodeId,
@@ -300,11 +318,58 @@ backgroundPageConnection.postMessage({
 
 
 /**
+ * Handles a request to update the active AudioNode (to inspect in the pane).
+ * @param {!Object} message The message indicating the update.
+ */
+function handleUpdateActiveAudioNode(message) {
+  if (!message.graphNodeId) {
+    // The panel requests that the current active AudioNode be cleared.
+    if (activeAudioNodeGraphId) {
+      // The current active AudioNode has not been cleared yet.
+      activeAudioNodeGraphId = '';
+      // Tell the panel that we have successfully cleared the active AudioNode.
+      postToPanelWindow({
+        type: 'active_audio_node_updated'
+      });
+    }
+    return;
+  }
+
+  // The graph node that triggered the request for changing the active
+  // AudioNode. This might not map to an AudioNode yet. For instance, it might
+  // map to a node representing an AudioParam or channel.
+  var graphNode = audioGraph.node(message.graphNodeId);
+  // audioNodeGraphId is the ID of the AudioNode unique throughout all frames.
+  if (graphNode.audioNodeGraphId == activeAudioNodeGraphId) {
+    // This AudioNode is already the active one.
+    return;
+  }
+  var audioNodeData = audioNodes[graphNode.audioNodeGraphId];
+  activeAudioNodeGraphId = graphNode.audioNodeGraphId;
+  postToPanelWindow({
+    type: 'active_audio_node_updated',
+    audioNodeData: audioNodeData
+  });
+}
+
+
+/**
  * Handles what happens when the 'Web Audio' panel opens for the first time
  * after the user opens Chrome dev tools.
  * @param {!Window} panelWindow The window object of the panel.
  */
 function handlePanelOpenForFirstTime(localPanelWindow) {
+  // Listen to messages from the panel.
+  localPanelWindow.addEventListener('message', function(event) {
+    var message = event.data
+    switch (message['type']) {
+      case 'update_active_audio_node':
+        // The user requests the active AudioNode be updated.
+        handleUpdateActiveAudioNode(message);
+        break;
+    }
+  });
+
   if (missingUpdates) {
     // Tell the panel to warn the user about missing audio updates that occurred
     // before the dev tools instance was opened.
@@ -409,13 +474,16 @@ var NODE_COLOR = {
 /**
  * Produces a node option object with an argument of the node label.
  * @param {string} nodeName A name (type) of the AudioNode.
- * @param {string} nodeId A unique ID of the AudioNode.
+ * @param {string} nodeId ID of the AudioNode. Unique within the frame.
+ * @param {string} audioNodeGraphId ID the AudioNode unique across all frames.
+ *     If this node is for a channel or an AudioParam, this graph ID is that of
+ *     the relevant AudioNode. Used to determine which AudioNode to make active.
  * @param {string=} opt_audioParam The audio param. Applicable if this node
  *     is for an AudioParam (not an AudioNode). 
  * @return {Object} A node option object filled with the style properties and
  *                  the label.
  */
-function getNodeOptions(nodeName, nodeId, opt_audioParam) {
+function getNodeOptions(nodeName, nodeId, audioNodeGraphId, opt_audioParam) {
   if (opt_audioParam) {
     // Use the options for a graph node for an AudioParam.
     return {
@@ -424,7 +492,8 @@ function getNodeOptions(nodeName, nodeId, opt_audioParam) {
         style: 'stroke: none; fill: ' + AUDIO_PARAM_NODE_COLOR,
         labelStyle: 'color: black; font-family: Arial; text-transform: uppercase;',
         rx: 20,
-        ry: 20
+        ry: 20,
+        audioNodeGraphId: audioNodeGraphId
       };
   }
   // Use the options for a graph node for an AudioNode.
@@ -434,7 +503,8 @@ function getNodeOptions(nodeName, nodeId, opt_audioParam) {
     style: 'stroke: none; fill: ' + NODE_COLOR[nodeName] + ';',
     labelStyle: 'color: white; font-family: Arial;',
     rx: 2,
-    ry: 2
+    ry: 2,
+    audioNodeGraphId: audioNodeGraphId
   };
 }
 
