@@ -39,6 +39,16 @@ var lastScaleValue = 1;
 var lastTranslateValue = [0, 0];
 
 
+/**
+ * Whether the user had panned or zoomed since the last tab refresh. Used to
+ * determine whether we can directly re-center and re-scale the graph after a
+ * layout. If we re-orient the graph after the user already interacted, we could
+ * be overriding a desirable orientation of the user.
+ * @type {boolean}
+ */
+var userPannedOrZoomed = false;
+
+
 // Allow the user to zoom via mouse wheel.
 var zoomListener = d3.behavior.zoom().on('zoom', handleZoom);
 // Actually attach the listener.
@@ -82,19 +92,32 @@ function handleZoom() {
   lastScaleValue = d3.event.scale;
   lastTranslateValue = d3.event.translate;
   scaleAndTranslateGraph(lastScaleValue, lastTranslateValue);
+  userPannedOrZoomed = true;
 }
 
 
 /**
- * Applies a scale and a translate to the inner SVG element of the graph.
+ * Applies a scale and a translation to the inner SVG element of the graph.
  * @param {number} scale
- * @param {number} translate
+ * @param {Array<number, number>} translation Format: X, Y
  */
-function scaleAndTranslateGraph(scale, translate) {
+function scaleAndTranslateGraph(scale, translation) {
   svgGraphInnerContainer.attr(
       'transform',
-      'translate(' + translate + ')' + 'scale(' + scale + ')'
+      'translate(' + translation + ')' + 'scale(' + scale + ')'
     );
+}
+
+
+/**
+ * Scales and repositions so that the entire graph is visible.
+ */
+function makeWholeGraphViewable() {
+  if (!graphHasValidDimensions()) {
+    return;
+  }
+
+  centerGraph();
 }
 
 
@@ -107,18 +130,67 @@ function layoutAndDrawGraph() {
   scaleAndTranslateGraph(1, lastTranslateValue);
   renderDagreGraph(svgGraphInnerContainer, audioGraph);
 
-  var graphDimensions = audioGraph.graph();
-  if (!isFinite(graphDimensions.width) || !isFinite(graphDimensions.height)) {
-    // The computed dimensions are awry. Perhaps the graph lacks nodes.
+  if (!graphHasValidDimensions()) {
     return;
   }
 
-  // Center the graph.
-  svgGraphContainer.attr('width', graphDimensions.width + 100);
-  var xCenterOffset = graphDimensions.width / 2;
-  svgGraphContainer.attr('transform', 'translate(' + xCenterOffset + ', 20)');
-  svgGraphContainer.attr('height', graphDimensions.height + 100);
-  scaleAndTranslateGraph(lastScaleValue, lastTranslateValue);
+  if (userPannedOrZoomed) {
+    // The user already panned or zoomed. Maintain the user's current
+    // configuration of translation and scaling.
+    scaleAndTranslateGraph(lastScaleValue, lastTranslateValue);
+  } else {
+    // The user had not panned or zoomed yet. Center and scale the graph so that
+    // the user can see the whole graph.
+    centerGraph();
+  }
+}
+
+
+/**
+ * Determines if the graph has valid dimensions. It may not if it lacks nodes.
+ * Assumes that layout and rendering already occurred.
+ * @return {boolean}
+ */
+function graphHasValidDimensions() {
+  var graphDimensions = audioGraph.graph();
+  return isFinite(graphDimensions.width) && isFinite(graphDimensions.height);
+}
+
+
+/**
+ * Centers the graph and scales it so that it fits completely within the panel
+ * page.
+ */
+function centerGraph() {
+  // The dimensions of the DOM container of the graph.
+  var graphContainerDimensions =
+      svgGraphContainer.node().getBoundingClientRect();
+
+  // The min dimenions needed to render the graph.
+  var graphDimensions = audioGraph.graph();
+
+  var widthRatio = graphContainerDimensions.width / graphDimensions.width;
+  var heightRatio = graphContainerDimensions.height / graphDimensions.height;
+  var scale;
+  var translation = [0, 0];
+  if (widthRatio < heightRatio) {
+    // We are limited by width.
+    scale = widthRatio;
+    translation[1] =
+        (graphContainerDimensions.height - graphDimensions.height * scale) / 2;
+  } else {
+    // We are limited by height.
+    scale = heightRatio;
+    translation[0] =
+        (graphContainerDimensions.width - graphDimensions.width * scale) / 2;
+  }
+
+  // Center the graph. Then reset the detection for user interaction.
+  zoomListener
+      .translate(translation)
+      .scale(scale)
+      .event(svgGraphInnerContainer);
+  userPannedOrZoomed = false;
 }
 
 
@@ -144,9 +216,9 @@ function handleMissingAudioUpdates(message) {
   var divDebug = document.getElementById('debuggingText');
   
   divGraph.style.display = divDebug.style.display = 'none';
-  divWarning.style.display = 'block'
+  divWarning.style.display = 'block';
   divWarning.innerHTML =
-      'This visualization ignores web audio updates before dev tools opened.' +
+      'Web audio updates occurred before dev tools opened.' +
       '<br><strong>Refresh</strong> to track a comprehensive graph.';
 }
 
@@ -163,6 +235,11 @@ function handlePageChangeWithinTab() {
   divWarning.style.display = 'none';
   divWarning.innerHTML = '';
   divGraph.style.display = divDebug.style.display = 'block';
+
+  // Reset panning and zooming.
+  lastScaleValue = 1;
+  lastTranslateValue = [0, 0];
+  userPannedOrZoomed = false;
 }
 
 
@@ -182,3 +259,7 @@ window.addEventListener('message', function(event) {
       break;
   }
 });
+
+// Make the whole graph fit in the viewport when the user clicks on the button.
+document.getElementById('viewEntireGraphButton').addEventListener(
+    'click', makeWholeGraphViewable);
