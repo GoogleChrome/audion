@@ -1,11 +1,15 @@
 body, div {
   margin: 0;
-  padding: 0; 
+  padding: 0;
 }
 
 body {
   background-color: #EEEEEE;
   height: 100vh;
+}
+
+.hidden {
+  display: none;
 }
 
 #all {
@@ -17,7 +21,7 @@ body {
 
 #warningMessage {
   /* By default, the warning message is hidden. */
-  display: none; 
+  display: none;
   background-color: #FFFFFF;
   border-radius: 3px;
   box-shadow: 0 3px 6px rgba(0,0,0,0.16), 0 3px 6px rgba(0,0,0,0.23);
@@ -51,4 +55,31 @@ body {
 
 #viewEntireGraphButton:hover {
   opacity: 1;
+}
+
+.closeButton {
+  cursor: pointer;
+  height: 25px;
+  opacity: 0.7;
+  width: 25px;
+}
+
+.closeButton:hover {
+  opacity: 1;
+}
+
+#pane {
+  background: #fff;
+  bottom: 0;
+  box-sizing: border-box;
+  padding: 20px;
+  position: fixed;
+  right: 0;
+  top: 0;
+  width: 300px;
+}
+
+#pane h1 {
+  font-size: 20px;
+  font-weight: normal;
 }

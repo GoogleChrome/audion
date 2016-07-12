@@ -1,7 +1,7 @@
-Documentation of Extension Messages 
+Documentation of Extension Messages
 ===========================================
 
-Since we do not use a JS compiler to enforce invariants across scripts, we 
+Since we do not use a JS compiler to enforce invariants across scripts, we
 manually document the types of messages (and their properties) sent to/from
 various scripts in the extension.
 
@@ -12,6 +12,14 @@ Most messages (the ones related to updating the audio graph) from the bg script
 to the dev panel have a `frameId` field to indicate which frame they stem from.
 
 ```
+// Indicates that the dev panel updated the active AudioNode (the one being
+// inspected). This could mean that the active audio node was cleared.
+{
+  type: 'active_audio_node_updated',
+  // Data on the AudioNode. If null, then the active audio node was cleared.
+  audioNodeData: {?Object}
+}
+
 // Indicates a new edge from an AudioNode (to an AudioNode or an AudioParam).
 {
   type: 'add_edge',
@@ -26,6 +34,9 @@ to the dev panel have a `frameId` field to indicate which frame they stem from.
   type: 'add_node',
   nodeId: {number},
   nodeType: {string},
+  // The URL and line number at which the node was made.
+  creationLineNumber: {number},
+  creationUrl: {string}
 }
 
 
@@ -36,7 +47,7 @@ to the dev panel have a `frameId` field to indicate which frame they stem from.
   type: 'listeners_ready',
   // The ID of inspected tab. Included if message is from panel JS since
   // port.sender.tab is undefined for messages from panels.
-  inspectedTabId: {number=}, 
+  inspectedTabId: {number=},
 }
 
 
@@ -75,6 +86,16 @@ to the dev panel have a `frameId` field to indicate which frame they stem from.
 
 // Indicates that a tab changed pages so the panel can reset.
 {
-  type: 'page_changed'  
+  type: 'page_changed'
 }
+
+// Indicates to dev-tools to change the active AudioNode to inspect. Sent by the
+// panel after user interaction.
+{
+  type: 'update_active_audio_node',
+  // The graph node ID of the node that the user selected. If this none, the
+  // request is to clear the currently active AudioNode.
+  graphNodeId: {string}
+}
+
 ```

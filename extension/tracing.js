@@ -135,6 +135,13 @@
   }
 
 
+  /** @type {RegExp} */
+  var anonymousLineRegex = /.+\<anonymous\>:\d+:\d+\)$/;
+
+  /** @type {RegExp} */
+  var userLineRegex = /.+\((.+):(\d+):\d+\)$/;
+
+
   /**
    * Instruments a newly created node and its AudioParams.
    * @param {!AudioNode} node
@@ -149,10 +156,32 @@
         paramToType.set(node[prop], prop);
       }
     }
+
+    // Get the URL and line number at which this node was created.
+    var creationUrl;
+    var creationLineNumber;
+    var functionsCalled = new Error().stack.split('at');
+    for (var i = 0; i < functionsCalled.length; i++) {
+      functionsCalled[i] = functionsCalled[i].trim();
+      if (functionsCalled[i].match(anonymousLineRegex)) {
+        continue
+      } else {
+        var match = functionsCalled[i].match(userLineRegex);
+        if (match && match.length == 3) {
+          // We found the URL and line number of creation.
+          creationUrl = match[1];
+          creationLineNumber = match[2];
+          break;
+        }
+      }
+    }
+
     postToContentScript({
       type: 'add_node',
       nodeId: nodeId,
-      nodeType: node.constructor.name
+      nodeType: node.constructor.name,
+      creationLineNumber: creationLineNumber,
+      creationUrl: creationUrl
     });
   }
 
