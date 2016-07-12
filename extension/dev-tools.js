@@ -29,7 +29,9 @@ var audioGraph = createEmptyAudioGraph();
  * An type of object that stores data about an AudioNode.
  * @typedef {{
  *   type: string, // The type of the AudioNode.
- *   audioNodeId: string // An ID unique to the AudioNode within its frame.
+ *   audioNodeId: string, // An ID unique to the AudioNode within its frame.
+ *   creationLineNumber: {number}, // The line at which the node was made.
+ *   creationUrl: {string} // The URL at which the node was made.
  * }}
  */
 var AudioNodeData;
