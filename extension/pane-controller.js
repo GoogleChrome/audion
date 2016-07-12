@@ -46,6 +46,8 @@ PaneController.prototype.highlightAudioNode = function(audioNodeData) {
   paneTitle.innerHTML = audioNodeData.type + ' ' + audioNodeData.audioNodeId;
 
   // Note where the node was created if we can detect that.
+  var paneContent = document.getElementById('paneContent');
+  paneContent.innerHTML = '';
   var creationLineNumber = parseInt(audioNodeData.creationLineNumber);
   if (audioNodeData.creationUrl && creationLineNumber >= 0) {
     var createdAtSection = document.createElement('div');
@@ -61,7 +63,7 @@ PaneController.prototype.highlightAudioNode = function(audioNodeData) {
       return false;
     });
     createdAtSection.appendChild(linkToSource);
-    document.getElementById('paneContent').appendChild(createdAtSection);
+    paneContent.appendChild(createdAtSection);
   }
 
   // Make the pane shown.
