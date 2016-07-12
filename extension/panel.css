@@ -45,7 +45,7 @@ body {
   opacity: 0.5;
   cursor: pointer;
   height: 35px;
-  transition: opacity 0.3s
+  transition: opacity 0.3s;
   width: 35px;
 }
 
