@@ -30,8 +30,8 @@ var audioGraph = createEmptyAudioGraph();
  * @typedef {{
  *   type: string, // The type of the AudioNode.
  *   audioNodeId: string, // An ID unique to the AudioNode within its frame.
- *   creationLineNumber: {number}, // The line at which the node was made.
- *   creationUrl: {string} // The URL at which the node was made.
+ *   creationLineNumber: number, // The line at which the node was made.
+ *   creationUrl: string // The URL at which the node was made.
  * }}
  */
 var AudioNodeData;
@@ -50,7 +50,7 @@ var audioNodes = {};
  * AudioNode (the one being inspected at the moment). Empty if none.
  * @type {string}
  */
-activeAudioNodeGraphId = '';
+var activeAudioNodeGraphId = '';
 
 
 /**
@@ -168,8 +168,7 @@ function handleAddNode(message) {
     creationUrl: message.creationUrl
   };
   audioGraph.setNode(
-      graphNodeId,
-      getNodeOptions(nodeName, message.nodeId, graphNodeId));
+      graphNodeId, getNodeOptions(nodeName, message.nodeId, graphNodeId));
 
   requestGraphRedraw();
 };
