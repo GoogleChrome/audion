@@ -5,6 +5,22 @@
 
 
 /**
+ * Controls the pane for say examining AudioNodes.
+ * @type {!PaneController}
+ */
+var paneController = new PaneController();
+
+// When the pane closes, tell the dev panel to clear the active AudioNode.
+paneController.setOnPaneCloseFunction(function() {
+  // Tell the dev panel to stop highlighting this node by sending a
+  // update_active_audio_node message that lacks a graphNodeId property.
+  postToPanelWindow({
+      type: 'update_active_audio_node',
+    });
+});
+
+
+/**
  * A renderer used to layout and render the graph.
  * @type {!dagreD3.render}
  */
@@ -51,8 +67,11 @@ var userPannedOrZoomed = false;
 
 // Allow the user to zoom via mouse wheel.
 var zoomListener = d3.behavior.zoom().on('zoom', handleZoom);
-// Actually attach the listener.
 svgGraphContainer.call(zoomListener);
+
+
+// Allow the user to inspect nodes by clicking them.
+svgGraphContainer.on('click', handleClickOnGraphContainer);
 
 
 /**
@@ -86,6 +105,16 @@ function requestRedraw() {
 
 
 /**
+ * Posts a message to this panel window. Assumes that it is open. The dev-tools
+ * script will listen to messages posed to the panel window.
+ * @param {!Object} message The message to post.
+ */
+function postToPanelWindow(message) {
+  window.postMessage(message, window.location.origin || '*');
+}
+
+
+/**
  * Handles a d3 zoom event. Assumes d3.event is defined.
  */
 function handleZoom() {
@@ -93,6 +122,49 @@ function handleZoom() {
   lastTranslateValue = d3.event.translate;
   scaleAndTranslateGraph(lastScaleValue, lastTranslateValue);
   userPannedOrZoomed = true;
+}
+
+
+/**
+ * Handles a click event on the graph container.
+ */
+function handleClickOnGraphContainer() {
+  // Keep climbing the DOM tree til we hit an interesting element, ie a node.
+  var thingClickedOn = d3.event.target;
+  while (thingClickedOn && this != thingClickedOn) {
+    var data = d3.select(thingClickedOn).data();
+    if (!(data && data.length == 1)) {
+      // We do not know if the user clicked on something interesting yet.
+      continue;
+    }
+    var graphNodeId = data[0];
+    var node = audioGraph.node(graphNodeId);
+    if (node) {
+      // The user clicked on a node.
+      postToPanelWindow({
+        type: 'update_active_audio_node',
+        graphNodeId: graphNodeId
+      });
+      break;
+    }
+    thingClickedOn = thingClickedOn.parentElement;
+  }
+}
+
+
+/**
+ * The dev panel had updated the active AudioNode (the one being inspected).
+ * Take care of any changes.
+ * @param {!Object} message
+ */
+function handleAudioNodeUpdatedByDevPanel(message) {
+  if (message.audioNodeData) {
+    // The pane should highlight an AudioNode node.
+    paneController.highlightAudioNode(message.audioNodeData);
+  } else {
+    // The pane is highlighting no AudioNode. Hide it.
+    paneController.hidePane();
+  }
 }
 
 
@@ -205,7 +277,6 @@ function handleRequestGraphRedraw(message) {
 }
 
 
-
 /**
  * Handles what happens if web audio updates occurred before the dev tools
  * instance opened.
@@ -214,7 +285,7 @@ function handleMissingAudioUpdates(message) {
   var divWarning = document.getElementById('warningMessage');
   var divGraph = document.getElementById('graph');
   var divDebug = document.getElementById('debuggingText');
-  
+
   divGraph.style.display = divDebug.style.display = 'none';
   divWarning.style.display = 'block';
   divWarning.innerHTML =
@@ -246,6 +317,9 @@ function handlePageChangeWithinTab() {
 window.addEventListener('message', function(event) {
   var message = event.data
   switch (message['type']) {
+    case 'active_audio_node_updated':
+      handleAudioNodeUpdatedByDevPanel(message);
+      break;
     case 'missing_updates':
       // Audio updates occurred prior to dev tools opening.
       handleMissingAudioUpdates(message);
