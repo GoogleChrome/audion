@@ -23,8 +23,7 @@
     }
   ],
   "web_accessible_resources": [
-    "images/*",
-    "tracing.js"
+    "images/*"
   ],
   "icons": {
     "48": "images/temporaryIcon48.png",
