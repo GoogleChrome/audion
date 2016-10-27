@@ -1,0 +1,25 @@
+{
+  "name": "audion",
+  "version": "1.0.0",
+  "description": "Traces web audio API calls.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "browser-sync": "^2.12.5",
+    "google-closure-compiler": "^20160517.1.0",
+    "gulp": "~3.9.1",
+    "gulp-change": "^1.0.0",
+    "gulp-closure-compiler": "^0.4.0",
+    "gulp-closure-css-renamer": "0.0.2",
+    "gulp-concat": "^2.6.0",
+    "gulp-htmlmin": "^2.0.0",
+    "gulp-less": "^3.1.0",
+    "gulp-util": "^3.0.7",
+    "harmonize": "^1.4.4",
+    "yargs": "^4.7.1"
+  }
+}
