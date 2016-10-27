@@ -1,6 +1,6 @@
 # Audion
 
-Audion is a Chrome extension that adds a Web Audio panel to dev tools that lets the user inspect the web audio graph in real-time.
+Audion is a Chrome extension that adds a Web Audio panel to dev tools. This panel lets the user inspect the web audio graph in real-time.
 
 ## Set up for development.
 
