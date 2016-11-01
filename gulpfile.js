@@ -161,7 +161,7 @@ function compileJs(entryPoint, destDirectory, compiledFileName) {
       entryPoint,
     ],
 
-    externs: ['third-party/closure-externs/**/*.js'],
+    externs: ['externs/**/*.js'],
     // Do not include any un-needed JS in our app.
     only_closure_dependencies: true,
     warning_level: 'VERBOSE'
