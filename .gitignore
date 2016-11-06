@@ -38,3 +38,7 @@ jspm_packages
 
 # Mac hidden files
 .DS_Store
+
+# Our built product.
+build
+

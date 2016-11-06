@@ -12,7 +12,6 @@
  * extension.
  * @typedef {{
  *   type: number,
- *   tag: string
  * }}
  */
 var AudionMessage;
@@ -40,6 +39,18 @@ var AudionTaggedMessage;
  * }}
  */
 var AudionMessageFromFrame;
+
+
+/**
+ * Indicates that a script is ready to receive messages. The type of this
+ * message is audion.messaging.MessageType.LISTENERS_READY.
+ * @typedef {{
+ *   type: number,
+ *   tag: ?number,
+ *   frameId: ?number
+ * }}
+ */
+var AudionListenersReadyMessage;
 
 
 /**
