@@ -33,7 +33,7 @@ gulp.task('default', function() {
   // The background script coordinates the other scripts and does not concern
   // CSS since it does not directly interact with the DOM.
   compileBackgroundScript();
-  compileReportNewWindowEntryPoint();
+  compileTabPageChangedEntryPoint();
   minifyHtml();
   copyExtensionFiles();
   copyMediaFiles();
@@ -83,9 +83,9 @@ function compileBackgroundScript() {
  * Compiles JS for the entry point for reporting a page update.
  * @return {!Object} The gulp result from compilation.
  */
-function compileReportNewWindowEntryPoint() {
+function compileTabPageChangedEntryPoint() {
   return compileJs(
-      'audion.entryPoints.reportNewWindow', 'build/js', 'report-new-window.js');
+      'audion.entryPoints.tabPageChanged', 'build/js', 'tab-page-changed.js');
 }
 
 

@@ -10,7 +10,7 @@
     {
       "matches": ["<all_urls>"],
       "run_at" : "document_start",
-      "js": ["js/report-new-window.js"],
+      "js": ["js/tab-page-changed.js"],
       "all_frames": false
     },
     {

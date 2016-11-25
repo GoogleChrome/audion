@@ -5,7 +5,7 @@ goog.provide('audion.messaging.MessageType');
  * Enumerates types of messages sent throughout the extension. Stored in the
  * type field of AudionMessages. These are numbers to allow for fast comparison.
  * See messages-extern.js for the properties of various AudionMessage objects.
- * Increment this value upon adding a new value - next available value: 9
+ * Increment this value upon adding a new value - next available value: 11
  * @enum {number}
  */
 audion.messaging.MessageType = {
@@ -19,5 +19,8 @@ audion.messaging.MessageType = {
   NODE_TO_PARAM_CONNECTED: 5,
   ALL_DISCONNECTED: 6,
   NODE_FROM_NODE_DISCONNECTED: 7,
-  NODE_FROM_PARAM_DISCONNECTED: 8
+  NODE_FROM_PARAM_DISCONNECTED: 8,
+
+  MISSING_AUDIO_UPDATES: 9,
+  PAGE_OF_TAB_CHANGED: 10
 };

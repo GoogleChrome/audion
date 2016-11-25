@@ -54,6 +54,21 @@ var AudionListenersReadyMessage;
 
 
 /**
+ * Indicates that a dev tools script is ready to receive messages. The type of
+ * this message is audion.messaging.MessageType.LISTENERS_READY. This message
+ * has an additional field for the inspected tab ID. Chrome does not add that
+ * natively to the message, so we must reserve a field for it in the message.
+ * @typedef {{
+ *   type: number,
+ *   tag: ?number,
+ *   frameId: ?number,
+ *   inspectedTabId: number
+ * }}
+ */
+var AudionListenersReadyFromDevToolsScriptMessage;
+
+
+/**
  * Indicates that an AudioContext had been created. The type of this message is
  * audion.messaging.MessageType.CONTEXT_CREATED.
  * @typedef {{
