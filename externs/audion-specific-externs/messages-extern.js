@@ -60,8 +60,6 @@ var AudionListenersReadyMessage;
  * natively to the message, so we must reserve a field for it in the message.
  * @typedef {{
  *   type: number,
- *   tag: ?number,
- *   frameId: ?number,
  *   inspectedTabId: number
  * }}
  */

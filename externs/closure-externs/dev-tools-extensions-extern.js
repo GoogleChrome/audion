@@ -1,5 +1,6 @@
 /**
  * @fileoverview An extern for the API for Chrome Developer Tools extensions.
+ * TODO: Move into central repo.
  * @externs
  */
 
@@ -60,7 +61,7 @@ chrome.devtools.network = {};
 
 
 /**
- * Fired when the user switches to the panel. Usage:
+ * Fired when a request finishes. Usage:
  * chrome.devtools.network.onRequestFinished.addListener(
  *     function(request) {...});
  * @type {ChromeEvent}
@@ -84,6 +85,13 @@ function ExtensionPanel() {}
  * @type {ChromeEvent}
  */
 ExtensionPanel.prototype.onShown;
+
+
+/**
+ * A listener that fires when the user switches away from the panel.
+ * @type {ChromeEvent}
+ */
+ExtensionPanel.prototype.onHidden;
 
 
 /**
@@ -117,11 +125,21 @@ ExtensionPanel.prototype.createStatusBarButton = function(
  *     passive state, and the bottom-right for the docked pressed state.
  * @param {string} pagePath Path of the panel's HTML page relative to the
  *     extension directory.
- * @param {function(Object)=} opt_callback A function that is called
+ * @param {function(!ExtensionPanel)=} opt_callback A function that is called
  *     when the panel is created.
  */
 chrome.devtools.panels.create = function(
     title, iconPath, pagePath, opt_callback) {};
+
+
+/**
+ * Opens a resource in the dev tools Sources panel.
+ * @param {string} scriptUrl the URL of the script.
+ * @param {number} lineNumber The line number to go to.
+ * @param {function()} opt_callback Runs after we navigate to the resource.
+ */
+chrome.devtools.panels.openResource = function(
+    scriptUrl, lineNumber, opt_callback) {};
 
 
 
@@ -157,76 +175,3 @@ BrowserRequest.prototype.response;
  *     is supported.
  */
 BrowserRequest.prototype.getContent;
-
-
-var vkbeautify = {};
-
-
-/**
- * Minify xml to take out any whitespace.
- * @param {string} text
- * @param {boolean} isConvert
- */
-vkbeautify.xmlmin = function(text, isConvert) {};
-
-
-/**
- * Expand xml to have the whitespace.
- * @param {string} text
- * @param {number} expandNumber
- */
-vkbeautify.xml = function(text, expandNumber) {};
-
-
-/**
- * Returns the parser response of vast.
- * @type {Object}
- */
-var parsedResponse = {};
-
-
-/**
- * Lime item id of Ad.
- * @type {string}
- */
-parsedResponse.lineItemId;
-
-
-/**
- * Description of Ad.
- * @type {string|undefined}
- */
-parsedResponse.description;
-
-
-/**
- * Date time of request.
- * @type {string}
- */
-parsedResponse.startedDateTime;
-
-
-/**
- * Request type of request.
- * @type {string}
- */
-parsedResponse.requestType;
-
-
-/**
- * Vast element type of request.
- * @type {string}
- */
-parsedResponse.vastElement;
-
-
-/** @type {string} */
-parsedResponse.preRolls;
-
-
-/** @type {string} */
-parsedResponse.postRolls;
-
-
-/** @type {string} */
-parsedResponse.midRolls;

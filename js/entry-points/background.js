@@ -178,12 +178,6 @@ audion.entryPoints.handleNewDevToolsListenersReady_ = function(port, message) {
  * @param {!Port} port The port for the connection.
  */
 audion.entryPoints.handleNewDevToolsConnection_ = function(port) {
-  var tab = port.sender.tab;
-  if (!tab || !tab.id) {
-    // We know not what tab this connection is coming from. It is degenerate.
-    return;
-  }
-
   // Listen to messages from the content script for the frame.
   port.onMessage.addListener(function(message) {
     message = /** @type {!AudionMessage} */ (message);
