@@ -83,8 +83,9 @@ dagreD3.graphlib.Graph.prototype.getParent = function(w) {};
  * @param {string} v
  * @param {string} w
  * @param {Object=} opt_cfg
+ * @param {string=} opt_name
  */
-dagreD3.graphlib.Graph.prototype.setEdge = function(v, w, opt_cfg) {};
+dagreD3.graphlib.Graph.prototype.setEdge = function(v, w, opt_cfg, opt_name) {};
 
 
 /**

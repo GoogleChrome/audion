@@ -1,0 +1,7 @@
+.bodyWithupdatesMissingWarning > * {
+  display: none;
+}
+
+.bodyWithupdatesMissingWarning .updatesMissingWarning {
+  display: block;
+}

@@ -35,6 +35,7 @@ gulp.task('default', function() {
   compileBackgroundScript();
   compileTabPageChangedEntryPoint();
   minifyHtml();
+  copyThirdPartyJs();
   copyExtensionFiles();
   copyMediaFiles();
 });
@@ -66,6 +67,16 @@ function minifyHtml() {
   return gulp.src('html/*.html')
     .pipe(htmlmin({collapseWhitespace: true}))
     .pipe(gulp.dest('build'));
+}
+
+
+/**
+ * Copies third party scripts to the build JS directory.
+ * @return {!Object} The gulp result from piping the data.
+ */
+function copyThirdPartyJs() {
+  return gulp.src('third_party/*.js')
+    .pipe(gulp.dest('build/js'));
 }
 
 

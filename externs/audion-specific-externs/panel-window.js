@@ -10,4 +10,24 @@
  * @constructor
  * @extends {Window}
  */
-function AudionPanelWindow() {}
+function AudionPanelWindow() {};
+
+
+/**
+ * Handles missing audio updates.
+ */
+AudionPanelWindow.prototype.audionMissingAudioUpdates = function() {};
+
+
+/**
+ * Requests the panel to redraw the UI after say a web audio update.
+ * {!dagreD3.graphlib.Graph} visualGraph The graph to render.
+ */
+AudionPanelWindow.prototype.requestRedraw = function(visualGraph) {};
+
+
+/**
+ * Requests the panel to reset its UI.
+ * {!dagreD3.graphlib.Graph} visualGraph The graph to render initially.
+ */
+AudionPanelWindow.prototype.resetUi = function(visualGraph) {};
