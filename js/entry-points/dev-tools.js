@@ -52,10 +52,7 @@ audion.entryPoints.nodeTypeToColorMapping_ = {
   'ScriptProcessor': '#607D88',
   'SpatialPanner': '#8BC34A',
   'StereoPanner': '#8BC34A',
-  'WaveShaper': '#8BC34A',
-
-  // TODO(chizeng): Remove.
-  'AudioParam': '#B0BEC5'
+  'WaveShaper': '#8BC34A'
 };
 
 
@@ -191,6 +188,24 @@ audion.entryPoints.computeVisualGraphNodeIdForAudioNode_ = function(
 
 /**
  * Computes an ID (unique across all the frames of the inspected tab) that can
+ * be used to uniquely obtain the node representing an AudioParam.
+ * @param {number} frameId
+ * @param {number} nodeId
+ * @param {string} audioParamName
+ * @return {string}
+ * @private
+ */
+audion.entryPoints.computeVisualGraphNodeIdForAudioParam_ = function(
+    frameId, nodeId, audioParamName) {
+  // The frame ID and AudioNode ID uniquely identifies an AudioNode in the tab.
+  // TODO(chizeng): Update this arg once we support multiple channels.
+  return audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
+      frameId, nodeId) + 'p$' + audioParamName;
+};
+
+
+/**
+ * Computes an ID (unique across all the frames of the inspected tab) that can
  * be used to uniquely obtain the node representing an AudioNode from the visual
  * graph (which differs from the web audio graph.
  * @param {number} frameId
@@ -203,6 +218,43 @@ audion.entryPoints.computeVisualGraphIdForNodeToNodeEdge_ = function(
     frameId, sourceAudioNodeId, destinationAudioNodeId) {
   return 'edge|' + frameId + '|' + sourceAudioNodeId + '|' +
       destinationAudioNodeId;
+};
+
+
+/**
+ * Computes an ID (unique across all the frames of the inspected tab) that can
+ * be used to uniquely obtain the dotted edge from an AudioParam to its
+ * associated node. 
+ * @param {number} frameId
+ * @param {number} sourceAudioNodeId The AudioNode ID (not visual graph ID).
+ * @param {number} destinationAudioNodeId
+ * @param {string} audioParamName
+ * @return {string}
+ * @private
+ */
+audion.entryPoints.computeVisualGraphIdForAudioParamToNodeEdge_ = function(
+    frameId, sourceAudioNodeId, destinationAudioNodeId, audioParamName) {
+  return audion.entryPoints.computeVisualGraphIdForNodeToNodeEdge_(
+      frameId, sourceAudioNodeId, destinationAudioNodeId) + '|fromParam$' +
+          audioParamName;
+};
+
+
+/**
+ * Computes an ID (unique across all the frames of the inspected tab) that can
+ * be used to uniquely obtain the edge from an Audio Node to an AudioParam.
+ * @param {number} frameId
+ * @param {number} sourceAudioNodeId The AudioNode ID (not visual graph ID).
+ * @param {number} destinationAudioNodeId
+ * @param {string} audioParamName
+ * @return {string}
+ * @private
+ */
+audion.entryPoints.computeVisualGraphIdForNodeToAudioParamEdge_ = function(
+    frameId, sourceAudioNodeId, destinationAudioNodeId, audioParamName) {
+  return audion.entryPoints.computeVisualGraphIdForNodeToNodeEdge_(
+      frameId, sourceAudioNodeId, destinationAudioNodeId) + '|toParam$' +
+          audioParamName;
 };
 
 
@@ -221,12 +273,12 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
     nodeType = nodeType.substr(0, nodeType.length - suffix.length);
   }
   var nodeColor =
-      audion.entryPoints.nodeTypeToColorMapping_[message.nodeType] || '#000';
+      audion.entryPoints.nodeTypeToColorMapping_[nodeType] || '#000';
   var nodeData = /** @type {!AudionVisualGraphData} */ ({
     underlyingType: audion.render.VisualGraphType.AUDIO_NODE,
     frameId: message.frameId,
     labelType: 'html',
-    label: message.nodeType + ' ' + message.nodeId,
+    label: nodeType + ' ' + message.nodeId,
     style: 'stroke: none; fill: ' + nodeColor + ';',
     labelStyle: 'color: #fff; font-family: arial;',
     rx: 2,
@@ -251,7 +303,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
  * @private
  */
 audion.entryPoints.handleNodeToNodeConnected_ = function(message) {
-  var edgeData = {
+  var edgeData = /** @type {!AudionVisualGraphData} */ ({
     underlyingType: audion.render.VisualGraphType.NODE_TO_NODE_EDGE,
     lineInterpolate: 'basis',
     style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
@@ -260,7 +312,7 @@ audion.entryPoints.handleNodeToNodeConnected_ = function(message) {
     frameId: message.frameId,
     sourceAudioNodeId: message.sourceNodeId,
     destinationAudioNodeId: message.destinationNodeId
-  };
+  });
 
   // Compute the visual graph IDs of the nodes.
   var sourceNodeVisualGraphId =
@@ -306,7 +358,170 @@ audion.entryPoints.handelPageOfTabChanged_ = function() {
   // Well, the tab just changed, so we can't be missing audio updates.
   audion.entryPoints.audioUpdatesMissing_ = false;
 
-  // TODO(chizeng): Tell the panel to reset to this empty graph.
+  // Tell the panel to reset to this empty graph.
+  if (audion.entryPoints.panelWindow_) {
+    audion.entryPoints.panelWindow_.resetUi(audion.entryPoints.visualGraph_);
+  }
+};
+
+
+/**
+ * Handles when a node connects to an AudioParam.
+ * @param {!AudionNodeToParamConnectedMessage} message
+ */
+audion.entryPoints.handleNodeToParamConnected_ = function(message) {
+  var sourceVisualNodeId =
+      audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
+          /** @type {number} */ (message.frameId), message.sourceNodeId);
+
+  // This is the visual node ID of the 
+  var destinationAudioNodeVisualGraphId =
+      audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
+          /** @type {number} */ (message.frameId), message.destinationNodeId);
+
+  // If the visual node for the AudioParam exists, connect directly to it.
+  var audioParamVisualNodeId =
+      audion.entryPoints.computeVisualGraphNodeIdForAudioParam_(
+          /** @type {number} */ (message.frameId),
+          message.destinationNodeId,
+          message.destinationParamName);
+  if (!audion.entryPoints.visualGraph_.node(audioParamVisualNodeId)) {
+    // If that visual node does not exist, create it.
+    var nodeData = /** @type {!AudionVisualGraphData} */ ({
+      underlyingType: audion.render.VisualGraphType.AUDIO_PARAM_NODE,
+      frameId: message.frameId,
+      labelType: 'html',
+      label: message.destinationParamName,
+      audioNodeGraphId: message.destinationNodeId,
+      style: 'stroke: none; fill: #B0BEC5;',
+      labelStyle: 'color: black; font-family: Arial; text-transform: uppercase;',
+      rx: 20,
+      ry: 20
+    });
+    // Add the node to the visual graph.
+    audion.entryPoints.visualGraph_.setNode(audioParamVisualNodeId, nodeData);
+
+    // Connect this AudioParam visual node with its associated AudioNode with
+    // a dotted edge.
+    // Update the graph with the new edge. Request a redraw.
+    var dottedEdgeData = /** @type {!AudionVisualGraphData} */ ({
+      underlyingType: audion.render.VisualGraphType.AUDIO_PARAM_TO_NODE_EDGE,
+      lineInterpolate: 'linear',
+      style: 'stroke-width: 2.5px; stroke-dasharray: 2.5, 2.5;' +
+          'stroke: #B0BEC5; fill: none;',
+      arrowheadStyle: 'fill: none; stroke: none;',
+      width: 1,
+      frameId: /** @type {number} */ (message.frameId),
+      destinationAudioNodeId: message.destinationNodeId,
+      audioParamName: message.destinationParamName
+    });
+    audion.entryPoints.visualGraph_.setEdge(
+        audioParamVisualNodeId,
+        destinationAudioNodeVisualGraphId,
+        dottedEdgeData,
+        // todo
+        audion.entryPoints.computeVisualGraphIdForAudioParamToNodeEdge_(
+            /** @type {number} */ (message.frameId),
+            message.sourceNodeId,
+            message.destinationNodeId,
+            message.destinationParamName)
+      );
+  }
+
+  // Make an edge between the source audio node and the audio param.
+  var edgeData = /** @type {!AudionVisualGraphData} */ ({
+    underlyingType: audion.render.VisualGraphType.NODE_TO_AUDIO_PARAM_EDGE,
+    lineInterpolate: 'basis',
+    style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
+    arrowheadStyle: 'fill: #90A4AE; stroke: none;',
+    width: 35,
+    frameId: message.frameId,
+    sourceAudioNodeId: message.sourceNodeId,
+    destinationAudioNodeId: message.destinationNodeId,
+    audioParamName: message.destinationParamName
+  });
+  audion.entryPoints.visualGraph_.setEdge(
+      sourceVisualNodeId,
+      audioParamVisualNodeId,
+      edgeData,
+      // Compute a visual graph ID unique to the edge.
+      // todo
+      audion.entryPoints.computeVisualGraphIdForNodeToAudioParamEdge_(
+          /** @type {number} */ (message.frameId),
+          message.sourceNodeId,
+          message.destinationNodeId,
+          message.destinationParamName)
+    );
+
+  // Request a redraw due to a graph update.
+  audion.entryPoints.requestPanelRedraw_();
+};
+
+
+/**
+ * Handles when an AudioNode disconnects from an AudioNode.
+ * @param {!AudionNodeFromNodeDisconnectedMessage} message
+ */
+audion.entryPoints.handleNodeFromNodeDisconnected_ = function(message) {
+  audion.entryPoints.visualGraph_.removeEdge(
+      audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
+          /** @type {number} */ (message.frameId), message.sourceNodeId),
+      audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
+          /** @type {number} */ (message.frameId),
+          message.disconnectedFromNodeId),
+      audion.entryPoints.computeVisualGraphIdForNodeToNodeEdge_(
+          /** @type {number} */ (message.frameId),
+          message.sourceNodeId,
+          message.disconnectedFromNodeId)
+  );
+  audion.entryPoints.requestPanelRedraw_();
+};
+
+
+/**
+ * Handles when an AudioNode disconnects from everything.
+ * @param {!AudionAllDisconnectedMessage} message
+ */
+audion.entryPoints.handleAllDisconnected_ = function(message) {
+  // Remove all edges emanating out of the source node.
+  var edges = audion.entryPoints.visualGraph_.outEdges(
+      audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
+          /** @type {number} */ (message.frameId), message.nodeId));
+  for (var i = 0; i < edges.length; i++) {
+    audion.entryPoints.visualGraph_.removeEdge(edges[i]);
+  }
+  audion.entryPoints.requestPanelRedraw_();
+};
+
+
+/**
+ * Handles when an AudioNode disconnects from an AudioParam.
+ * @param {!AudionNodeFromParamDisconnectedMessage} message
+ */
+audion.entryPoints.handleNodeFromParamDisconnected_ = function(message) {
+  var visualIdOfAudioParamAudioNode =
+      audion.entryPoints.computeVisualGraphNodeIdForAudioParam_(
+          /** @type {number} */ (message.frameId),
+          message.disconnectedFromNodeId, message.audioParamName);
+  audion.entryPoints.visualGraph_.removeEdge(
+      audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
+          /** @type {number} */ (message.frameId), message.sourceNodeId),
+      visualIdOfAudioParamAudioNode,
+      audion.entryPoints.computeVisualGraphIdForAudioParamToNodeEdge_(
+          /** @type {number} */ (message.frameId),
+          message.sourceNodeId,
+          message.disconnectedFromNodeId,
+          message.audioParamName)
+  );
+  // If no AudioNodes connect to the AudioParam, just remove the visual node
+  // that represents the AudioParam.
+  var edges = audion.entryPoints.visualGraph_.inEdges(
+      visualIdOfAudioParamAudioNode);
+  if (edges && edges.length == 0) {
+    // TODO(chizeng): Figure out how to remove a node in dagre. Remove the node.
+    goog.global.console.log('meep');
+  }
+  audion.entryPoints.requestPanelRedraw_();
 };
 
 
@@ -326,16 +541,20 @@ audion.entryPoints.handleMessageFromBackground_ = function(message) {
           /** @type {!AudionNodeToNodeConnectedMessage} */ (message));
       break;
     case audion.messaging.MessageType.NODE_TO_PARAM_CONNECTED:
-      // TODO
+      audion.entryPoints.handleNodeToParamConnected_(
+          /** @type {!AudionNodeToParamConnectedMessage} */ (message));
       break;
     case audion.messaging.MessageType.ALL_DISCONNECTED:
-      // TODO
+      audion.entryPoints.handleAllDisconnected_(
+          /** @type {!AudionAllDisconnectedMessage} */ (message));
       break;
     case audion.messaging.MessageType.NODE_FROM_NODE_DISCONNECTED:
-      // TODO
+      audion.entryPoints.handleNodeFromNodeDisconnected_(
+          /** @type {!AudionNodeFromNodeDisconnectedMessage} */ (message));
       break;
     case audion.messaging.MessageType.NODE_FROM_PARAM_DISCONNECTED:
-      // TODO
+      audion.entryPoints.handleNodeFromParamDisconnected_(
+          /** @type {!AudionNodeFromParamDisconnectedMessage} */ (message));
       break;
     case audion.messaging.MessageType.MISSING_AUDIO_UPDATES:
       audion.entryPoints.handleMissingAudioUpdates_();

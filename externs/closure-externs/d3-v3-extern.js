@@ -313,7 +313,10 @@ d3.transitionType.prototype.transition;
 d3.transitionType.prototype.tween;
 
 /**
+ * NOTE(chizeng): I made this subclass Function so that we can pass a
+ * d3.zoomType as an argument into the `call` method.
  * @constructor
+ * @extends {Function}
  */
 d3.zoomType = function() {};
 d3.zoomType.prototype.on;

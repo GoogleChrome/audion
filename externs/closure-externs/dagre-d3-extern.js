@@ -110,10 +110,17 @@ dagreD3.graphlib.Graph.prototype.edges = function() {};
 
 
 /**
- * @param {!Object} edgeObject
+ * @param {!Object|string} edgeOrNodeId
  * @param {string=} opt_w
  */
-dagreD3.graphlib.Graph.prototype.inEdges = function(edgeObject, opt_w) {};
+dagreD3.graphlib.Graph.prototype.inEdges = function(edgeOrNodeId, opt_w) {};
+
+
+/**
+ * @param {!Object|string} edgeOrNodeId
+ * @param {string=} opt_w
+ */
+dagreD3.graphlib.Graph.prototype.outEdges = function(edgeOrNodeId, opt_w) {};
 
 
 /**

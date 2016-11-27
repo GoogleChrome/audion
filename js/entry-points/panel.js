@@ -25,6 +25,18 @@ audion.entryPoints.renderDagreGraph_ = new dagreD3['render']();
 
 
 /**
+ * The HTML block container for the SVG visualization.
+ * @private {!Element}
+ */
+audion.entryPoints.htmlContainer_ =
+    /** @type {!Element} */ (goog.global.document.getElementById('graph'));
+// Add a compiled CSS class name so that we can apply styles. We should probably
+// move to using the ID directly.  
+audion.entryPoints.htmlContainer_.classList.add(
+    goog.getCssName('htmlGraphContainer'));
+
+
+/**
  * The SVG container for the audio graph visualization.
  * @private {!d3.selection}
  */
@@ -63,6 +75,46 @@ audion.entryPoints.userPannedOrZoomed_ = false;
 
 
 /**
+ * Handles a d3 zoom event. Assumes d3.event is defined.
+ * @private
+ */
+audion.entryPoints.handleZoom_ = function() {
+  audion.entryPoints.lastScaleValue_ = d3.event.scale;
+  audion.entryPoints.lastTranslateValue_ = d3.event.translate;
+  audion.entryPoints.scaleAndTranslateGraph_(
+      audion.entryPoints.lastScaleValue_,
+      audion.entryPoints.lastTranslateValue_);
+  audion.entryPoints.userPannedOrZoomed_ = true;
+}
+
+
+/**
+ * A listener for zoom actions by the user.
+ * // TODO(chizeng): Be more nuanced about function annotation.
+ * @type {!d3.zoomType}
+ */
+audion.entryPoints.zoomListener_ =
+    d3.behavior.zoom().on('zoom', audion.entryPoints.handleZoom_);
+audion.entryPoints.svgGraphContainer_.call(audion.entryPoints.zoomListener_);
+
+
+/**
+ * Determines if the graph has valid dimensions. It may not if it lacks nodes.
+ * Assumes that layout and rendering already occurred.
+ * @return {boolean}
+ * @private
+ */
+audion.entryPoints.graphHasValidDimensions_ = function() {
+  if (!audion.entryPoints.lastRecordedVisualGraph_) {
+    // No graph at all.
+    return false;
+  }
+  var graphDimensions = audion.entryPoints.lastRecordedVisualGraph_.graph();
+  return isFinite(graphDimensions.width) && isFinite(graphDimensions.height);
+}
+
+
+/**
  * Handles what happens when we discover that dev tools is missing audio updates
  * from the main tab. We want to inform the user.
  * @private
@@ -95,6 +147,44 @@ audion.entryPoints.scaleAndTranslateGraph_ = function(scale, translation) {
 
 
 /**
+ * Centers the graph and scales it so that it fits completely within the panel
+ * page. Assumes that a graph has been recorded.
+ * @private
+ */
+audion.entryPoints.centerGraph_ = function() {
+  // The dimensions of the DOM container of the graph.
+  var graphContainerDimensions =
+      audion.entryPoints.svgGraphContainer_.node().getBoundingClientRect();
+
+  // The min dimenions needed to render the graph.
+  var graphDimensions = audion.entryPoints.lastRecordedVisualGraph_.graph();
+
+  var widthRatio = graphContainerDimensions.width / graphDimensions.width;
+  var heightRatio = graphContainerDimensions.height / graphDimensions.height;
+  var scale;
+  var translation = [0, 0];
+  if (widthRatio < heightRatio) {
+    // We are limited by width.
+    scale = widthRatio;
+    translation[1] =
+        (graphContainerDimensions.height - graphDimensions.height * scale) / 2;
+  } else {
+    // We are limited by height.
+    scale = heightRatio;
+    translation[0] =
+        (graphContainerDimensions.width - graphDimensions.width * scale) / 2;
+  }
+
+  // Center the graph. Then reset the detection for user interaction.
+  audion.entryPoints.zoomListener_
+      .translate(translation)
+      .scale(scale)
+      .event(audion.entryPoints.svgGraphInnerContainer_);
+  audion.entryPoints.userPannedOrZoomed_ = false;
+}
+
+
+/**
  * Does graph layout and then renders the graph.
  * @private
  */
@@ -112,7 +202,21 @@ audion.entryPoints.layoutAndDrawGraph_ = function() {
       audion.entryPoints.svgGraphInnerContainer_,
       audion.entryPoints.lastRecordedVisualGraph_);
 
-  // TODO: Center the graph.
+  if (!audion.entryPoints.graphHasValidDimensions_()) {
+    return;
+  }
+
+  if (audion.entryPoints.userPannedOrZoomed_) {
+    // The user already panned or zoomed. Maintain the user's current
+    // configuration of translation and scaling.
+    audion.entryPoints.scaleAndTranslateGraph_(
+        audion.entryPoints.lastScaleValue_,
+        audion.entryPoints.lastTranslateValue_);
+  } else {
+    // The user had not panned or zoomed yet. Center and scale the graph so that
+    // the user can see the whole graph.
+    audion.entryPoints.centerGraph_();
+  }
 };
 
 
@@ -151,7 +255,61 @@ audion.entryPoints.requestRedraw_ = function(visualGraph) {
 audion.entryPoints.resetUi_ = function(visualGraph) {
   audion.entryPoints.lastRecordedVisualGraph_ = visualGraph;
 
-  // TODO(chizeng): Reset the UI.
+  // Hide the warning about missing audio updates. Show the rest.
+  goog.global.document.body.classList.remove(
+      goog.getCssName('bodyWithupdatesMissingWarning'));
+  var updatesMissingWarning = goog.global.document.querySelector(
+      '.' + goog.getCssName('updatesMissingWarning'));
+  if (updatesMissingWarning) {
+    updatesMissingWarning.remove();
+  }
+
+  // Reset panning and zooming.
+  audion.entryPoints.lastScaleValue_ = 1;
+  audion.entryPoints.lastTranslateValue_ = [0, 0];
+  audion.entryPoints.userPannedOrZoomed_ = false;
+
+  // Request another redraw.
+  audion.entryPoints.requestRedraw_(visualGraph);
+};
+
+
+/**
+ * Handles a click on the button for resizing the view to fit.
+ * @private
+ */
+audion.entryPoints.handleResizeToFitButtonClick_ = function() {
+  if (!audion.entryPoints.graphHasValidDimensions_()) {
+    // The graph is wonky, ie it lacks nodes.
+    return;
+  }
+
+  // Resize the graph so the user can see all of it. Center it.
+  audion.entryPoints.centerGraph_();
+};
+
+
+/**
+ * Creates the utility bar, which offers various pieces of functionality.
+ * @private
+ */
+audion.entryPoints.createUtilityBar_ = function() {
+  var utilityBar = goog.global.document.createElement('div');
+  utilityBar.classList.add(goog.getCssName('utilityBar'));
+
+  // Create a button for resizing the view to fit.
+  var resizeToFitButton = goog.global.document.createElement('div');
+  resizeToFitButton.classList.add(goog.getCssName('button'));
+  resizeToFitButton.classList.add(goog.getCssName('resizeToFitButton'));
+  // Make an internal square.
+  var resizeToFitButtonInternal = goog.global.document.createElement('div');
+  resizeToFitButton.appendChild(resizeToFitButtonInternal);
+  // Add a listener to the button.
+  resizeToFitButton.addEventListener(
+      'click', audion.entryPoints.handleResizeToFitButtonClick_);
+  utilityBar.appendChild(resizeToFitButton);
+
+  goog.global.document.body.appendChild(utilityBar);
 };
 
 
@@ -160,7 +318,9 @@ audion.entryPoints.resetUi_ = function(visualGraph) {
  * the actual UI of the panel.
  */
 audion.entryPoints.panel = function() {
-
+  // Create the utility bar with various functionality like resizing the view to
+  // fit the entire graph.
+  audion.entryPoints.createUtilityBar_();
 
   // Define some functions global to the panel window namespace so that the dev
   // tools script (which has complete access to the panel page window upon
