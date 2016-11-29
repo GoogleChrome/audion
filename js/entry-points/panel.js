@@ -314,6 +314,49 @@ audion.entryPoints.createUtilityBar_ = function() {
 
 
 /**
+ * Handles a click on something inside the graph visualization.
+ * @this {!Element}
+ * @private
+ */
+audion.entryPoints.handleClickOnGraph_ = function() {
+  // Keep climbing the DOM tree til we hit an interesting element, ie a node.
+  var thingClickedOn = d3.event.target;
+  while (thingClickedOn && this != thingClickedOn) {
+    var data = d3.select(thingClickedOn).data();
+    if (!(data && data.length == 1)) {
+      // We do not know if the user clicked on something interesting yet.
+      continue;
+    }
+    var graphNodeId = data[0];
+
+    // TODO(chizeng): Handle how the user might have clicked on an edge instead
+    // of a node.
+    var node = audion.entryPoints.lastRecordedVisualGraph_.node(graphNodeId);
+    if (node) {
+      // The user clicked on a node in the visual graph.
+      // TODO(chizeng): Inspect the node.
+      goog.global.console.log('User clicked on node ' + node.label);
+      break;
+    }
+    // Keep going up the DOM tree.
+    thingClickedOn = thingClickedOn.parentElement;
+  }
+};
+
+
+/**
+ * Sets up a click listener for the graph so that the user can say inspect
+ * audio nodes. To be efficient, we use a single listener for the entire graph
+ * DOM and wait for click events on visual nodes and edges to bubble up.
+ * @private
+ */
+audion.entryPoints.createGraphClickListener_ = function() {
+  audion.entryPoints.svgGraphContainer_.on(
+      'click', audion.entryPoints.handleClickOnGraph_);
+};
+
+
+/**
  * The entry point for the script to run in our web audio Chrome dev panel -
  * the actual UI of the panel.
  */
@@ -321,6 +364,10 @@ audion.entryPoints.panel = function() {
   // Create the utility bar with various functionality like resizing the view to
   // fit the entire graph.
   audion.entryPoints.createUtilityBar_();
+
+  // Sets a listener for clicks on the graph so that for instance the user can
+  // inspect a node.
+  audion.entryPoints.createGraphClickListener_();  
 
   // Define some functions global to the panel window namespace so that the dev
   // tools script (which has complete access to the panel page window upon

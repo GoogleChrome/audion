@@ -5,7 +5,7 @@ goog.provide('audion.messaging.MessageType');
  * Enumerates types of messages sent throughout the extension. Stored in the
  * type field of AudionMessages. These are numbers to allow for fast comparison.
  * See messages-extern.js for the properties of various AudionMessage objects.
- * Increment this value upon adding a new value - next available value: 11
+ * Increment this value upon adding a new value - next available value: 14
  * @enum {number}
  */
 audion.messaging.MessageType = {
@@ -22,5 +22,13 @@ audion.messaging.MessageType = {
   NODE_FROM_PARAM_DISCONNECTED: 8,
 
   MISSING_AUDIO_UPDATES: 9,
-  PAGE_OF_TAB_CHANGED: 10
+  PAGE_OF_TAB_CHANGED: 10,
+
+  // The panel notifies dev tools when the user highlights (wants to inspect) an
+  // AudioNode. Our dev tools script tells the correct frame content script (via
+  // the background script) to continuously send back information on the node
+  // until the node is no longer highlighted.
+  AUDIO_NODE_HIGHLIGHTED: 11,
+  AUDIO_NODE_UNHIGHLIGHTED: 12,
+  AUDIO_NODE_PROPERTIES_UPDATE: 13
 };

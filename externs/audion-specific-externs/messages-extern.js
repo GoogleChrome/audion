@@ -166,3 +166,59 @@ var AudionNodeFromNodeDisconnectedMessage;
  * }}
  */
 var AudionNodeFromParamDisconnectedMessage;
+
+
+/**
+ * Indicates that the user highlights (wishes to inspect the properties of) a
+ * certain AudioNode. This message is sent from the panel to the dev tools
+ * script ... as well as routed from the dev tools script to the appropriate
+ * frame.
+ * The type of this message is
+ * audion.messaging.MessageType.AUDIO_NODE_HIGHLIGHTED.
+ * @typedef {{
+ *   type: number,
+ *   audioNodeId: number,
+ *   frameId: number
+ * }}
+ */
+var AudionNodeHighlightedMessage;
+
+
+/**
+ * Indicates that the user is no longer interested in inspecting the properties
+ * of a certain AudioNode.
+ * The type of this message is
+ * audion.messaging.MessageType.AUDIO_NODE_UNHIGHLIGHTED.
+ * @typedef {{
+ *   type: number,
+ *   audioNodeId: number,
+ *   frameId: number
+ * }}
+ */
+var AudionNodeUnhighlightedMessage;
+
+
+/**
+ * Encapsulates a property value pair for an AudioNode. See
+ * AudionAudioNodePropertiesUpdateMessage.
+ * @typedef {{
+ *   property: string,
+ *   value: (number|string)
+ * }}
+ */
+var AudionPropertyValuePair;
+
+
+/**
+ * Sent from the inspected web page to dev tools. Contains information on the
+ * values of an interesting AudioNode.
+ * The type of this message is
+ * audion.messaging.MessageType.AUDIO_NODE_PROPERTIES_UPDATE.
+ * @typedef {{
+ *   type: number,
+ *   audioNodeId: number,
+ *   frameId: number,
+ *   propertyValues: !Array.<!AudionPropertyValuePair>
+ * }}
+ */
+var AudionAudioNodePropertiesUpdateMessage;

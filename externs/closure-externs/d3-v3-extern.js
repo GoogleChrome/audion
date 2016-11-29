@@ -97,7 +97,7 @@ d3.selection.prototype.call = function(f, var_args) {};
  */
 d3.selection.prototype.classed = function(nameOrMap, opt_value) {};
 /**
- * @param {!(Array|function(this:d3.selection, ?, number): !Array)} opt_values
+ * @param {!(Array|function(this:d3.selection, ?, number): !Array)=} opt_values
  * @param {function(?, number)=} opt_keyFn
  *     The {@code this} context of opt_keyFn is the node when the function is
  *     evaluated on existing nodes, or the data array when the function is

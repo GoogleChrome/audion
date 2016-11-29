@@ -54,6 +54,50 @@ audion.entryPoints.resourceIdField_ = '__resource_id__';
 
 
 /**
+ * The keys of this object comprise a set of IDs of AudioNodes that the user is
+ * interested in inspecting. We will periodically send back property-value data
+ * on each AudioNode in this set until the node becomes unhighlighted. The
+ * values of this object are all 1.
+ * @private {!Object.<audion.entryPoints.Id_, number>}
+ */
+audion.entryPoints.highlightedAudioNodeIds_ = {};
+
+
+/**
+ * Handles what happens when an audio node is highlighted (inspected by the
+ * user).
+ * @param {!AudionNodeHighlightedMessage} message
+ * @private 
+ */
+audion.entryPoints.handleAudioNodeHighlighted_ = function(message) {
+  audion.entryPoints.highlightedAudioNodeIds_['' + message.audioNodeId] = 1;
+
+  // TODO(chizeng): Start render cycle to send back data on nodes.
+};
+
+
+/**
+ * Handles what happens when an audio node is no longer highlighted (no longer
+ * inspected by the user).
+ * @param {!AudionNodeUnhighlightedMessage} message
+ * @private 
+ */
+audion.entryPoints.handleAudioNodeHighlighted_ = function(message) {
+  // Remove this node from the list of nodes that we periodically send back data
+  // on.
+  delete audion.entryPoints.highlightedAudioNodeIds_['' + message.audioNodeId];
+
+  var highlightedNodesCount = 0;
+  for (var nodeId in audion.entryPoints.highlightedAudioNodeIds_) {
+    highlightedNodesCount++;
+  }
+  if (highlightedNodesCount == 0) {
+    // TODO(chizeng): Stop the render cycle of issuing data on this node.
+  }
+};
+
+
+/**
  * The entry point for tracing (ie detecting) web audio API calls. Suppress
  * type-checking for this function - it does crazy stuff with prototype
  * overrides that makes the compiler go AHHH!. Keep all logic within the scope
@@ -397,6 +441,34 @@ audion.entryPoints.tracing = function() {
   };
   AudioContext.prototype = nativeAudioContextConstructor.prototype;
   AudioContext.prototype.constructor = AudioContext;
+
+  // Listen to messages on the window that are related to the extension.
+  // Listen to messages from the page. Relay them to the background script.
+  window.addEventListener('message', function(event) {
+    if (event.source != window) {
+      // We are not interested in messages from other windows.
+      return;
+    }
+
+    var message = /** @type {?AudionTaggedMessage} */ (event.data);
+    if (!message || message.tag != audion.entryPoints.ExtensionTag) {
+      // This message is not relevant to this extension.
+      return;
+    }
+
+    switch(message.type) {
+      case audion.messaging.MessageType.AUDIO_NODE_HIGHLIGHTED:
+        // User is interested in periodic info on properties of an audio node.
+        audion.entryPoints.handleAudioNodeHighlighted_(
+            /** @type {!AudionNodeHighlightedMessage} */ (message));
+        break;
+      case audion.messaging.MessageType.AUDIO_NODE_UNHIGHLIGHTED:
+        // User is no longer interested in inspecting a certain node.
+        audion.entryPoints.handleAudioNodeUnHighlighted_(
+            /** @type {!AudionNodeUnhighlightedMessage} */ (message));
+        break;
+    }
+  });
 };
 
 
