@@ -23,10 +23,13 @@ audion.entryPoints.AudioContextData_;
 
 
 /**
- * Stores data on an AudioNode ... as well as the AudioNode.
+ * Stores data on an AudioNode ... as well as the AudioNode. We may later plan
+ * to remove the reference to the audio node for AudioBufferSourceNodes so that
+ * the buffers they refer to can be garbage-collected. That is why that field is
+ * nullable.
  * @typedef{{
  *   id: audion.entryPoints.Id_,
- *   node: !AudioNode
+ *   node: ?AudioNode
  * }}
  * @private
  */
@@ -64,15 +67,115 @@ audion.entryPoints.highlightedAudioNodeIds_ = {};
 
 
 /**
+ * The requestAnimationFrameId for the rendering cycles used to report data on
+ * the properties of a node back to the dev tools script. This value is used to
+ * later cancel sending back the data. This value is null if no rAF is pending.
+ * @private {?number}
+ */
+audion.entryPoints.reportDataAnimationFrameId_ = null;
+
+
+/**
+ * Maps IDs to data objects (see type defs above). Each resource (
+ * AudioContext, AudioNode, and AudioParam) has its own ID.
+ * @private {!Object.<audion.entryPoints.Id_, !Object>}
+ */
+audion.entryPoints.idToResource_ = {};
+
+
+/**
+ * Posts a message to the content script. Adds a tag to the message to
+ * indicate that the message comes from this extension.
+ * @param {!AudionTaggedMessage} messageToSend
+ * @private
+ */
+audion.entryPoints.postToContentScript_ = function(messageToSend) {
+  messageToSend.tag = audion.entryPoints.ExtensionTag;
+  // Post the message to this window only. The content script will pick it up.
+  window.postMessage(messageToSend, window.location.origin || '*');
+}
+
+
+/**
+ * Counts the number of highlighted audio nodes (that we are interested in
+ * periodically sending back data on).
+ * @return {number}
+ * @private 
+ */
+audion.entryPoints.countHighlightedAudioNodes_ = function() {
+  var count = 0;
+  for (var nodeId in audion.entryPoints.highlightedAudioNodeIds_) {
+    count++;
+  }
+  return count;
+};
+
+
+/**
+ * Returns a string that it pretends is a number.
+ * The Closure compiler thinks that every key in a for loop through an object is
+ * a string, even if we typed the object to contain numbers. Casting the string
+ * to a number doesn't work since a number technically is not a subtype of a
+ * string, and I am loath to incur the latency of using parseInt.
+ * @return {number}
+ * @private
+ * @suppress {checkTypes}
+ */
+audion.entryPoints.coerceStringToNumber_ = function(someString) {
+  return someString;
+};
+
+
+/**
+ * Initiates the process of periodically sending back data on the properties of
+ * audio nodes. Assumes that the set of highlighted nodes (to send back data on)
+ * is initially non-empty. The process automatically stops when there are no
+ * nodes to send back data on.
+ * @private 
+ */
+audion.entryPoints.initiateDataSendBackNodeDataCycle_ = function() {
+  if (audion.entryPoints.reportDataAnimationFrameId_ ||
+      audion.entryPoints.countHighlightedAudioNodes_() == 0) {
+    // The process has already started. Or, we lack nodes to send info on.
+    return;
+  }
+
+  // Start render cycle to send back data on nodes. Intentionally skip a frame.
+  audion.entryPoints.reportDataAnimationFrameId_ =
+      goog.global.requestAnimationFrame(function() {
+    audion.entryPoints.reportDataAnimationFrameId_ =
+      goog.global.requestAnimationFrame(function() {
+      var atLeast1MessageSent = false;
+      for (var nodeId in audion.entryPoints.highlightedAudioNodeIds_) {
+        nodeId = audion.entryPoints.coerceStringToNumber_(nodeId);
+        var nodeData = /** @type {!audion.entryPoints.AudioNodeData_} */ (
+            audion.entryPoints.idToResource_[nodeId]);
+
+        // TODO(chizeng): Issue a message that contains data on this node.
+      }
+      if (!atLeast1MessageSent &&
+          audion.entryPoints.reportDataAnimationFrameId_) {
+        // No data on any AudioNodes were issued. Nothing to report any more.
+        // Lets cancel the periodic sending of data.
+        goog.global.cancelAnimationFrame(
+            audion.entryPoints.reportDataAnimationFrameId_);
+      }
+    });
+  });
+};
+
+
+/**
  * Handles what happens when an audio node is highlighted (inspected by the
  * user).
  * @param {!AudionNodeHighlightedMessage} message
  * @private 
  */
 audion.entryPoints.handleAudioNodeHighlighted_ = function(message) {
-  audion.entryPoints.highlightedAudioNodeIds_['' + message.audioNodeId] = 1;
+  audion.entryPoints.highlightedAudioNodeIds_[message.audioNodeId] = 1;
 
-  // TODO(chizeng): Start render cycle to send back data on nodes.
+  // Start render cycle to send back data on nodes if that has not started.
+  audion.entryPoints.initiateDataSendBackNodeDataCycle_();
 };
 
 
@@ -82,18 +185,10 @@ audion.entryPoints.handleAudioNodeHighlighted_ = function(message) {
  * @param {!AudionNodeUnhighlightedMessage} message
  * @private 
  */
-audion.entryPoints.handleAudioNodeHighlighted_ = function(message) {
+audion.entryPoints.handleAudioNodeUnhighlighted_ = function(message) {
   // Remove this node from the list of nodes that we periodically send back data
-  // on.
-  delete audion.entryPoints.highlightedAudioNodeIds_['' + message.audioNodeId];
-
-  var highlightedNodesCount = 0;
-  for (var nodeId in audion.entryPoints.highlightedAudioNodeIds_) {
-    highlightedNodesCount++;
-  }
-  if (highlightedNodesCount == 0) {
-    // TODO(chizeng): Stop the render cycle of issuing data on this node.
-  }
+  // on. The cycle will auto-stop once there are no more highlighted nodes.
+  delete audion.entryPoints.highlightedAudioNodeIds_[message.audioNodeId];
 };
 
 
@@ -117,31 +212,11 @@ audion.entryPoints.tracing = function() {
 
 
   /**
-   * Maps IDs to data objects (see type defs above). Each resource (
-   * AudioContext, AudioNode, and AudioParam) has its own ID.
-   * @private {!Object.<audion.entryPoints.Id_, !Object>}
-   */
-  var idToResource = {};
-
-
-  /**
    * Logs a message to the console for debugging.
    * @param {string} message
    */
   function logMessage(message) {
     window.console.log(message);
-  }
-
-
-  /**
-   * Posts a message to the content script. Adds a tag to the message to
-   * indicate that the message comes from this extension.
-   * @param {!AudionTaggedMessage} messageToSend
-   */
-  function postToContentScript(messageToSend) {
-    messageToSend.tag = audion.entryPoints.ExtensionTag;
-    // Post the message to this window only. The content script will pick it up.
-    window.postMessage(messageToSend, window.location.origin || '*');
   }
 
 
@@ -183,7 +258,8 @@ audion.entryPoints.tracing = function() {
   function instrumentNode(node) {
     var nodeId = nextAvailableId++;
     assignIdProperty(node, nodeId);
-    idToResource[nodeId] = /** @type {!audion.entryPoints.AudioNodeData_} */ ({
+    audion.entryPoints.idToResource_[nodeId] =
+        /** @type {!audion.entryPoints.AudioNodeData_} */ ({
       id: nodeId,
       node: node
     });
@@ -195,7 +271,7 @@ audion.entryPoints.tracing = function() {
         // Store the ID of the node the param belongs to. And the param name.
         var audioParamId = nextAvailableId++;
         assignIdProperty(audioParam, audioParamId);
-        idToResource[audioParamId] =
+        audion.entryPoints.idToResource_[audioParamId] =
             /** @type {!audion.entryPoints.AudioParamData_} */ ({
               id: audioParamId,
               audioNodeId: nodeId,
@@ -205,7 +281,8 @@ audion.entryPoints.tracing = function() {
     }
 
     // Notify extension about the addition of a new node.
-    postToContentScript(/** @type {!AudionNodeCreatedMessage} */ ({
+    audion.entryPoints.postToContentScript_(
+        /** @type {!AudionNodeCreatedMessage} */ ({
       type: audion.messaging.MessageType.NODE_CREATED,
       nodeId: nodeId,
       nodeType: node.constructor.name
@@ -241,7 +318,7 @@ audion.entryPoints.tracing = function() {
     if (otherThingId) {
       // Notify the extension of a connection with either an AudioNode or an
       // AudioParam.
-      // postToContentScript({
+      // audion.entryPoints.postToContentScript_({
       //   type: 'add_edge',
       //   sourceId: nodeIds.get(this),
       //   destId: otherNodeId,
@@ -249,21 +326,23 @@ audion.entryPoints.tracing = function() {
       //   audioParam: paramToType.get(originalArguments[0])
       // });
       if (otherThing instanceof AudioNode) {
-        postToContentScript(/** type {!AudionNodeToNodeConnectedMessage} */ ({
-          type: audion.messaging.MessageType.NODE_TO_NODE_CONNECTED,
-          sourceNodeId: this[audion.entryPoints.resourceIdField_],
-          destinationNodeId: otherThingId
-        }));
+        audion.entryPoints.postToContentScript_(
+            /** type {!AudionNodeToNodeConnectedMessage} */ ({
+              type: audion.messaging.MessageType.NODE_TO_NODE_CONNECTED,
+              sourceNodeId: this[audion.entryPoints.resourceIdField_],
+              destinationNodeId: otherThingId
+            }));
       } else if (otherThing instanceof AudioParam) {
         var audioParamData =
             /** @type {!audion.entryPoints.AudioParamData_} */ (
-                idToResource[otherThingId]);
-        postToContentScript(/** type {!AudionNodeToParamConnectedMessage} */ ({
-          type: audion.messaging.MessageType.NODE_TO_PARAM_CONNECTED,
-          sourceNodeId: this[audion.entryPoints.resourceIdField_],
-          destinationNodeId: audioParamData.audioNodeId,
-          destinationParamName: audioParamData.propertyName
-        }));
+                audion.entryPoints.idToResource_[otherThingId]);
+        audion.entryPoints.postToContentScript_(
+            /** type {!AudionNodeToParamConnectedMessage} */ ({
+              type: audion.messaging.MessageType.NODE_TO_PARAM_CONNECTED,
+              sourceNodeId: this[audion.entryPoints.resourceIdField_],
+              destinationNodeId: audioParamData.audioNodeId,
+              destinationParamName: audioParamData.propertyName
+            }));
       }
     }
     return result;
@@ -286,10 +365,11 @@ audion.entryPoints.tracing = function() {
 
     if (originalArguments.length == 0 || !originalArguments[0]) {
       // All edges emanating from this node gad been removed.
-      postToContentScript(/** @type {!AudionAllDisconnectedMessage} */ ({
-        type: audion.messaging.MessageType.ALL_DISCONNECTED,
-        nodeId: this[audion.entryPoints.resourceIdField_]
-      }));
+      audion.entryPoints.postToContentScript_(
+          /** @type {!AudionAllDisconnectedMessage} */ ({
+            type: audion.messaging.MessageType.ALL_DISCONNECTED,
+            nodeId: this[audion.entryPoints.resourceIdField_]
+          }));
       return result;
     }
 
@@ -298,7 +378,7 @@ audion.entryPoints.tracing = function() {
     if (otherThingId) {
       // We disconnect from a specific AudioNode or an AudioParam.
       if (otherThing instanceof AudioNode) {
-        postToContentScript(
+        audion.entryPoints.postToContentScript_(
             /** @type {!AudionNodeFromNodeDisconnectedMessage} */ ({
               type: audion.messaging.MessageType.NODE_FROM_NODE_DISCONNECTED,
               sourceNodeId: this[audion.entryPoints.resourceIdField_],
@@ -307,8 +387,8 @@ audion.entryPoints.tracing = function() {
       } else if (otherThing instanceof AudioParam) {
         var audioParamData =
             /** @type {!audion.entryPoints.AudioParamData_} */ (
-                idToResource[otherThingId]);
-        postToContentScript(
+                audion.entryPoints.idToResource_[otherThingId]);
+        audion.entryPoints.postToContentScript_(
             /** @type {!AudionNodeFromParamDisconnectedMessage} */ ({
               type: audion.messaging.MessageType.NODE_FROM_PARAM_DISCONNECTED,
               sourceNodeId: this[audion.entryPoints.resourceIdField_],
@@ -424,16 +504,17 @@ audion.entryPoints.tracing = function() {
     var newContext = new nativeAudioContextConstructor();
     var audioContextId = nextAvailableId++;
     assignIdProperty(newContext, audioContextId);
-    idToResource[audioContextId] =
+    audion.entryPoints.idToResource_[audioContextId] =
         /** @type {!audion.entryPoints.AudioContextData_} */ ({
           id: audioContextId
         });
 
     // Tell the extension that we have created a new AudioContext.
-    postToContentScript(/** @type {!AudionContextCreatedMessage} */ ({
-      type: audion.messaging.MessageType.CONTEXT_CREATED,
-      contextId: audioContextId
-    }));
+    audion.entryPoints.postToContentScript_(
+        /** @type {!AudionContextCreatedMessage} */ ({
+          type: audion.messaging.MessageType.CONTEXT_CREATED,
+          contextId: audioContextId
+        }));
 
     // Instrument the destination node.
     instrumentNode(newContext.destination);
@@ -464,7 +545,7 @@ audion.entryPoints.tracing = function() {
         break;
       case audion.messaging.MessageType.AUDIO_NODE_UNHIGHLIGHTED:
         // User is no longer interested in inspecting a certain node.
-        audion.entryPoints.handleAudioNodeUnHighlighted_(
+        audion.entryPoints.handleAudioNodeUnhighlighted_(
             /** @type {!AudionNodeUnhighlightedMessage} */ (message));
         break;
     }

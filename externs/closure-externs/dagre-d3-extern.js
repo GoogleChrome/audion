@@ -54,6 +54,12 @@ dagreD3.graphlib.Graph.prototype.setNode = function(name, opt_cfg) {};
 
 /**
  * @param {string} name
+ */
+dagreD3.graphlib.Graph.prototype.removeNode = function(name) {};
+
+
+/**
+ * @param {string} name
  * return {boolean}
  */
 dagreD3.graphlib.Graph.prototype.hasNode = function(name) {};

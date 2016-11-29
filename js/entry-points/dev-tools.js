@@ -109,7 +109,8 @@ audion.entryPoints.handlePanelShown_ = function(localPanelWindow) {
   audion.entryPoints.panelWindow_ = localPanelWindow;
   audion.entryPoints.panelShown_ = true;
 
-  // TODO(chizeng): Request a redraw.
+  // Request a redraw.
+  audion.entryPoints.requestPanelRedraw_();
 };
 
 
@@ -131,7 +132,7 @@ audion.entryPoints.handlePanelOpenForFirstTime_ = function(panelWindow) {
   // TODO(chizeng): Listen for messages from the panel. For instance, we may at
   // some point want to update the active node.
 
-  // TODO(chizeng): Tell the panel to warn the user about missing audio updates.
+  // Tell the panel to warn the user about missing audio updates.
   if (audion.entryPoints.audioUpdatesMissing_) {
     panelWindow.audionMissingAudioUpdates();
   }
@@ -518,8 +519,8 @@ audion.entryPoints.handleNodeFromParamDisconnected_ = function(message) {
   var edges = audion.entryPoints.visualGraph_.inEdges(
       visualIdOfAudioParamAudioNode);
   if (edges && edges.length == 0) {
-    // TODO(chizeng): Figure out how to remove a node in dagre. Remove the node.
-    goog.global.console.log('meep');
+    // Indeed, remove the node.
+    audion.entryPoints.visualGraph_.removeNode(visualIdOfAudioParamAudioNode);
   }
   audion.entryPoints.requestPanelRedraw_();
 };
