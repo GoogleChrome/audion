@@ -1,5 +1,11 @@
 goog.provide('audion.entryPoints.panel');
 
+goog.require('audion.messaging.MessageType');
+goog.require('audion.messaging.Util');
+goog.require('audion.ui.pane.AudioNodeMode');
+goog.require('audion.ui.pane.ModeType');
+goog.require('audion.ui.pane.Pane');
+
 
 /**
  * The last recorded visual graph to render if any.
@@ -72,6 +78,14 @@ audion.entryPoints.lastTranslateValue_ = [0, 0];
  * @private {boolean}
  */
 audion.entryPoints.userPannedOrZoomed_ = false;
+
+
+/**
+ * The pane used to say highlight information such as information on an
+ * inspected AudioNode.
+ * @private {!audion.ui.pane.Pane}
+ */
+audion.entryPoints.pane_ = new audion.ui.pane.Pane();
 
 
 /**
@@ -331,11 +345,16 @@ audion.entryPoints.handleClickOnGraph_ = function() {
 
     // TODO(chizeng): Handle how the user might have clicked on an edge instead
     // of a node.
-    var node = audion.entryPoints.lastRecordedVisualGraph_.node(graphNodeId);
+    var node = /** @type {?AudionVisualGraphData} */ (
+        audion.entryPoints.lastRecordedVisualGraph_.node(graphNodeId));
     if (node) {
-      // The user clicked on a node in the visual graph.
-      // TODO(chizeng): Inspect the node.
-      goog.global.console.log('User clicked on node ' + node.label);
+      // Issue message to dev tools to update the highlighted node.
+      audion.messaging.Util.postMessageToWindow(
+          /** @type {!AudionNodeHighlightedMessage} */ ({
+            type: audion.messaging.MessageType.AUDIO_NODE_HIGHLIGHTED,
+            audioNodeId: node.audioNodeId,
+            frameId: node.frameId
+          }));
       break;
     }
     // Keep going up the DOM tree.
@@ -353,6 +372,41 @@ audion.entryPoints.handleClickOnGraph_ = function() {
 audion.entryPoints.createGraphClickListener_ = function() {
   audion.entryPoints.svgGraphContainer_.on(
       'click', audion.entryPoints.handleClickOnGraph_);
+};
+
+
+/**
+ * Makes the panel UI heed an AudioNode property update.
+ * @param {!AudionAudioNodePropertiesUpdateMessage} message
+ * @private
+ */
+audion.entryPoints.noteAudioNodePropertyUpdate_ = function(message) {
+  var mode = audion.entryPoints.pane_.getMode();
+  if (mode && mode.getType() == audion.ui.pane.ModeType.AUDIO_NODE) {
+    mode = /** @type {!audion.ui.pane.AudioNodeMode} */ (mode);
+    if (mode.getFrameId() == message.frameId &&
+        mode.getAudioNodeId() == message.audioNodeId) {
+      // If the pane is currently showing the properties of this AudioNode, just
+      // have it update current property values.
+      mode.updateAudioProperties(message);
+      return;
+    }
+  }
+
+  // We are now inspecting a new AudioNode. Delete the old mode of display in
+  // the pane and create a new one.
+  mode = new audion.ui.pane.AudioNodeMode(message);
+  mode.setCleanUpCallback(function() {
+    // When the mode is done (ie, the pane is closed or swapped to something
+    // else like a new node), tell the content script to stop sending updates.
+    audion.messaging.Util.postMessageToWindow(
+          /** @type {!AudionNodeUnhighlightedMessage} */ ({
+            type: audion.messaging.MessageType.AUDIO_NODE_UNHIGHLIGHTED,
+            audioNodeId: message.audioNodeId,
+            frameId: message.frameId
+          }));
+  });
+  audion.entryPoints.pane_.setMode(mode);
 };
 
 
@@ -376,6 +430,11 @@ audion.entryPoints.panel = function() {
       audion.entryPoints.handleMissingAudioUpdates_;
   goog.global['requestRedraw'] = audion.entryPoints.requestRedraw_;
   goog.global['resetUi'] = audion.entryPoints.resetUi_;
+  goog.global['noteAudioNodePropertyUpdate'] =
+      audion.entryPoints.noteAudioNodePropertyUpdate_;
+
+  // Add the pane to the DOM.
+  goog.global.document.body.appendChild(audion.entryPoints.pane_.getDom());
 };
 
 

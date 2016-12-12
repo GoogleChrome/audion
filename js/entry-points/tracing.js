@@ -1,7 +1,9 @@
 goog.provide('audion.entryPoints.tracing');
 
-goog.require('audion.entryPoints.ExtensionTag');
+goog.require('audion.entryPoints.ExtensionTag.FromTracing');
+goog.require('audion.entryPoints.ExtensionTag.ToTracing');
 goog.require('audion.messaging.MessageType');
+goog.require('audion.messaging.NodePropertyType');
 
 
 /**
@@ -84,13 +86,36 @@ audion.entryPoints.idToResource_ = {};
 
 
 /**
+ * Read-only properties present on all nodes.
+ * @private @const {!Array.<string>}
+ */
+audion.entryPoints.readOnlyAudioNodeProperties_ =
+    ['numberOfInputs', 'numberOfOutputs'];
+
+
+/**
+ * Modifiable (and non-enum) properties present on all nodes.
+ * @private @const {!Array.<string>}
+ */
+audion.entryPoints.modifiableAudioNodeProperties_ = ['channelCount'];
+
+
+/**
+ * Enum properties present on all nodes.
+ * @private @const {!Array.<string>}
+ */
+audion.entryPoints.enumAudioNodeProperties_ =
+    ['channelCountMode', 'channelInterpretation'];
+
+
+/**
  * Posts a message to the content script. Adds a tag to the message to
  * indicate that the message comes from this extension.
- * @param {!AudionTaggedMessage} messageToSend
+ * @param {!AudionMessage} messageToSend
  * @private
  */
 audion.entryPoints.postToContentScript_ = function(messageToSend) {
-  messageToSend.tag = audion.entryPoints.ExtensionTag;
+  messageToSend.tag = audion.entryPoints.ExtensionTag.FromTracing;
   // Post the message to this window only. The content script will pick it up.
   window.postMessage(messageToSend, window.location.origin || '*');
 }
@@ -145,21 +170,88 @@ audion.entryPoints.initiateDataSendBackNodeDataCycle_ = function() {
       goog.global.requestAnimationFrame(function() {
     audion.entryPoints.reportDataAnimationFrameId_ =
       goog.global.requestAnimationFrame(function() {
-      var atLeast1MessageSent = false;
-      for (var nodeId in audion.entryPoints.highlightedAudioNodeIds_) {
-        nodeId = audion.entryPoints.coerceStringToNumber_(nodeId);
-        var nodeData = /** @type {!audion.entryPoints.AudioNodeData_} */ (
-            audion.entryPoints.idToResource_[nodeId]);
+        // Requre another animation frame be scheduled for another round of
+        // peridiocally sending data back to dev tools.
+        audion.entryPoints.reportDataAnimationFrameId_ = null;
 
-        // TODO(chizeng): Issue a message that contains data on this node.
-      }
-      if (!atLeast1MessageSent &&
-          audion.entryPoints.reportDataAnimationFrameId_) {
-        // No data on any AudioNodes were issued. Nothing to report any more.
-        // Lets cancel the periodic sending of data.
-        goog.global.cancelAnimationFrame(
-            audion.entryPoints.reportDataAnimationFrameId_);
-      }
+        var atLeast1MessageSent = false;
+        for (var nodeId in audion.entryPoints.highlightedAudioNodeIds_) {
+          // There is at least 1 node we are inspecting.
+          atLeast1MessageSent = true;
+
+          nodeId = audion.entryPoints.coerceStringToNumber_(nodeId);
+          var nodeData = /** @type {!audion.entryPoints.AudioNodeData_} */ (
+              audion.entryPoints.idToResource_[nodeId]);
+
+          // Scrape data on the various properties of the node.
+          var node = nodeData.node;
+          var propertyValues = [];
+
+          // TODO:(chizeng): Handle case in which nodeData.node is null because
+          // we removed the reference to the node in order for buffer to be GCed.
+
+          // Obtain info on AudioParams.
+          for (var propertyName in node) {
+            if (node[propertyName] instanceof AudioParam) {
+              // Report the value of the audio param.
+              propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
+                property: propertyName,
+                propertyType: audion.messaging.NodePropertyType.AUDIO_PARAM,
+                value: node[propertyName].value
+              }));
+            }
+          }
+
+          // Report the context of this node.
+          propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
+            property: 'context (id)',
+            propertyType: audion.messaging.NodePropertyType.READ_ONLY,
+            value: node.context[audion.entryPoints.resourceIdField_]
+          }));
+
+          // Obtain info on certain params present on all AudioNodes.
+          var properties =
+              audion.entryPoints.readOnlyAudioNodeProperties_;
+          for (var p = 0; p < properties.length; p++) {
+            propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
+              property: properties[p],
+              propertyType: audion.messaging.NodePropertyType.READ_ONLY,
+              value: node[properties[p]]
+            }));
+          }
+          properties = audion.entryPoints.modifiableAudioNodeProperties_;
+          for (var p = 0; p < properties.length; p++) {
+            propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
+              property: properties[p],
+              propertyType: audion.messaging.NodePropertyType.MUTABLE_NUMBER,
+              value: node[properties[p]]
+            }));
+          }
+          properties = audion.entryPoints.enumAudioNodeProperties_;
+          for (var p = 0; p < properties.length; p++) {
+            propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
+              property: properties[p],
+              propertyType: audion.messaging.NodePropertyType.ENUM,
+              value: node[properties[p]]
+            }));
+          }
+
+          // TODO(chizeng): Issue property values specific to the node.
+
+          // Issue a message that contains data on this node.
+          audion.entryPoints.postToContentScript_(
+              /** @type {!AudionAudioNodePropertiesUpdateMessage} */ ({
+            type: audion.messaging.MessageType.AUDIO_NODE_PROPERTIES_UPDATE,
+            audioNodeId: nodeId,
+            audioNodeType: nodeData.node.constructor.name,
+            propertyValues: propertyValues
+          }));
+        }
+
+        if (atLeast1MessageSent) {
+          // Schedule another round to possibly send more data back.
+          audion.entryPoints.initiateDataSendBackNodeDataCycle_();
+        }
     });
   });
 };
@@ -318,13 +410,6 @@ audion.entryPoints.tracing = function() {
     if (otherThingId) {
       // Notify the extension of a connection with either an AudioNode or an
       // AudioParam.
-      // audion.entryPoints.postToContentScript_({
-      //   type: 'add_edge',
-      //   sourceId: nodeIds.get(this),
-      //   destId: otherNodeId,
-      //   // Undefined if we are not connecting with an AudioParam.
-      //   audioParam: paramToType.get(originalArguments[0])
-      // });
       if (otherThing instanceof AudioNode) {
         audion.entryPoints.postToContentScript_(
             /** type {!AudionNodeToNodeConnectedMessage} */ ({
@@ -532,7 +617,8 @@ audion.entryPoints.tracing = function() {
     }
 
     var message = /** @type {?AudionTaggedMessage} */ (event.data);
-    if (!message || message.tag != audion.entryPoints.ExtensionTag) {
+    if (!message ||
+         message.tag != audion.entryPoints.ExtensionTag.ToTracing) {
       // This message is not relevant to this extension.
       return;
     }

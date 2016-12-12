@@ -11,6 +11,7 @@
   "devDependencies": {
     "browser-sync": "^2.12.5",
     "google-closure-compiler": "^20160517.1.0",
+    "google-closure-library": "^20161201.0.0",
     "gulp": "~3.9.1",
     "gulp-change": "^1.0.0",
     "gulp-closure-compiler": "^0.4.0",

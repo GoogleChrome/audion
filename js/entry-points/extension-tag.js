@@ -1,4 +1,5 @@
-goog.provide('audion.entryPoints.ExtensionTag');
+goog.provide('audion.entryPoints.ExtensionTag.FromTracing');
+goog.provide('audion.entryPoints.ExtensionTag.ToTracing');
 
 
 /**
@@ -9,4 +10,14 @@ goog.provide('audion.entryPoints.ExtensionTag');
  * comparison.
  * @const {number}
  */
-audion.entryPoints.ExtensionTag = 823710097;
+audion.entryPoints.ExtensionTag.FromTracing = 823710097;
+
+
+/**
+ * The value of the tag field for every relevant message posted *to* the tracing
+ * code from the background script. We need 2 of them to differentiate between
+ * messages.
+ * @const {number}
+ */
+audion.entryPoints.ExtensionTag.ToTracing = 934445323;
+

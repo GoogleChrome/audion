@@ -31,3 +31,10 @@ AudionPanelWindow.prototype.requestRedraw = function(visualGraph) {};
  * {!dagreD3.graphlib.Graph} visualGraph The graph to render initially.
  */
 AudionPanelWindow.prototype.resetUi = function(visualGraph) {};
+
+
+/**
+ * Makes the panel UI heed an AudioNode property update.
+ * @param {!AudionAudioNodePropertiesUpdateMessage} message
+ */
+AudionPanelWindow.prototype.noteAudioNodePropertyUpdate = function(message) {};

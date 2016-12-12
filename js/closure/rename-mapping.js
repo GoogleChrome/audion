@@ -1,4 +1,4 @@
 goog.provide('cssVocabulary');
 goog.setCssNameMapping(
-{"utilityBar":"a","bodyWithupdatesMissingWarning":"b","button":"c","resizeToFitButton":"d","updatesMissingWarning":"e","htmlGraphContainer":"f"}
+{"utilityBar":"a","resizeToFitButton":"b","button":"c","bodyWithupdatesMissingWarning":"d","htmlGraphContainer":"e","updatesMissingWarning":"f","contentArea":"g","hiddenPane":"h","widgetRowLeft":"i","widgetRowRight":"j","propertyValueCategoryTitle":"k"}
 ,'BY_WHOLE');

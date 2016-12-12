@@ -190,7 +190,11 @@ function compileJs(entryPoint, destDirectory, compiledFileName) {
   }
 
   // Compile and minify JS.
-  return gulp.src('js/**/*.js')
+  var jsSrcs = [
+      'js/**/*.js',
+      'node_modules/google-closure-library/closure/**/*.js'
+    ];
+  return gulp.src(jsSrcs)
       .pipe(closureCompiler({
         compilerPath: 'node_modules/google-closure-compiler/compiler.jar',
         // The name of the compiled JS.

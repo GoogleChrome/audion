@@ -1,0 +1,30 @@
+#paneContainer {
+  background: #eceff1; 
+  border-left: 1px solid #78909c;
+  color: #78909c;
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 300px;
+  padding: 15px;
+  z-index: 3;
+  box-sizing: border-box;
+}
+
+#paneContainer .contentArea {
+  margin: 20px 0 0 0;
+}
+
+#paneContainer.hiddenPane {
+  display: none;
+}
+
+#paneContainer .widgetRowLeft, #paneContainer .widgetRowRight {
+  display: inline-block;
+  width: 50%;
+}
+
+.propertyValueCategoryTitle {
+  margin: 16px 0 4px 0;
+}

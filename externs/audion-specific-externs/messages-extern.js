@@ -42,6 +42,18 @@ var AudionMessageFromFrame;
 
 
 /**
+ * A base record for a message that came from an instance of dev tools. It may
+ * or may not be a message directed to a specific frame.
+ * @typedef {{
+ *   type: number,
+ *   inspectedTabId: number,
+ *   frameId: ?number
+ * }}
+ */
+var AudionMessageFromDevTools;
+
+
+/**
  * Indicates that a script is ready to receive messages. The type of this
  * message is audion.messaging.MessageType.LISTENERS_READY.
  * @typedef {{
@@ -192,7 +204,8 @@ var AudionNodeHighlightedMessage;
  * @typedef {{
  *   type: number,
  *   audioNodeId: number,
- *   frameId: number
+ *   frameId: number,
+ *   inspectedTabId: ?number
  * }}
  */
 var AudionNodeUnhighlightedMessage;
@@ -200,9 +213,12 @@ var AudionNodeUnhighlightedMessage;
 
 /**
  * Encapsulates a property value pair for an AudioNode. See
- * AudionAudioNodePropertiesUpdateMessage.
+ * AudionAudioNodePropertiesUpdateMessage. propertyType takes on a
+ * audion.messaging.NodePropertyType enum value and describes the nature of the
+ * property (AudioParam? read only? enum value? etc).
  * @typedef {{
  *   property: string,
+ *   propertyType: number,
  *   value: (number|string)
  * }}
  */
@@ -217,7 +233,9 @@ var AudionPropertyValuePair;
  * @typedef {{
  *   type: number,
  *   audioNodeId: number,
+ *   audioNodeType: string,
  *   frameId: number,
+ *   inspectedTabId: ?number,
  *   propertyValues: !Array.<!AudionPropertyValuePair>
  * }}
  */
