@@ -14,14 +14,17 @@ var concat = require('gulp-concat');
 var htmlmin = require('gulp-htmlmin');
 var less = require('gulp-less');
 var util = require('gulp-util');
+var mkdirp = require('mkdirp');
 var argv = require('yargs').argv;
+
+TEMPORARY_DIRECTORY = '/tmp/audion-build-temporary-files';
 
 
 // Use 'gulp' to compile in advanced mode.
 // Use 'gulp --whitespace' to compile in debug mode (only concat JS).
 gulp.task('default', function() {
   // We must compile javascript after generating the CSS renaming map.
-  compileCss().on('end', function() {
+  compileCss(function() {
     // The tracing code is actually embedded as a string within the compiled JS.
     compileTracingEntryPoint().on('end', function() {
       compileTracingInjectorEntryPoint();
@@ -136,10 +139,9 @@ function compilePanelEntryPoint() {
  * @return {!Object} The gulp result from compilation.
  */
 function compileTracingEntryPoint() {
-  var destDirectory = 'js/auto-generated';
   return compileJs(
       'audion.entryPoints.tracing',
-      destDirectory,
+      TEMPORARY_DIRECTORY,
       'instrument-web-audio-code.js')
            .pipe(change(function(content) {
              // Wrap the generated code to inject for tracing with a closure.
@@ -154,7 +156,7 @@ function compileTracingEntryPoint() {
                      .replace(/'/g, "\\'") +
                  '})();\';';
            }))
-           .pipe(gulp.dest(destDirectory));
+           .pipe(gulp.dest(TEMPORARY_DIRECTORY));
 }
 
 
@@ -174,7 +176,7 @@ function compileJs(entryPoint, destDirectory, compiledFileName) {
       entryPoint,
     ],
 
-    externs: ['externs/**/*.js'],
+    externs: ['externs/**/*.js', 'third_party/closure-externs/**/*.js'],
     // Do not include any un-needed JS in our app.
     only_closure_dependencies: true,
     warning_level: 'VERBOSE'
@@ -192,6 +194,7 @@ function compileJs(entryPoint, destDirectory, compiledFileName) {
   // Compile and minify JS.
   var jsSrcs = [
       'js/**/*.js',
+      TEMPORARY_DIRECTORY + '/**/*.js',
       'node_modules/google-closure-library/closure/**/*.js'
     ];
   return gulp.src(jsSrcs)
@@ -208,19 +211,29 @@ function compileJs(entryPoint, destDirectory, compiledFileName) {
 
 /**
  * Compiles CSS.
+ * @param {!Function} callback Runs when compileCss completes.
  */
-function compileCss() {
-  // Minify CSS and create a rename mapping to be used during JS compilation.
-  return gulp.src('js/**/*.css')
-    .pipe(less())
-    .on('error', logError)
-    .pipe(concat('c.css'))
-    .pipe(closureCssRenamer({
-      compress: true,
-      renameFile: 'js/closure/rename-mapping.js'
-    }))
-    .on('error', logError)
-    .pipe(gulp.dest('build/css'));
+function compileCss(callback) {
+  return mkdirp(TEMPORARY_DIRECTORY, function(err) {
+    if (err) {
+      // Failed to create the directory. It does not exist now.
+      logError(err);
+      return;
+    }
+
+    // Minify CSS and create a rename mapping to be used during JS compilation.
+    return gulp.src('js/**/*.css')
+      .pipe(less())
+      .on('error', logError)
+      .pipe(concat('c.css'))
+      .pipe(closureCssRenamer({
+        compress: true,
+        renameFile: TEMPORARY_DIRECTORY + '/rename-mapping.js'
+      }))
+      .on('error', logError)
+      .pipe(gulp.dest('build/css'))
+      .on('end', callback);
+  });
 }
 
 
