@@ -35,6 +35,10 @@
   display: none;
 }
 
+#paneContainer .xButton {
+  cursor: pointer;
+}
+
 #paneContainer .widgetRowLeft, #paneContainer .widgetRowRight {
   display: inline-block;
   width: 50%;

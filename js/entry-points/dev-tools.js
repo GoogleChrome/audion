@@ -233,7 +233,8 @@ audion.entryPoints.handleAudioNodeUnhighlightedRequest_ = function(message) {
       /** @type {!AudionNodeUnhighlightedMessage} */ ({
     type: audion.messaging.MessageType.AUDIO_NODE_UNHIGHLIGHTED,
     frameId: previousNodeEntry.frameId,
-    audioNodeId: previousNodeEntry.audioNodeId
+    audioNodeId: previousNodeEntry.audioNodeId,
+    inspectedTabId: chrome.devtools.inspectedWindow.tabId
   }));
 };
 
