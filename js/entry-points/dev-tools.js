@@ -316,6 +316,10 @@ audion.entryPoints.requestPanelRedraw_ = function() {
  */
 audion.entryPoints.computeVisualGraphNodeIdForAudioNode_ = function(
     frameId, nodeId) {
+  if (!nodeId) {
+    throw 'hey! no nodeId. The frameId is ' + frameId + '.';
+  }
+
   // The frame ID and AudioNode ID uniquely identifies an AudioNode in the tab.
   return 'node$' + frameId + '$' + nodeId;
 };

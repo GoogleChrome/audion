@@ -23,6 +23,9 @@ audion.ui.pane.Pane = function() {
   dom.id = goog.getCssName('paneContainer');
   audion.ui.pane.Pane.base(this, 'constructor', dom);
 
+  // Initially hide the pane.
+  dom.classList.add(audion.ui.pane.Pane.hiddenPaneClass_);
+
   // The X button for closing the pane.
   var xButton = document.createElement('div');
   xButton.innerHTML = '&#x2715;';
@@ -49,6 +52,13 @@ goog.inherits(audion.ui.pane.Pane, audion.ui.Widget);
 
 
 /**
+ * The class assigned to the pane to hide it.
+ * @private @const {string}
+ */
+audion.ui.pane.Pane.hiddenPaneClass_ = goog.getCssName('hiddenPane');
+
+
+/**
  * Sets the current mode. Shows the pane if the mode is non-null and the pane is
  * not already being shown. If null, hides the pane if it is not already hidden.
  * @param {?audion.ui.pane.Mode} mode 
@@ -64,15 +74,14 @@ audion.ui.pane.Pane.prototype.setMode = function(mode) {
   // Set the new mode, and show the pane.
   this.mode_ = mode;
   var dom = this.getDom();
-  var classForHidden = goog.getCssName('hiddenPane');
   if (this.mode_) {
     // Init the new mode.
     this.contentArea_.appendChild(this.mode_.getDom());
     // Show the pane.
-    dom.classList.remove(classForHidden);
+    dom.classList.remove(audion.ui.pane.Pane.hiddenPaneClass_);
   } else {
     // Hide the pane. Clear its contents.
-    dom.classList.add(classForHidden);
+    dom.classList.add(audion.ui.pane.Pane.hiddenPaneClass_);
     this.clearContentArea_();
   }
 };
