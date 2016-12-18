@@ -1,3 +1,18 @@
+/**
+ * Copyright 2016 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('audion.entryPoints.devTools');
 
 goog.require('audion.messaging.ConnectionType');
@@ -25,6 +40,22 @@ audion.entryPoints.panelShown_ = false;
  * @private {boolean}
  */
 audion.entryPoints.audioUpdatesMissing_ = false;
+
+
+/**
+ * @typedef {{
+ *   frameId: number,
+ *   audioNodeId: number
+ * }}
+ */
+audion.entryPoints.AudioNodeEntry_;
+
+
+/**
+ * The currently highlighted audio node if any.
+ * @private {?audion.entryPoints.AudioNodeEntry_}
+ */
+audion.entryPoints.highlightedAudioNode_ = null;
 
 
 /**
@@ -116,9 +147,157 @@ audion.entryPoints.handlePanelShown_ = function(localPanelWindow) {
 
 /**
  * Handles what happens whenever the panel is hidden.
+ * @private
  */
 audion.entryPoints.handlePanelHidden_ = function() {
   audion.entryPoints.panelShown_ = false;
+};
+
+
+/**
+ * Posts a message to the background script.
+ * @param {!AudionMessage} message
+ * @private
+ */
+audion.entryPoints.postToBackgroundScript_ = function(message) {
+  audion.entryPoints.backgroundPageConnection_.postMessage(message);
+};
+
+
+/**
+ * Requests the panel to redraw the UI (after say a web audio update) only if
+ * the panel is shown.
+ * @private
+ */
+audion.entryPoints.requestPanelRedraw_ = function() {
+  if (audion.entryPoints.panelShown_) {
+    audion.entryPoints.panelWindow_.requestRedraw(
+        audion.entryPoints.visualGraph_);
+  }
+};
+
+
+/**
+ * Handles a request by the user to inspect a node.
+ * @param {!AudionNodeHighlightedMessage} message
+ * @private
+ */
+audion.entryPoints.handleNewAudioNodeHighlightedRequest_ = function(message) {
+  var previousHighlightedNode = audion.entryPoints.highlightedAudioNode_;
+  if (previousHighlightedNode) {
+    // A node is currently highlighted.
+    if (previousHighlightedNode.frameId == message.frameId &&
+        previousHighlightedNode.audioNodeId == message.audioNodeId) {
+      // This audio node is already highlighted.
+      return;
+    }
+
+    // Un-highlight the previous node.
+    audion.entryPoints.postToBackgroundScript_(
+        /** @type {!AudionNodeUnhighlightedMessage} */ ({
+      type: audion.messaging.MessageType.AUDIO_NODE_UNHIGHLIGHTED,
+      frameId: previousHighlightedNode.frameId,
+      audioNodeId: previousHighlightedNode.audioNodeId,
+      inspectedTabId: chrome.devtools.inspectedWindow.tabId
+    }));
+  }
+
+  // Update the highlighted AudioNode to be the new one.
+  audion.entryPoints.highlightedAudioNode_ =
+      /** @type {?audion.entryPoints.AudioNodeEntry_} */ ({
+    frameId: message.frameId,
+    audioNodeId: message.audioNodeId
+  });
+
+  // Visually indicate that the node is highlighted.
+  var visualNodeId = audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
+      message.frameId, message.audioNodeId);
+  var node = /** @type {?AudionVisualGraphData} */ (
+      audion.entryPoints.visualGraph_.node(visualNodeId));
+  node.style += 'outline: 5px solid #ffc107;';
+  audion.entryPoints.requestPanelRedraw_();
+
+  // TODO(chizeng): When deleting nodes is supported, we may want to check here
+  // that the the AudioNode is still in the graph.
+
+  // Tell the content script to issue data on the new node.
+  audion.entryPoints.postToBackgroundScript_(
+      /** @type {!AudionNodeHighlightedMessage} */ ({
+    type: audion.messaging.MessageType.AUDIO_NODE_HIGHLIGHTED,
+    frameId: audion.entryPoints.highlightedAudioNode_.frameId,
+    audioNodeId: audion.entryPoints.highlightedAudioNode_.audioNodeId,
+    inspectedTabId: chrome.devtools.inspectedWindow.tabId
+  }));
+};
+
+
+/**
+ * Handles a request by the user to stop inspecting a node.
+ * @param {!AudionNodeUnhighlightedMessage} message
+ * @private
+ */
+audion.entryPoints.handleAudioNodeUnhighlightedRequest_ = function(message) {
+  var previousNodeEntry = audion.entryPoints.highlightedAudioNode_;
+  if (!previousNodeEntry) {
+    // No audio node highlighted anyway.
+    return;
+  }
+
+  if (previousNodeEntry.frameId != message.frameId ||
+      previousNodeEntry.audioNodeId != message.audioNodeId) {
+    // This request to stop highlighting is no longer relevant.
+    return;
+  }
+
+  // Un-highlight the node.
+  audion.entryPoints.highlightedAudioNode_ = null;
+
+  // Remove the visual highlight from the graph.
+  var visualNodeId = audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
+      message.frameId, message.audioNodeId);
+  var node = /** @type {?AudionVisualGraphData} */ (
+      audion.entryPoints.visualGraph_.node(visualNodeId));
+  node.style = node.style.replace('outline: 5px solid #ffc107;', '');
+  audion.entryPoints.visualGraph_.setNode(visualNodeId, node);
+  audion.entryPoints.requestPanelRedraw_();
+
+  // Notify the content script so that it stops sending info on the node.
+  audion.entryPoints.postToBackgroundScript_(
+      /** @type {!AudionNodeUnhighlightedMessage} */ ({
+    type: audion.messaging.MessageType.AUDIO_NODE_UNHIGHLIGHTED,
+    frameId: previousNodeEntry.frameId,
+    audioNodeId: previousNodeEntry.audioNodeId,
+    inspectedTabId: chrome.devtools.inspectedWindow.tabId
+  }));
+};
+
+
+/**
+ * Handles what happens when the 'Web Audio' panel opens for the first time
+ * after the user opens Chrome dev tools.
+ * @param {!AudionPanelWindow} panelWindow The window object of the panel.
+ * @private
+ */
+audion.entryPoints.listenToMessagesFromPanel_ = function(panelWindow) {
+  // Listen to messages from the page. Relay them to the background script.
+  panelWindow.addEventListener('message', function(event) {
+    if (event.source != panelWindow) {
+      // We are not interested in messages from non-panel windows.
+      return;
+    }
+
+    var message = /** @type {?AudionMessage} */ (event.data);
+    switch(message.type) {
+      case audion.messaging.MessageType.AUDIO_NODE_HIGHLIGHTED:
+        audion.entryPoints.handleNewAudioNodeHighlightedRequest_(
+            /** @type {!AudionNodeHighlightedMessage} */ (message));
+        break;
+      case audion.messaging.MessageType.AUDIO_NODE_UNHIGHLIGHTED:
+        audion.entryPoints.handleAudioNodeUnhighlightedRequest_(
+            /** @type {!AudionNodeUnhighlightedMessage} */ (message));
+        break;
+    }
+  });
 };
 
 
@@ -136,6 +315,10 @@ audion.entryPoints.handlePanelOpenForFirstTime_ = function(panelWindow) {
   if (audion.entryPoints.audioUpdatesMissing_) {
     panelWindow.audionMissingAudioUpdates();
   }
+
+  // Listen for messages from the panel window. These could reflect requests by
+  // the user.
+  audion.entryPoints.listenToMessagesFromPanel_(panelWindow);
 };
 
 
@@ -159,19 +342,6 @@ audion.entryPoints.handlePanelCreated_ = function(extensionPanel) {
 
 
 /**
- * Requests the panel to redraw the UI (after say a web audio update) only if
- * the panel is shown.
- * @private
- */
-audion.entryPoints.requestPanelRedraw_ = function() {
-  if (audion.entryPoints.panelShown_) {
-    audion.entryPoints.panelWindow_.requestRedraw(
-        audion.entryPoints.visualGraph_);
-  }
-};
-
-
-/**
  * Computes an ID (unique across all the frames of the inspected tab) that can
  * be used to uniquely obtain the node representing an AudioNode from the visual
  * graph (which differs from the web audio graph).
@@ -182,6 +352,10 @@ audion.entryPoints.requestPanelRedraw_ = function() {
  */
 audion.entryPoints.computeVisualGraphNodeIdForAudioNode_ = function(
     frameId, nodeId) {
+  if (!nodeId) {
+    throw 'hey! no nodeId. The frameId is ' + frameId + '.';
+  }
+
   // The frame ID and AudioNode ID uniquely identifies an AudioNode in the tab.
   return 'node$' + frameId + '$' + nodeId;
 };
@@ -278,13 +452,13 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
   var nodeData = /** @type {!AudionVisualGraphData} */ ({
     underlyingType: audion.render.VisualGraphType.AUDIO_NODE,
     frameId: message.frameId,
+    audioNodeId: message.nodeId,
     labelType: 'html',
     label: nodeType + ' ' + message.nodeId,
-    style: 'stroke: none; fill: ' + nodeColor + ';',
-    labelStyle: 'color: #fff; font-family: arial;',
+    style: 'cursor: pointer; stroke: none; fill: ' + nodeColor + ';',
+    labelStyle: 'cursor: pointer; color: #fff; font-family: arial;',
     rx: 2,
-    ry: 2,
-    audioNodeGraphId: message.nodeId
+    ry: 2
   });
 
   // Obtain an ID for the visual node.
@@ -352,7 +526,7 @@ audion.entryPoints.handleMissingAudioUpdates_ = function() {
  * Handles the case in which the tab URL changes. We have to reset.
  * @private
  */
-audion.entryPoints.handelPageOfTabChanged_ = function() {
+audion.entryPoints.handlePageOfTabChanged_ = function() {
   // Reset the graph.
   audion.entryPoints.visualGraph_ = audion.entryPoints.createEmptyAudioGraph_();
 
@@ -527,6 +701,32 @@ audion.entryPoints.handleNodeFromParamDisconnected_ = function(message) {
 
 
 /**
+ * Handles a message from the background script that contains information on a
+ * node being inspected.
+ * @param {!AudionAudioNodePropertiesUpdateMessage} message
+ * @private
+ */
+audion.entryPoints.handleAudioNodePropertiesUpdate_ = function(message) {
+  // Call the panel window method to take this update into account.
+  if (!audion.entryPoints.panelWindow_) {
+    // No panel window has ever opened yet. Since the user must have requested
+    // that a certain node is highlighted, we really should never enter here ...
+    return;
+  }
+
+  var highlightedNode = audion.entryPoints.highlightedAudioNode_;
+  if (!highlightedNode ||
+      highlightedNode.frameId != message.frameId ||
+      highlightedNode.audioNodeId != message.audioNodeId) {
+    // This node is no longer highlighted. Ignore this message.
+    return;
+  }
+
+  audion.entryPoints.panelWindow_.noteAudioNodePropertyUpdate(message);
+};
+
+
+/**
  * Handles a message from the background script.
  * @param {!AudionMessageFromFrame} message
  * @private
@@ -561,7 +761,11 @@ audion.entryPoints.handleMessageFromBackground_ = function(message) {
       audion.entryPoints.handleMissingAudioUpdates_();
       break;
     case audion.messaging.MessageType.PAGE_OF_TAB_CHANGED:
-      audion.entryPoints.handelPageOfTabChanged_();
+      audion.entryPoints.handlePageOfTabChanged_();
+      break;
+    case audion.messaging.MessageType.AUDIO_NODE_PROPERTIES_UPDATE:
+      audion.entryPoints.handleAudioNodePropertiesUpdate_(
+          /** @type {!AudionAudioNodePropertiesUpdateMessage} */ (message));
       break;
   }
 };

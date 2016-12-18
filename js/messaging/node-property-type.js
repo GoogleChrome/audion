@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('audion.entryPoints.tabPageChanged');
-
-goog.require('audion.messaging.MessageType');
+goog.provide('audion.messaging.NodePropertyType');
 
 
 /**
- * The entry point for the script that runs when a top-level page changes.
- * Informs other entities of this change.
+ * Enumerates types of properties of AudioNodes. These values are used within
+ * AudionPropertyValuePair messages, which are routed to dev tools in order to
+ * update the properties of nodes shown to the user.
+ * Increment this value upon adding a new value - next available value: 5
+ * @enum {number}
  */
-audion.entryPoints.tabPageChanged = function() {
-  chrome.runtime.sendMessage(/** @type {!AudionMessage} */ (
-      {type: audion.messaging.MessageType.PAGE_OF_TAB_CHANGED}));
+audion.messaging.NodePropertyType = {
+  AUDIO_PARAM: 1,
+  READ_ONLY: 2,
+  MUTABLE_NUMBER: 3,
+  ENUM: 4
 };
-
-
-audion.entryPoints.tabPageChanged();

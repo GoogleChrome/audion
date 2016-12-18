@@ -13,19 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('audion.entryPoints.tabPageChanged');
-
-goog.require('audion.messaging.MessageType');
+goog.provide('audion.ui.pane.ModeType');
 
 
 /**
- * The entry point for the script that runs when a top-level page changes.
- * Informs other entities of this change.
+ * Enumerates types of modes for rendering content in the pane.
+ * @enum {number}
  */
-audion.entryPoints.tabPageChanged = function() {
-  chrome.runtime.sendMessage(/** @type {!AudionMessage} */ (
-      {type: audion.messaging.MessageType.PAGE_OF_TAB_CHANGED}));
+audion.ui.pane.ModeType = {
+  // This mode shows information on an inspected AudioNode.
+  AUDIO_NODE: 1
 };
-
-
-audion.entryPoints.tabPageChanged();

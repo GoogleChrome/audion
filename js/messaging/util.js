@@ -13,19 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('audion.entryPoints.tabPageChanged');
+/**
+ * @fileoverview Utility methods related to sending messages.
+ */
 
-goog.require('audion.messaging.MessageType');
+goog.provide('audion.messaging.Util');
 
 
 /**
- * The entry point for the script that runs when a top-level page changes.
- * Informs other entities of this change.
+ * Issues a message to the window.
+ * @param {!AudionMessage} message
+ * @param {!Window=} opt_window The window to post to. Defaults to current one.
  */
-audion.entryPoints.tabPageChanged = function() {
-  chrome.runtime.sendMessage(/** @type {!AudionMessage} */ (
-      {type: audion.messaging.MessageType.PAGE_OF_TAB_CHANGED}));
+audion.messaging.Util.postMessageToWindow = function(message, opt_window) {
+  var w = (opt_window || window);
+  w.postMessage(message, w.location.origin || '*');
 };
-
-
-audion.entryPoints.tabPageChanged();

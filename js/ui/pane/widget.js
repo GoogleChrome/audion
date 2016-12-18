@@ -13,19 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-goog.provide('audion.entryPoints.tabPageChanged');
-
-goog.require('audion.messaging.MessageType');
+goog.provide('audion.ui.Widget');
 
 
-/**
- * The entry point for the script that runs when a top-level page changes.
- * Informs other entities of this change.
+/** 
+ * The base class for a UI widget that could be inserted somewhere.
+ * @param {!Element} rootElement The root element of the widget.
+ * @constructor
  */
-audion.entryPoints.tabPageChanged = function() {
-  chrome.runtime.sendMessage(/** @type {!AudionMessage} */ (
-      {type: audion.messaging.MessageType.PAGE_OF_TAB_CHANGED}));
+audion.ui.Widget = function(rootElement) {
+  /** @private {!Element} */
+  this.rootElement_ = rootElement;
 };
 
 
-audion.entryPoints.tabPageChanged();
+/**
+ * @return {!Element} The root DOM of the widget. Append this to a container.
+ */
+audion.ui.Widget.prototype.getDom = function() {
+  return this.rootElement_;
+};

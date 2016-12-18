@@ -1,3 +1,18 @@
+/**
+ * Copyright 2016 Google Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 goog.provide('audion.entryPoints.background');
 
 goog.require('audion.messaging.ConnectionType');
@@ -17,7 +32,7 @@ audion.entryPoints.nextAvailableId_ = 1;
  * Maps a tab ID to a frame ID to a content script connection (for collecting
  * web audio information straight from the frame). The content scripts that
  * these ports connect to are all ready to receive messages.
- * @type {!Object.<string, !Object.<string, !Port>>}
+ * @private {!Object.<string, !Object.<string, !Port>>}
  */
 audion.entryPoints.frameConnections_ = {};
 
@@ -25,7 +40,7 @@ audion.entryPoints.frameConnections_ = {};
 /**
  * Maps a tab ID to a connection to a panel (dev tools instance) connection. The
  * panel scripts that these ports connect to are all ready to receive messages.
- * @type {!Object.<string, !Port>}
+ * @private {!Object.<string, !Port>}
  */
 audion.entryPoints.devToolsScriptConnections_ = {};
 
@@ -34,7 +49,7 @@ audion.entryPoints.devToolsScriptConnections_ = {};
  * Keys for this object comprise a set of IDs of tabs that received web audio
  * updates. Used to determine whether a dev tools instance for a tab might have
  * missed audio graph updates. The values in this object are all 1.
- * @type {!Object.<string, number>}
+ * @private {!Object.<string, number>}
  */
 audion.entryPoints.tabsWithAudioUpdates_ = {};
 
@@ -44,6 +59,7 @@ audion.entryPoints.tabsWithAudioUpdates_ = {};
  * much code. :/
  * @param {!Object} obj The object.
  * @return {boolean} Whether the object is empty.
+ * @private
  */
 audion.entryPoints.isEmpty_ = function(obj) {
   return Object.keys(obj).length == 0;
@@ -55,6 +71,7 @@ audion.entryPoints.isEmpty_ = function(obj) {
  * indicating that it is ready to receive messages. We store a reference to the
  * port for that connection.
  * @param {!AudionPortForFrameConnection} port The port for the connection.
+ * @private
  */
 audion.entryPoints.handleNewFrameListenersReady_ = function(port) {
   var tabId = port.sender.tab.id;
@@ -87,6 +104,7 @@ audion.entryPoints.handleNewFrameListenersReady_ = function(port) {
  * Handles a web audio update received from a frame.
  * @param {!AudionPortForFrameConnection} port The port connecting to the frame.
  * @param {!AudionMessage} message Contains the web audio update.
+ * @private
  */
 audion.entryPoints.handleAudioUpdate_ = function(port, message) {
   // Note that this tab has experienced a web audio update.
@@ -102,7 +120,10 @@ audion.entryPoints.handleAudioUpdate_ = function(port, message) {
     // Tell dev tools which frame this message came from and pass it the
     // message.
     message = /** @type {!AudionMessageFromFrame} */ (message);
-    message.frameId = devToolsPort.frameId;
+
+    // This frame ID had been set on the port (connection to the frame) when the
+    // port had been marked as ready to listen a while back.
+    message.frameId = /** @type {number} */ (port.frameId);
     devToolsPort.postMessage(message);
   }
 };
@@ -112,6 +133,7 @@ audion.entryPoints.handleAudioUpdate_ = function(port, message) {
  * Handles a new connection made with the content script of a frame. The
  * connection might not actually be able to receive messages yet.
  * @param {!AudionPortForFrameConnection} port The port for the connection.
+ * @private
  */
 audion.entryPoints.handleNewFrameConnection_ = function(port) {
   var tab = port.sender.tab;
@@ -140,6 +162,7 @@ audion.entryPoints.handleNewFrameConnection_ = function(port) {
  * Handles when a dev tools script is ready to receive messages.
  * @param {!Port} port The port for the connection.
  * @param {!AudionListenersReadyFromDevToolsScriptMessage} message
+ * @private
  */
 audion.entryPoints.handleNewDevToolsListenersReady_ = function(port, message) {
   // TODO(chizeng): Determine what it means for the tab ID to be -1. It
@@ -176,6 +199,7 @@ audion.entryPoints.handleNewDevToolsListenersReady_ = function(port, message) {
  * Handles a new connection made with a dev panel script. The connection might
  * not actually be able to receive messages yet.
  * @param {!Port} port The port for the connection.
+ * @private
  */
 audion.entryPoints.handleNewDevToolsConnection_ = function(port) {
   // Listen to messages from the content script for the frame.
@@ -186,6 +210,26 @@ audion.entryPoints.handleNewDevToolsConnection_ = function(port) {
         message = /** @type {!AudionListenersReadyFromDevToolsScriptMessage} */(
             message);
         audion.entryPoints.handleNewDevToolsListenersReady_(port, message);
+        break;
+      case audion.messaging.MessageType.AUDIO_NODE_HIGHLIGHTED:
+      case audion.messaging.MessageType.AUDIO_NODE_UNHIGHLIGHTED:
+        message = /** @type {!AudionMessageFromDevTools} */ (message);
+        // TODO(chizeng): Determine what it means for the tab ID to be -1. It
+        // sometimes is.
+        var tabId = message.inspectedTabId;
+        if (!(tabId >= 0)) {
+          // This condition also filters for undefineds.
+          // We do not know which tab we are inspecting. Might be degenerate.
+          return;
+        }
+
+        // The user has either inspected or stop inspecting an AudioNode. Tell
+        // the content script so that it sends/stops sending node updates.
+        var frame = audion.entryPoints.frameConnections_[
+            '' + tabId]['' + message.frameId];
+        if (frame) {
+          frame.postMessage(message);
+        }
         break;
     }
   });
