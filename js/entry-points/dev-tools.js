@@ -165,6 +165,19 @@ audion.entryPoints.postToBackgroundScript_ = function(message) {
 
 
 /**
+ * Requests the panel to redraw the UI (after say a web audio update) only if
+ * the panel is shown.
+ * @private
+ */
+audion.entryPoints.requestPanelRedraw_ = function() {
+  if (audion.entryPoints.panelShown_) {
+    audion.entryPoints.panelWindow_.requestRedraw(
+        audion.entryPoints.visualGraph_);
+  }
+};
+
+
+/**
  * Handles a request by the user to inspect a node.
  * @param {!AudionNodeHighlightedMessage} message
  * @private
@@ -195,6 +208,17 @@ audion.entryPoints.handleNewAudioNodeHighlightedRequest_ = function(message) {
     frameId: message.frameId,
     audioNodeId: message.audioNodeId
   });
+
+  // Visually indicate that the node is highlighted.
+  var visualNodeId = audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
+      message.frameId, message.audioNodeId);
+  var node = /** @type {?AudionVisualGraphData} */ (
+      audion.entryPoints.visualGraph_.node(visualNodeId));
+  node.style += 'outline: 5px solid #ffc107;';
+  audion.entryPoints.requestPanelRedraw_();
+
+  // TODO(chizeng): When deleting nodes is supported, we may want to check here
+  // that the the AudioNode is still in the graph.
 
   // Tell the content script to issue data on the new node.
   audion.entryPoints.postToBackgroundScript_(
@@ -227,6 +251,15 @@ audion.entryPoints.handleAudioNodeUnhighlightedRequest_ = function(message) {
 
   // Un-highlight the node.
   audion.entryPoints.highlightedAudioNode_ = null;
+
+  // Remove the visual highlight from the graph.
+  var visualNodeId = audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
+      message.frameId, message.audioNodeId);
+  var node = /** @type {?AudionVisualGraphData} */ (
+      audion.entryPoints.visualGraph_.node(visualNodeId));
+  node.style = node.style.replace('outline: 5px solid #ffc107;', '');
+  audion.entryPoints.visualGraph_.setNode(visualNodeId, node);
+  audion.entryPoints.requestPanelRedraw_();
 
   // Notify the content script so that it stops sending info on the node.
   audion.entryPoints.postToBackgroundScript_(
@@ -305,19 +338,6 @@ audion.entryPoints.handlePanelCreated_ = function(extensionPanel) {
     extensionPanel.onShown.removeListener(callback);
   };
   extensionPanel.onShown.addListener(callback);
-};
-
-
-/**
- * Requests the panel to redraw the UI (after say a web audio update) only if
- * the panel is shown.
- * @private
- */
-audion.entryPoints.requestPanelRedraw_ = function() {
-  if (audion.entryPoints.panelShown_) {
-    audion.entryPoints.panelWindow_.requestRedraw(
-        audion.entryPoints.visualGraph_);
-  }
 };
 
 
@@ -691,6 +711,14 @@ audion.entryPoints.handleAudioNodePropertiesUpdate_ = function(message) {
   if (!audion.entryPoints.panelWindow_) {
     // No panel window has ever opened yet. Since the user must have requested
     // that a certain node is highlighted, we really should never enter here ...
+    return;
+  }
+
+  var highlightedNode = audion.entryPoints.highlightedAudioNode_;
+  if (!highlightedNode ||
+      highlightedNode.frameId != message.frameId ||
+      highlightedNode.audioNodeId != message.audioNodeId) {
+    // This node is no longer highlighted. Ignore this message.
     return;
   }
 
