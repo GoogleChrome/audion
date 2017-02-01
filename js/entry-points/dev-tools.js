@@ -381,6 +381,42 @@ audion.entryPoints.computeVisualGraphNodeIdForAudioParam_ = function(
 
 /**
  * Computes an ID (unique across all the frames of the inspected tab) that can
+ * be used to uniquely obtain the node representing an output channel.
+ * @param {number} frameId
+ * @param {number} nodeId
+ * @param {number} outputChannel
+ * @return {string}
+ * @private
+ */
+audion.entryPoints.computeVisualGraphNodeIdForOutputChannel_ = function(
+    frameId, nodeId, outputChannel) {
+  // The frame ID and AudioNode ID uniquely identifies an AudioNode in the tab.
+  // TODO(chizeng): Update this arg once we support multiple channels.
+  return audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
+      frameId, nodeId) + '$output' + outputChannel;
+};
+
+
+/**
+ * Computes an ID (unique across all the frames of the inspected tab) that can
+ * be used to uniquely obtain the node representing an input channel.
+ * @param {number} frameId
+ * @param {number} nodeId
+ * @param {number} inputChannel
+ * @return {string}
+ * @private
+ */
+audion.entryPoints.computeVisualGraphNodeIdForInputChannel_ = function(
+    frameId, nodeId, inputChannel) {
+  // The frame ID and AudioNode ID uniquely identifies an AudioNode in the tab.
+  // TODO(chizeng): Update this arg once we support multiple channels.
+  return audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
+      frameId, nodeId) + '$input' + inputChannel;
+};
+
+
+/**
+ * Computes an ID (unique across all the frames of the inspected tab) that can
  * be used to uniquely obtain the node representing an AudioNode from the visual
  * graph (which differs from the web audio graph.
  * @param {number} frameId
@@ -499,9 +535,7 @@ audion.entryPoints.handleNodeToNodeConnected_ = function(message) {
     width: 35,
     frameId: message.frameId,
     sourceAudioNodeId: message.sourceNodeId,
-    destinationAudioNodeId: message.destinationNodeId,
-    label: audion.entryPoints.computeEdgeLabel_(
-        message.fromChannel, message.toChannel)
+    destinationAudioNodeId: message.destinationNodeId
   });
 
   // Compute the visual graph IDs of the nodes.
@@ -512,7 +546,7 @@ audion.entryPoints.handleNodeToNodeConnected_ = function(message) {
       audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
           /** @type {number} */ (message.frameId), message.destinationNodeId);
 
-  // Update the graph with the new edge. Request a redraw.
+  // Update the graph with the new edge between the nodes. Request a redraw.
   audion.entryPoints.visualGraph_.setEdge(
           sourceNodeVisualGraphId,
           destinationNodeVisualGraphId,
@@ -526,26 +560,6 @@ audion.entryPoints.handleNodeToNodeConnected_ = function(message) {
               message.toChannel)
         );
   audion.entryPoints.requestPanelRedraw_();
-};
-
-
-/**
- * Handles the case in which we discover that we are missing audio updates that
- * occurred before dev tools opened.
- * @param {?number=} opt_fromChannel The output channel.
- * @param {?number=} opt_toChannel The input channel.
- * @private
- */
-audion.entryPoints.computeEdgeLabel_ = function(
-    opt_fromChannel, opt_toChannel) {
-  var label = '';
-  if (goog.isNumber(opt_fromChannel)) {
-    label += 'from output ' + opt_fromChannel;
-  }
-  if (goog.isNumber(opt_toChannel)) {
-    label += ' to input ' + opt_toChannel;
-  }
-  return label;
 };
 
 
@@ -650,9 +664,7 @@ audion.entryPoints.handleNodeToParamConnected_ = function(message) {
     frameId: message.frameId,
     sourceAudioNodeId: message.sourceNodeId,
     destinationAudioNodeId: message.destinationNodeId,
-    audioParamName: message.destinationParamName,
-    label: audion.entryPoints.computeEdgeLabel_(
-        message.fromChannel, undefined)
+    audioParamName: message.destinationParamName
   });
   audion.entryPoints.visualGraph_.setEdge(
       sourceVisualNodeId,
