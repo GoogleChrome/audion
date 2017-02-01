@@ -129,7 +129,9 @@ var AudionNodeCreatedMessage;
  *   tag: ?number,
  *   frameId: ?number,
  *   sourceNodeId: number,
- *   destinationNodeId: number
+ *   destinationNodeId: number,
+ *   fromChannel: ?number,
+ *   toChannel: ?number
  * }}
  */
 var AudionNodeToNodeConnectedMessage;
@@ -145,7 +147,8 @@ var AudionNodeToNodeConnectedMessage;
  *   frameId: ?number,
  *   sourceNodeId: number,
  *   destinationNodeId: number,
- *   destinationParamName: string
+ *   destinationParamName: string,
+ *   fromChannel: ?number
  * }}
  */
 var AudionNodeToParamConnectedMessage;
@@ -173,7 +176,9 @@ var AudionAllDisconnectedMessage;
  *   tag: ?number,
  *   frameId: ?number,
  *   sourceNodeId: number,
- *   disconnectedFromNodeId: number
+ *   disconnectedFromNodeId: number,
+ *   fromChannel: ?number,
+ *   toChannel: ?number
  * }}
  */
 var AudionNodeFromNodeDisconnectedMessage;
@@ -189,7 +194,8 @@ var AudionNodeFromNodeDisconnectedMessage;
  *   frameId: ?number,
  *   sourceNodeId: number,
  *   disconnectedFromNodeId: number,
- *   audioParamName: string
+ *   audioParamName: string,
+ *   fromChannel: ?number
  * }}
  */
 var AudionNodeFromParamDisconnectedMessage;

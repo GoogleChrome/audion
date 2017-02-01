@@ -140,7 +140,7 @@ audion.entryPoints.postToContentScript_ = function(messageToSend) {
  * Counts the number of highlighted audio nodes (that we are interested in
  * periodically sending back data on).
  * @return {number}
- * @private 
+ * @private
  */
 audion.entryPoints.countHighlightedAudioNodes_ = function() {
   var count = 0;
@@ -264,7 +264,7 @@ audion.entryPoints.sendBackNodeData_ = function() {
  * audio nodes. Assumes that the set of highlighted nodes (to send back data on)
  * is initially non-empty. The process automatically stops when there are no
  * nodes to send back data on.
- * @private 
+ * @private
  */
 audion.entryPoints.initiateDataSendBackNodeDataCycle_ = function() {
   if (audion.entryPoints.reportDataAnimationFrameId_ ||
@@ -290,7 +290,7 @@ audion.entryPoints.initiateDataSendBackNodeDataCycle_ = function() {
  * Handles what happens when an audio node is highlighted (inspected by the
  * user).
  * @param {!AudionNodeHighlightedMessage} message
- * @private 
+ * @private
  */
 audion.entryPoints.handleAudioNodeHighlighted_ = function(message) {
   audion.entryPoints.highlightedAudioNodeIds_[message.audioNodeId] = 1;
@@ -304,7 +304,7 @@ audion.entryPoints.handleAudioNodeHighlighted_ = function(message) {
  * Handles what happens when an audio node is no longer highlighted (no longer
  * inspected by the user).
  * @param {!AudionNodeUnhighlightedMessage} message
- * @private 
+ * @private
  */
 audion.entryPoints.handleAudioNodeUnhighlighted_ = function(message) {
   // Remove this node from the list of nodes that we periodically send back data
@@ -436,6 +436,8 @@ audion.entryPoints.tracing = function() {
 
     var otherThing = originalArguments[0];
     var otherThingId = otherThing[audion.entryPoints.resourceIdField_];
+    var fromChannel = originalArguments[1];
+    var toChannel = originalArguments[2];
     if (otherThingId) {
       // Notify the extension of a connection with either an AudioNode or an
       // AudioParam.
@@ -444,7 +446,9 @@ audion.entryPoints.tracing = function() {
             /** type {!AudionNodeToNodeConnectedMessage} */ ({
               type: audion.messaging.MessageType.NODE_TO_NODE_CONNECTED,
               sourceNodeId: this[audion.entryPoints.resourceIdField_],
-              destinationNodeId: otherThingId
+              destinationNodeId: otherThingId,
+              fromChannel: fromChannel,
+              toChannel: toChannel
             }));
       } else if (otherThing instanceof AudioParam) {
         var audioParamData =
@@ -455,7 +459,8 @@ audion.entryPoints.tracing = function() {
               type: audion.messaging.MessageType.NODE_TO_PARAM_CONNECTED,
               sourceNodeId: this[audion.entryPoints.resourceIdField_],
               destinationNodeId: audioParamData.audioNodeId,
-              destinationParamName: audioParamData.propertyName
+              destinationParamName: audioParamData.propertyName,
+              fromChannel: fromChannel
             }));
       }
     }
@@ -488,6 +493,8 @@ audion.entryPoints.tracing = function() {
     }
 
     var otherThing = originalArguments[0];
+    var fromChannel = originalArguments[1];
+    var toChannel = originalArguments[2];
     var otherThingId = otherThing[audion.entryPoints.resourceIdField_];
     if (otherThingId) {
       // We disconnect from a specific AudioNode or an AudioParam.
@@ -496,7 +503,9 @@ audion.entryPoints.tracing = function() {
             /** @type {!AudionNodeFromNodeDisconnectedMessage} */ ({
               type: audion.messaging.MessageType.NODE_FROM_NODE_DISCONNECTED,
               sourceNodeId: this[audion.entryPoints.resourceIdField_],
-              disconnectedFromNodeId: otherThingId
+              disconnectedFromNodeId: otherThingId,
+              fromChannel: fromChannel,
+              toChannel: toChannel
             }));
       } else if (otherThing instanceof AudioParam) {
         var audioParamData =
@@ -507,7 +516,8 @@ audion.entryPoints.tracing = function() {
               type: audion.messaging.MessageType.NODE_FROM_PARAM_DISCONNECTED,
               sourceNodeId: this[audion.entryPoints.resourceIdField_],
               disconnectedFromNodeId: audioParamData.audioNodeId,
-              audioParamName: audioParamData.propertyName
+              audioParamName: audioParamData.propertyName,
+              fromChannel: fromChannel
             }));
       }
     }
