@@ -713,19 +713,41 @@ audion.entryPoints.handlePageOfTabChanged_ = function() {
  * @param {!AudionNodeToParamConnectedMessage} message
  */
 audion.entryPoints.handleNodeToParamConnected_ = function(message) {
-  var sourceVisualNodeId =
+  var frameId = /** @type {number} */ (message.frameId);
+  var sourceNodeVisualGraphId =
       audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
-          /** @type {number} */ (message.frameId), message.sourceNodeId);
+          frameId, message.sourceNodeId);
 
-  // This is the visual node ID of the
+  var sourceVisualNodeId = sourceNodeVisualGraphId;
+  if (goog.isNumber(message.fromChannel)) {
+    // There is an output channel.
+    sourceVisualNodeId =
+        audion.entryPoints.computeVisualGraphNodeIdForOutputChannel_(
+            frameId, message.sourceNodeId, message.fromChannel);
+    if (!audion.entryPoints.visualGraph_.node(sourceVisualNodeId)) {
+      // This output channel node not yet exists. Create it.
+      audion.entryPoints.visualGraph_.setNode(
+          sourceVisualNodeId,
+          audion.entryPoints.createNodeDataForChannel_(
+              frameId, message.fromChannel, message.sourceNodeId));
+      // Create a dotted edge from the source node to its output param.
+      audion.entryPoints.visualGraph_.setEdge(
+          sourceNodeVisualGraphId,
+          sourceVisualNodeId,
+          audion.entryPoints.createEdgeDataForOutputChannelEdge_(
+              frameId, message.fromChannel, message.sourceNodeId));
+    }
+  }
+
+  // This is the visual node ID of the destination AudioNode.
   var destinationAudioNodeVisualGraphId =
       audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
-          /** @type {number} */ (message.frameId), message.destinationNodeId);
+          frameId, message.destinationNodeId);
 
   // If the visual node for the AudioParam exists, connect directly to it.
   var audioParamVisualNodeId =
       audion.entryPoints.computeVisualGraphNodeIdForAudioParam_(
-          /** @type {number} */ (message.frameId),
+          frameId,
           message.destinationNodeId,
           message.destinationParamName);
   if (!audion.entryPoints.visualGraph_.node(audioParamVisualNodeId)) {
@@ -754,7 +776,7 @@ audion.entryPoints.handleNodeToParamConnected_ = function(message) {
           'stroke: #B0BEC5; fill: none;',
       arrowheadStyle: 'fill: none; stroke: none;',
       width: 1,
-      frameId: /** @type {number} */ (message.frameId),
+      frameId: frameId,
       destinationAudioNodeId: message.destinationNodeId,
       audioParamName: message.destinationParamName
     });
@@ -764,7 +786,7 @@ audion.entryPoints.handleNodeToParamConnected_ = function(message) {
         dottedEdgeData,
         // todo
         audion.entryPoints.computeVisualGraphIdForAudioParamToNodeEdge_(
-            /** @type {number} */ (message.frameId),
+            frameId,
             message.sourceNodeId,
             message.destinationNodeId,
             message.destinationParamName)
@@ -790,7 +812,7 @@ audion.entryPoints.handleNodeToParamConnected_ = function(message) {
       // Compute a visual graph ID unique to the edge.
       // todo
       audion.entryPoints.computeVisualGraphIdForNodeToAudioParamEdge_(
-          /** @type {number} */ (message.frameId),
+          frameId,
           message.sourceNodeId,
           message.destinationNodeId,
           message.destinationParamName,
