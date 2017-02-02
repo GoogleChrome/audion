@@ -21,13 +21,16 @@ goog.provide('audion.render.VisualGraphType');
  * tools. Nodes and edges in that graph carry data (on AudioNodes, web audio
  * graph edges, etc). This enumerates the different types of data.
  * Increment the following value upon adding a new entry:
- * Next available ID: 6
+ * Next available ID: 9
  * @enum {number}
  */
 audion.render.VisualGraphType = {
   AUDIO_NODE: 1,
   AUDIO_PARAM_NODE: 2,
-  NODE_TO_NODE_EDGE: 3,
-  AUDIO_PARAM_TO_NODE_EDGE: 4,
-  NODE_TO_AUDIO_PARAM_EDGE: 5
+  CHANNEL: 3,
+  INPUT_TO_NODE_EDGE: 4,
+  NODE_TO_NODE_EDGE: 5,
+  NODE_TO_OUTPUT_EDGE: 6,
+  AUDIO_PARAM_TO_NODE_EDGE: 7,
+  NODE_TO_AUDIO_PARAM_EDGE: 8
 };

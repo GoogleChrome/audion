@@ -26,7 +26,7 @@
  * is created by the dev tools script.
  *   * underlyingType is a numeric enum value denoting what the visual node
  *     represents, ie an AudioNode, an AudioParam, a channel, etc.
- *   * width refers to the width of an edge. 
+ *   * width refers to the width of an edge.
  * @typedef {{
  *   underlyingType: number,
  *   labelType: string,
@@ -44,7 +44,9 @@
  *   arrowheadClass: ?string,
  *   class: ?string,
  *   lineInterpolate: string,
- *   width: ?number
+ *   width: ?number,
+ *   inputChannel: ?number,
+ *   outputChannel: ?number
  * }}
  */
 var AudionVisualGraphData;
