@@ -46,7 +46,9 @@
  *   lineInterpolate: string,
  *   width: ?number,
  *   inputChannel: ?number,
- *   outputChannel: ?number
+ *   outputChannel: ?number,
+ *   sourceVisualNodeId: ?string,
+ *   destinationVisualNodeId: ?string
  * }}
  */
 var AudionVisualGraphData;

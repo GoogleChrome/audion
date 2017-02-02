@@ -551,11 +551,17 @@ audion.entryPoints.createNodeDataForChannel_ = function(
  * @param {number} frameId
  * @param {number} channel
  * @param {number} audioNodeGraphId
+ * @param {?string} sourceVisualNodeId
+ * @param {?string} destinationVisualNodeId
  * @return {!AudionVisualGraphData} Visual graph node data for a channel.
  * @private
  */
 audion.entryPoints.createEdgeDataForOutputChannelEdge_ = function(
-    frameId, channel, audioNodeGraphId) {
+    frameId,
+    channel,
+    audioNodeGraphId,
+    sourceVisualNodeId,
+    destinationVisualNodeId) {
   return /** @type {!AudionVisualGraphData} */ ({
       underlyingType: audion.render.VisualGraphType.NODE_TO_OUTPUT_EDGE,
       lineInterpolate: 'linear',
@@ -565,7 +571,9 @@ audion.entryPoints.createEdgeDataForOutputChannelEdge_ = function(
       width: 1,
       frameId: frameId,
       audioNodeId: audioNodeGraphId,
-      outputChannel: channel
+      outputChannel: channel,
+      sourceVisualNodeId: sourceVisualNodeId,
+      destinationVisualNodeId: destinationVisualNodeId
     });
 };
 
@@ -576,11 +584,17 @@ audion.entryPoints.createEdgeDataForOutputChannelEdge_ = function(
  * @param {number} frameId
  * @param {number} channel
  * @param {number} audioNodeGraphId
+ * @param {?string} sourceVisualNodeId
+ * @param {?string} destinationVisualNodeId
  * @return {!AudionVisualGraphData} Visual graph node data for a channel.
  * @private
  */
 audion.entryPoints.createEdgeDataForInputChannelEdge_ = function(
-    frameId, channel, audioNodeGraphId) {
+    frameId,
+    channel,
+    audioNodeGraphId,
+    sourceVisualNodeId,
+    destinationVisualNodeId) {
   return /** @type {!AudionVisualGraphData} */ ({
       underlyingType: audion.render.VisualGraphType.INPUT_TO_NODE_EDGE,
       lineInterpolate: 'linear',
@@ -590,7 +604,9 @@ audion.entryPoints.createEdgeDataForInputChannelEdge_ = function(
       width: 1,
       frameId: frameId,
       audioNodeId: audioNodeGraphId,
-      outputChannel: channel
+      outputChannel: channel,
+      sourceVisualNodeId: sourceVisualNodeId,
+      destinationVisualNodeId: destinationVisualNodeId
     });
 };
 
@@ -601,17 +617,6 @@ audion.entryPoints.createEdgeDataForInputChannelEdge_ = function(
  * @private
  */
 audion.entryPoints.handleNodeToNodeConnected_ = function(message) {
-  var edgeData = /** @type {!AudionVisualGraphData} */ ({
-    underlyingType: audion.render.VisualGraphType.NODE_TO_NODE_EDGE,
-    lineInterpolate: 'basis',
-    style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
-    arrowheadStyle: 'fill: #90A4AE; stroke: none;',
-    width: 35,
-    frameId: message.frameId,
-    sourceAudioNodeId: message.sourceNodeId,
-    destinationAudioNodeId: message.destinationNodeId
-  });
-
   // Compute the visual graph IDs of the nodes.
   var frameId = /** @type {number} */ (message.frameId);
   var sourceNodeVisualGraphId =
@@ -638,7 +643,11 @@ audion.entryPoints.handleNodeToNodeConnected_ = function(message) {
           sourceNodeVisualGraphId,
           sourceVisualNodeId,
           audion.entryPoints.createEdgeDataForOutputChannelEdge_(
-              frameId, message.fromChannel, message.sourceNodeId));
+              frameId,
+              message.fromChannel,
+              message.sourceNodeId,
+              sourceNodeVisualGraphId,
+              sourceVisualNodeId));
     }
   }
 
@@ -659,9 +668,26 @@ audion.entryPoints.handleNodeToNodeConnected_ = function(message) {
           destinationVisualNodeId,
           destinationNodeVisualGraphId,
           audion.entryPoints.createEdgeDataForInputChannelEdge_(
-              frameId, message.toChannel, message.destinationNodeId));
+              frameId,
+              message.toChannel,
+              message.destinationNodeId,
+              destinationVisualNodeId,
+              destinationNodeVisualGraphId));
     }
   }
+
+  var edgeData = /** @type {!AudionVisualGraphData} */ ({
+    underlyingType: audion.render.VisualGraphType.NODE_TO_NODE_EDGE,
+    lineInterpolate: 'basis',
+    style: 'stroke-width: 2.5px; stroke: #90A4AE; fill: none;',
+    arrowheadStyle: 'fill: #90A4AE; stroke: none;',
+    width: 35,
+    frameId: message.frameId,
+    sourceAudioNodeId: message.sourceNodeId,
+    destinationAudioNodeId: message.destinationNodeId,
+    sourceVisualNodeId: sourceVisualNodeId,
+    destinationVisualNodeId: destinationVisualNodeId,
+  });
 
   // Update the graph with the new edge between the nodes. Request a redraw.
   audion.entryPoints.visualGraph_.setEdge(
@@ -735,7 +761,11 @@ audion.entryPoints.handleNodeToParamConnected_ = function(message) {
           sourceNodeVisualGraphId,
           sourceVisualNodeId,
           audion.entryPoints.createEdgeDataForOutputChannelEdge_(
-              frameId, message.fromChannel, message.sourceNodeId));
+              frameId,
+              message.fromChannel,
+              message.sourceNodeId,
+              sourceNodeVisualGraphId,
+              sourceVisualNodeId));
     }
   }
 
@@ -778,7 +808,9 @@ audion.entryPoints.handleNodeToParamConnected_ = function(message) {
       width: 1,
       frameId: frameId,
       destinationAudioNodeId: message.destinationNodeId,
-      audioParamName: message.destinationParamName
+      audioParamName: message.destinationParamName,
+      sourceVisualNodeId: audioParamVisualNodeId,
+      destinationVisualNodeId: destinationAudioNodeVisualGraphId
     });
     audion.entryPoints.visualGraph_.setEdge(
         audioParamVisualNodeId,
@@ -803,7 +835,9 @@ audion.entryPoints.handleNodeToParamConnected_ = function(message) {
     frameId: message.frameId,
     sourceAudioNodeId: message.sourceNodeId,
     destinationAudioNodeId: message.destinationNodeId,
-    audioParamName: message.destinationParamName
+    audioParamName: message.destinationParamName,
+    sourceVisualNodeId: sourceVisualNodeId,
+    destinationVisualNodeId: audioParamVisualNodeId
   });
   audion.entryPoints.visualGraph_.setEdge(
       sourceVisualNodeId,
@@ -856,7 +890,15 @@ audion.entryPoints.handleAllDisconnected_ = function(message) {
       audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
           /** @type {number} */ (message.frameId), message.nodeId));
   for (var i = 0; i < edges.length; i++) {
+    // Remove the edge.
+    var edgeObject = audion.entryPoints.visualGraph_.edge(edges[i]);
     audion.entryPoints.visualGraph_.removeEdge(edges[i]);
+
+    // If the other node is an output channel ...
+
+    // If the other node is an AudioParam ...
+
+    // If the other node is an input channel ...
   }
   audion.entryPoints.requestPanelRedraw_();
 };
