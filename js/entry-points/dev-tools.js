@@ -928,6 +928,8 @@ audion.entryPoints.handleAllDisconnected_ = function(message) {
     var edgeObject = audion.entryPoints.visualGraph_.edge(edges[i]);
     audion.entryPoints.visualGraph_.removeEdge(edges[i]);
 
+    // TODO(chizeng): Defer to relevant private methods on a case by case basis.
+
     // If the other node is an output channel ...
 
     // If the other node is an AudioParam ...
@@ -958,6 +960,9 @@ audion.entryPoints.handleNodeFromParamDisconnected_ = function(message) {
           message.audioParamName,
           message.fromChannel)
   );
+
+  // TODO(chizeng): Potentially remove the node for the output channel if it no
+  // longer has out edges.
 
   // If no AudioNodes connect to the AudioParam, just remove the visual node
   // that represents the AudioParam.
