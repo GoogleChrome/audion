@@ -863,19 +863,53 @@ audion.entryPoints.handleNodeToParamConnected_ = function(message) {
  * @param {!AudionNodeFromNodeDisconnectedMessage} message
  */
 audion.entryPoints.handleNodeFromNodeDisconnected_ = function(message) {
+  // Obtain the edge data.
+  var edgeId = audion.entryPoints.computeVisualGraphIdForNodeToNodeEdge_(
+      /** @type {number} */ (message.frameId),
+      message.sourceNodeId,
+      message.disconnectedFromNodeId,
+      message.fromChannel,
+      message.toChannel);
+  var edgeObject = /** @type {!AudionVisualGraphData} */ (
+      audion.entryPoints.visualGraph_.edge(edgeId));
+  if (!edgeObject) {
+    console.warn('There is no edge with ID ' + edgeId + ' to remove.');
+    return;
+  }
+
+  // Remove the edge.
+  var frameId = /** @type {number} */ (message.frameId);
   audion.entryPoints.visualGraph_.removeEdge(
       audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
-          /** @type {number} */ (message.frameId), message.sourceNodeId),
+          frameId, message.sourceNodeId),
       audion.entryPoints.computeVisualGraphNodeIdForAudioNode_(
-          /** @type {number} */ (message.frameId),
-          message.disconnectedFromNodeId),
+          frameId, message.disconnectedFromNodeId),
       audion.entryPoints.computeVisualGraphIdForNodeToNodeEdge_(
-          /** @type {number} */ (message.frameId),
+          frameId,
           message.sourceNodeId,
           message.disconnectedFromNodeId,
           message.fromChannel,
-          message.toChannel)
-  );
+          message.toChannel));
+
+  if (goog.isNumber(message.fromChannel)) {
+    var sourceVisualNodeId = /** @type {string} */ (
+        edgeObject.sourceVisualNodeId);
+    // If there was an output channel, and it now points to no nodes, remove it.
+    if (!audion.entryPoints.visualGraph_.outEdges(sourceVisualNodeId)) {
+      audion.entryPoints.visualGraph_.removeNode(sourceVisualNodeId);
+    }
+  }
+
+  if (goog.isNumber(message.toChannel)) {
+    // If there was an input channel, and now, nothing points to it, remove it.
+    var destinationVisualNodeId = /** @type {string} */ (
+        edgeObject.destinationVisualNodeId);
+    if (!audion.entryPoints.visualGraph_.inEdges(destinationVisualNodeId)) {
+      audion.entryPoints.visualGraph_.removeNode(destinationVisualNodeId);
+    }
+  }
+
+  // Redraw after the edge update.
   audion.entryPoints.requestPanelRedraw_();
 };
 
