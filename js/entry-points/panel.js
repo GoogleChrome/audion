@@ -78,6 +78,7 @@ audion.entryPoints.requestRedraw_ = function(visualGraph) {
   // TODO: Throttle to every other frame.
   // TODO: Resize the paper when the panel window resizes.
   if (audion.entryPoints.paper_) {
+    joint.layout.DirectedGraph.layout(visualGraph, {'setLinkVertices': false});
     audion.entryPoints.paper_.render();
     return;
   }

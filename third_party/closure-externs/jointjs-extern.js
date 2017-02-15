@@ -40,6 +40,7 @@ var MatrixData;
 V.createSVGMatrix = function(opt_matrix) {};
 
 joint.dia = {};
+joint.layout = {};
 joint.shapes = {};
 joint.shapes.devs = {};
 joint.shapes.basic = {};
@@ -191,6 +192,21 @@ joint.dia.Graph.prototype.cloneCells = function(cells) {};
  */
 joint.dia.Graph.prototype.on = function(event, handler) {};
 
+joint.layout.DirectedGraph = {};
+/**
+ * Lays out a graph.
+ * @param {!joint.dia.Graph} graph
+ * @param {!Object=} opt_options
+ */
+joint.layout.DirectedGraph.layout = function(graph, opt_options) {};
+
+
+/**
+ * @constructor
+ * @param {!Object=} opt_options
+ * @extends {joint.dia.CellView}
+ */
+joint.shapes.devs.Model = function(opt_options) {};
 
 
 /**

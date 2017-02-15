@@ -87,6 +87,7 @@ function copyThirdPartyJs() {
       'node_modules/backbone/backbone-min.js',
       'node_modules/graphlib/dist/graphlib.core.min.js',
       'node_modules/dagre/dist/dagre.core.min.js',
+      'node_modules/jointjs/dist/joint.js',
       'node_modules/jointjs/dist/joint.min.js'
     ])
     .pipe(gulp.dest('build/js'));

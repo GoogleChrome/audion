@@ -294,35 +294,38 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
   var nodeLabel = message.nodeType + ' ' + message.nodeId;
 
   // Create labels for in ports.
-  var inPorts = [];
+  var ports = [];
   for (var i = 0; i < message.numberOfInputs; i++) {
-    inPorts.push(audion.entryPoints.inPortLabel_(frameId, message.nodeId, i));
+    ports.push({
+      'id': audion.entryPoints.inPortLabel_(frameId, message.nodeId, i),
+      'group': 'inPorts'
+    });
   }
 
   // Create labels for out ports.
-  var outPorts = [];
   for (var i = 0; i < message.numberOfOutputs; i++) {
-    outPorts.push(audion.entryPoints.outPortLabel_(frameId, message.nodeId, i));
+    ports.push({
+      'id': audion.entryPoints.outPortLabel_(frameId, message.nodeId, i),
+      'group': 'outPorts'
+    });
   }
 
   // Create labels for AudioParam ports.
-  var paramPorts = [];
   for (var i = 0; i < message.audioParamNames.length; i++) {
-    paramPorts.push(
-      audion.entryPoints.audioParamPortLabel_(
+    ports.push({
+      'id': audion.entryPoints.audioParamPortLabel_(
           frameId,
           message.nodeId,
-          message.audioParamNames[i]));
+          message.audioParamNames[i]),
+      'group': 'paramPorts'
+    });
   }
 
   // Create a node.
   new joint.shapes.devs.Model({
-    'inPorts': inPorts,
-    'outPorts': outPorts,
-    'paramPorts': paramPorts,
     'ports': {
       'groups': {
-          'in': {
+          'inPorts': {
               'attrs': {
                   'text': {'fill': '#000000'},
                   'circle':
@@ -335,7 +338,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
               'position': 'left',
               'label': null,
           },
-          'out': {
+          'outPorts': {
               'attrs': {
                   'text': {'fill': '#000000' },
                   'circle':
@@ -348,7 +351,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
               'position': 'right',
               'label': null
           },
-          'param': {
+          'paramPorts': {
               'attrs': {
                   'text': {'fill': '#000000'},
                   'circle':
@@ -362,6 +365,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
               'label': null,
           }
       },
+      items: ports
     },
     'attrs': {
         '.label': { 'text': nodeLabel, 'ref-x': .4, 'ref-y': .2 },
