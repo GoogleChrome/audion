@@ -78,7 +78,14 @@ function minifyHtml() {
  * @return {!Object} The gulp result from piping the data.
  */
 function copyThirdPartyJs() {
-  return gulp.src('third_party/*.js')
+  return gulp.src([
+      'node_modules/jquery/dist/jquery.min.js',
+      'node_modules/lodash/index.js',
+      'node_modules/backbone/backbone-min.js',
+      'node_modules/graphlib/dist/graphlib.core.min.js',
+      'node_modules/dagre/dist/dagre.core.min.js',
+      'node_modules/jointjs/dist/joint.min.js'
+    ])
     .pipe(gulp.dest('build/js'));
 }
 
@@ -222,7 +229,10 @@ function compileCss(callback) {
     }
 
     // Minify CSS and create a rename mapping to be used during JS compilation.
-    return gulp.src('js/**/*.css')
+    return gulp.src([
+        'js/**/*.css',
+        'node_modules/jointjs/dist/joint.min.css'
+      ])
       .pipe(less())
       .on('error', logError)
       .pipe(concat('c.css'))
