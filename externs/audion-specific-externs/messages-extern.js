@@ -114,7 +114,10 @@ var AudionContextCreatedMessage;
  *   tag: ?number,
  *   frameId: ?number,
  *   nodeId: number,
- *   nodeType: string
+ *   nodeType: string,
+ *   numberOfInputs: number,
+ *   numberOfOutputs: number,
+ *   audioParamNames: !Array<string>,
  * }}
  */
 var AudionNodeCreatedMessage;

@@ -14,15 +14,17 @@ var concat = require('gulp-concat');
 var htmlmin = require('gulp-htmlmin');
 var less = require('gulp-less');
 var util = require('gulp-util');
+var watch = require('gulp-watch');
 var mkdirp = require('mkdirp');
 var argv = require('yargs').argv;
 
 TEMPORARY_DIRECTORY = '/tmp/audion-build-temporary-files';
 
 
-// Use 'gulp' to compile in advanced mode.
-// Use 'gulp --whitespace' to compile in debug mode (only concat JS).
-gulp.task('default', function() {
+gulp.task('default', build);
+
+
+function build() {
   // We must compile javascript after generating the CSS renaming map.
   compileCss(function() {
     // The tracing code is actually embedded as a string within the compiled JS.
@@ -39,9 +41,10 @@ gulp.task('default', function() {
   compileTabPageChangedEntryPoint();
   minifyHtml();
   copyThirdPartyJs();
+  copyThirdPartyCss();
   copyExtensionFiles();
   copyMediaFiles();
-});
+}
 
 
 /**
@@ -87,6 +90,16 @@ function copyThirdPartyJs() {
       'node_modules/jointjs/dist/joint.min.js'
     ])
     .pipe(gulp.dest('build/js'));
+}
+
+
+/**
+ * Copies third party CSS to the build css directory.
+ * @return {!Object} The gulp result from piping the data.
+ */
+function copyThirdPartyCss() {
+  return gulp.src(['node_modules/jointjs/dist/joint.min.css'])
+      .pipe(gulp.dest('build/css'));
 }
 
 
@@ -229,10 +242,7 @@ function compileCss(callback) {
     }
 
     // Minify CSS and create a rename mapping to be used during JS compilation.
-    return gulp.src([
-        'js/**/*.css',
-        'node_modules/jointjs/dist/joint.min.css'
-      ])
+    return gulp.src('js/**/*.css')
       .pipe(less())
       .on('error', logError)
       .pipe(concat('c.css'))

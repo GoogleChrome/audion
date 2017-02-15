@@ -82,30 +82,17 @@ audion.entryPoints.backgroundPageConnection_ = chrome.runtime.connect({
 
 /**
  * Creates an empty audio graph.
- * @return {!dagre.graphlib.Graph}
+ * @return {!joint.dia.Graph}
  * @private
  */
 audion.entryPoints.createEmptyAudioGraph_ = function() {
-  // Make sure to use quoted strings (string literals) for the object keys below
-  // to prevent obfuscation.
-  return new dagre.graphlib.Graph({
-        'compound': true,
-        'multigraph': true
-      })
-      .setGraph({
-        'nodesep': 28,
-        'rankdir': 'LR',
-        'ranksep': 28,
-        'marginx': 14,
-        'marginy': 14
-      })
-      .setDefaultEdgeLabel(function () { return {}; });
+  return new joint.dia.Graph();
 };
 
 
 /**
  * The audio node graph.
- * @private {!dagre.graphlib.Graph}
+ * @private {!joint.dia.Graph}
  */
 audion.entryPoints.visualGraph_ = audion.entryPoints.createEmptyAudioGraph_();
 
@@ -248,12 +235,140 @@ audion.entryPoints.handlePanelCreated_ = function(extensionPanel) {
 
 
 /**
+ * Computes the label for a node.
+ * @param {number} frameId
+ * @param {number} nodeId
+ * @private
+ */
+audion.entryPoints.computeNodeLabel_ = function(frameId, nodeId) {
+  return 'f' + frameId + 'n' + nodeId;
+};
+
+
+/**
+ * Computes the label for an input port.
+ * @param {number} frameId
+ * @param {number} nodeId
+ * @param {number} portIndex
+ * @private
+ */
+audion.entryPoints.inPortLabel_ = function(frameId, nodeId, portIndex) {
+  return audion.entryPoints.computeNodeLabel_(frameId, nodeId) +
+      'input' + portIndex;
+};
+
+
+/**
+ * Computes the label for an output port.
+ * @param {number} frameId
+ * @param {number} nodeId
+ * @param {number} portIndex
+ * @private
+ */
+audion.entryPoints.outPortLabel_ = function(frameId, nodeId, portIndex) {
+  return audion.entryPoints.computeNodeLabel_(frameId, nodeId) +
+      'output' + portIndex;
+};
+
+
+/**
+ * Computes the label for an AudioParam port.
+ * @param {number} frameId
+ * @param {number} nodeId
+ * @param {string} name The name of the AudioParam.
+ * @private
+ */
+audion.entryPoints.audioParamPortLabel_ = function(frameId, nodeId, name) {
+  return audion.entryPoints.computeNodeLabel_(frameId, nodeId) + 'param' + name;
+};
+
+
+/**
  * Handles the creation of an AudioNode (that might not be part of a graph yet).
  * @param {!AudionNodeCreatedMessage} message
  * @private
  */
 audion.entryPoints.handleNodeCreated_ = function(message) {
-  // TODO
+  var frameId = /** @type {number} */ (message.frameId);
+  var nodeId = audion.entryPoints.computeNodeLabel_(frameId, message.nodeId);
+  var nodeLabel = message.nodeType + ' ' + message.nodeId;
+
+  // Create labels for in ports.
+  var inPorts = [];
+  for (var i = 0; i < message.numberOfInputs; i++) {
+    inPorts.push(audion.entryPoints.inPortLabel_(frameId, message.nodeId, i));
+  }
+
+  // Create labels for out ports.
+  var outPorts = [];
+  for (var i = 0; i < message.numberOfOutputs; i++) {
+    outPorts.push(audion.entryPoints.outPortLabel_(frameId, message.nodeId, i));
+  }
+
+  // Create labels for AudioParam ports.
+  var paramPorts = [];
+  for (var i = 0; i < message.audioParamNames.length; i++) {
+    paramPorts.push(
+      audion.entryPoints.audioParamPortLabel_(
+          frameId,
+          message.nodeId,
+          message.audioParamNames[i]));
+  }
+
+  // Create a node.
+  new joint.shapes.devs.Model({
+    'inPorts': inPorts,
+    'outPorts': outPorts,
+    'paramPorts': paramPorts,
+    'ports': {
+      'groups': {
+          'in': {
+              'attrs': {
+                  'text': {'fill': '#000000'},
+                  'circle':
+                      {
+                        'fill': '#00ff00',
+                        'stroke': '#000000',
+                        'magnet': 'passive'
+                      }
+              },
+              'position': 'left',
+              'label': null,
+          },
+          'out': {
+              'attrs': {
+                  'text': {'fill': '#000000' },
+                  'circle':
+                      {
+                        'fill': '#ff0000',
+                        'stroke': '#000000',
+                        'magnet': true
+                      }
+              },
+              'position': 'right',
+              'label': null
+          },
+          'param': {
+              'attrs': {
+                  'text': {'fill': '#000000'},
+                  'circle':
+                      {
+                        'fill': '#00ff00',
+                        'stroke': '#000000',
+                        'magnet': 'passive'
+                      }
+              },
+              'position': 'bottom',
+              'label': null,
+          }
+      },
+    },
+    'attrs': {
+        '.label': { 'text': nodeLabel, 'ref-x': .4, 'ref-y': .2 },
+        '.inPorts circle': {'fill': '#16A085'},
+        '.outPorts circle': {'fill': '#E74C3C'}
+    }
+  }).addTo(audion.entryPoints.visualGraph_);
   audion.entryPoints.requestPanelRedraw_();
 };
 

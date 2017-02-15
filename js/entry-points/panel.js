@@ -20,10 +20,45 @@ goog.require('audion.messaging.Util');
 
 
 /**
+ * The element that contains all graph logic.
+ * @private {!Element}
+ */
+audion.entryPoints.graphContainer_ = /** @type {!Element} */ (
+    document.getElementById('graph'));
+
+
+/**
  * The last recorded graph to render if any.
- * @private {?dagre.graphlib.Graph}
+ * @private {?joint.dia.Graph}
  */
 audion.entryPoints.lastRecordedVisualGraph_ = null;
+
+
+/**
+ * The paper on which to render the graph.
+ * @private {?joint.dia.Paper}
+ */
+audion.entryPoints.paper_ = null;
+
+
+/**
+ * Creates a paper.
+ * @param {!Element} graphContainer The DOM element that is the graph.
+ * @param {?joint.dia.Graph} graph The graph to use.
+ * @return {!joint.dia.Paper}
+ * @private
+ */
+audion.entryPoints.createPaper_ = function(graphContainer, graph) {
+  return new joint.dia.Paper({
+    'el': graphContainer,
+    'width': graphContainer.offsetWidth,
+    'height': graphContainer.offsetHeight,
+    'model': graph,
+    'snapLinks': {
+      'radius': Infinity,
+    }
+  });
+};
 
 
 /**
@@ -36,19 +71,33 @@ audion.entryPoints.handleMissingAudioUpdates_ = function() {};
 
 /**
  * Requests a redraw of the visual graph.
- * @param {!dagre.graphlib.Graph} visualGraph
+ * @param {!joint.dia.Graph} visualGraph
  * @private
  */
-audion.entryPoints.requestRedraw_ = function(visualGraph) {};
+audion.entryPoints.requestRedraw_ = function(visualGraph) {
+  // TODO: Throttle to every other frame.
+  // TODO: Resize the paper when the panel window resizes.
+  if (audion.entryPoints.paper_) {
+    return;
+  }
+  var innerGraph = document.createElement('div');
+  innerGraph.id = 'innerGraph';
+  audion.entryPoints.graphContainer_.appendChild(innerGraph);
+  audion.entryPoints.paper_ = audion.entryPoints.createPaper_(
+      innerGraph, visualGraph);
+};
 
 
 /**
  * Resets the UI. Hides warning about missing audio updates. Resets panning and
  * zooming.
- * @param {!dagre.graphlib.Graph} visualGraph
+ * @param {!joint.dia.Graph} visualGraph
  * @private
  */
-audion.entryPoints.resetUi_ = function(visualGraph) {};
+audion.entryPoints.resetUi_ = function(visualGraph) {
+  audion.entryPoints.lastRecordedVisualGraph_ = visualGraph;
+  audion.entryPoints.requestRedraw_(visualGraph);
+};
 
 
 /**

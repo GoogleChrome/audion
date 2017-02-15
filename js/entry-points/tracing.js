@@ -386,6 +386,7 @@ audion.entryPoints.tracing = function() {
     });
 
     // Instrument AudioParams.
+    var audioParamNames = [];
     for (var prop in node) {
       var audioParam = node[prop];
       if (audioParam instanceof AudioParam) {
@@ -398,6 +399,7 @@ audion.entryPoints.tracing = function() {
               audioNodeId: nodeId,
               propertyName: prop
             });
+        audioParamNames.push(prop);
       }
     }
 
@@ -406,7 +408,10 @@ audion.entryPoints.tracing = function() {
         /** @type {!AudionNodeCreatedMessage} */ ({
       type: audion.messaging.MessageType.NODE_CREATED,
       nodeId: nodeId,
-      nodeType: node.constructor.name
+      nodeType: node.constructor.name,
+      numberOfInputs: node.numberOfInputs,
+      numberOfOutputs: node.numberOfOutputs,
+      audioParamNames: audioParamNames
       // TODO(chizeng): Include a stack trace for the creation of the node.
     }));
   }

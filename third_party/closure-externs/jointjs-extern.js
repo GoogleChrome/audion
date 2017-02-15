@@ -161,6 +161,10 @@ joint.dia.Paper.prototype.setOrigin = function(x, y) {};
  * @param {number} sy
  */
 joint.dia.Paper.prototype.scale = function(sx, sy) {};
+/**
+ * Removes a paper.
+ */
+joint.dia.Paper.prototype.remove = function() {};
 
 /** @constructor */
 joint.dia.Graph = function() {};
@@ -182,6 +186,7 @@ joint.dia.Graph.prototype.cloneCells = function(cells) {};
  * @param {!Function} handler
  */
 joint.dia.Graph.prototype.on = function(event, handler) {};
+
 
 
 /**
