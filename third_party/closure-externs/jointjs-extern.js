@@ -165,6 +165,10 @@ joint.dia.Paper.prototype.scale = function(sx, sy) {};
  * Removes a paper.
  */
 joint.dia.Paper.prototype.remove = function() {};
+/**
+ * Renders a paper.
+ */
+joint.dia.Paper.prototype.render = function() {};
 
 /** @constructor */
 joint.dia.Graph = function() {};

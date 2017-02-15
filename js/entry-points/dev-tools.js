@@ -400,7 +400,7 @@ audion.entryPoints.handleMissingAudioUpdates_ = function() {
  */
 audion.entryPoints.handlePageOfTabChanged_ = function() {
   // Reset the graph.
-  audion.entryPoints.visualGraph_ = audion.entryPoints.createEmptyAudioGraph_();
+  audion.entryPoints.visualGraph_.clear();
 
   // Well, the tab just changed, so we can't be missing audio updates.
   audion.entryPoints.audioUpdatesMissing_ = false;
