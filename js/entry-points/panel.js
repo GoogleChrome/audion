@@ -87,6 +87,7 @@ audion.entryPoints.requestRedraw_ = function(visualGraph) {
   audion.entryPoints.graphContainer_.appendChild(innerGraph);
   audion.entryPoints.paper_ = audion.entryPoints.createPaper_(
       innerGraph, visualGraph);
+  joint.layout.DirectedGraph.layout(visualGraph, {'setLinkVertices': false});
 };
 
 

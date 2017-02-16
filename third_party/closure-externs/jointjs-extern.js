@@ -207,6 +207,10 @@ joint.layout.DirectedGraph.layout = function(graph, opt_options) {};
  * @extends {joint.dia.CellView}
  */
 joint.shapes.devs.Model = function(opt_options) {};
+/**
+ * @param {!joint.dia.Graph} graph
+ */
+joint.shapes.devs.Model.prototype.addTo = function(graph) {};
 
 
 /**
@@ -232,6 +236,17 @@ joint.shapes.basic.Generic = function(attrs) {};
  * @type {Object}
  */
 joint.shapes.basic.Generic.prototype.defaults;
+
+/**
+ * @constructor
+ * @extends {joint.dia.Cell}
+ * @param {!Object} attrs
+ */
+joint.shapes.basic.Rect = function(attrs) {};
+/**
+ * @param {!joint.dia.Graph} graph
+ */
+joint.shapes.basic.Rect.prototype.addTo = function(graph) {};
 
 /**
  * Symbols from Backbone.

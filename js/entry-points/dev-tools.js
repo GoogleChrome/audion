@@ -322,7 +322,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
   }
 
   // Create a node.
-  new joint.shapes.devs.Model({
+  new joint.shapes.basic.Rect({
     'ports': {
       'groups': {
           'inPorts': {
@@ -365,12 +365,13 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
               'label': null,
           }
       },
-      items: ports
+      'items': ports
     },
     'attrs': {
-        '.label': { 'text': nodeLabel, 'ref-x': .4, 'ref-y': .2 },
+        'text': { 'text': nodeLabel, 'ref-x': .4, 'ref-y': .2 },
         '.inPorts circle': {'fill': '#16A085'},
-        '.outPorts circle': {'fill': '#E74C3C'}
+        '.outPorts circle': {'fill': '#E74C3C'},
+        '.paramPorts circle': {'fill': '#90CAF9'}
     }
   }).addTo(audion.entryPoints.visualGraph_);
   audion.entryPoints.requestPanelRedraw_();
