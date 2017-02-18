@@ -20,6 +20,14 @@ goog.require('audion.messaging.MessageType');
 
 
 /**
+ * The queue for messages that will be sent to the panel window once the panel
+ * window opens for the first time.
+ * @private {!Array.<!AudionMessageFromFrame>}
+ */
+audion.entryPoints.messageQueue_ = [];
+
+
+/**
  * The window of the panel page. Initialized when the panel appears.
  * @private {?AudionPanelWindow}
  */
@@ -31,14 +39,6 @@ audion.entryPoints.panelWindow_ = null;
  * @private {boolean}
  */
 audion.entryPoints.panelShown_ = false;
-
-
-/**
- * Whether the extension is missing audio updates that occurred before dev tools
- * opened.
- * @private {boolean}
- */
-audion.entryPoints.audioUpdatesMissing_ = false;
 
 
 /**
@@ -81,23 +81,6 @@ audion.entryPoints.backgroundPageConnection_ = chrome.runtime.connect({
 
 
 /**
- * Creates an empty audio graph.
- * @return {!joint.dia.Graph}
- * @private
- */
-audion.entryPoints.createEmptyAudioGraph_ = function() {
-  return new joint.dia.Graph();
-};
-
-
-/**
- * The audio node graph.
- * @private {!joint.dia.Graph}
- */
-audion.entryPoints.visualGraph_ = audion.entryPoints.createEmptyAudioGraph_();
-
-
-/**
  * Handles what happens whenever the panel is shown (user tabs into it).
  * @param {!AudionPanelWindow} localPanelWindow The window of the panel page
  *     embedded in dev tools.
@@ -107,9 +90,6 @@ audion.entryPoints.handlePanelShown_ = function(localPanelWindow) {
   // Store a reference to the panel window every time it opens.
   audion.entryPoints.panelWindow_ = localPanelWindow;
   audion.entryPoints.panelShown_ = true;
-
-  // Request a redraw.
-  audion.entryPoints.requestPanelRedraw_();
 };
 
 
@@ -129,19 +109,6 @@ audion.entryPoints.handlePanelHidden_ = function() {
  */
 audion.entryPoints.postToBackgroundScript_ = function(message) {
   audion.entryPoints.backgroundPageConnection_.postMessage(message);
-};
-
-
-/**
- * Requests the panel to redraw the UI (after say a web audio update) only if
- * the panel is shown.
- * @private
- */
-audion.entryPoints.requestPanelRedraw_ = function() {
-  if (audion.entryPoints.panelShown_) {
-    audion.entryPoints.panelWindow_.requestRedraw(
-        audion.entryPoints.visualGraph_);
-  }
 };
 
 
@@ -201,13 +168,15 @@ audion.entryPoints.listenToMessagesFromPanel_ = function(panelWindow) {
  * @private
  */
 audion.entryPoints.handlePanelOpenForFirstTime_ = function(panelWindow) {
-  // TODO(chizeng): Listen for messages from the panel. For instance, we may at
-  // some point want to update the active node.
-
-  // Tell the panel to warn the user about missing audio updates.
-  if (audion.entryPoints.audioUpdatesMissing_) {
-    panelWindow.audionMissingAudioUpdates();
+  // Route all messages that were awaiting the panel window to open for the
+  // first time. This might flood the panel window with messages.
+  while (audion.entryPoints.messageQueue_.length) {
+    panelWindow.acceptMessage(audion.entryPoints.messageQueue_[0]);
+    audion.entryPoints.messageQueue_ =
+        audion.entryPoints.messageQueue_.slice(1);
   }
+
+  audion.entryPoints.panelWindow_ = panelWindow;
 
   // Listen for messages from the panel window. These could reflect requests by
   // the user.
@@ -235,281 +204,17 @@ audion.entryPoints.handlePanelCreated_ = function(extensionPanel) {
 
 
 /**
- * Computes the label for a node.
- * @param {number} frameId
- * @param {number} nodeId
- * @private
- */
-audion.entryPoints.computeNodeLabel_ = function(frameId, nodeId) {
-  return 'f' + frameId + 'n' + nodeId;
-};
-
-
-/**
- * Computes the label for an input port.
- * @param {number} frameId
- * @param {number} nodeId
- * @param {number} portIndex
- * @private
- */
-audion.entryPoints.inPortLabel_ = function(frameId, nodeId, portIndex) {
-  return audion.entryPoints.computeNodeLabel_(frameId, nodeId) +
-      'input' + portIndex;
-};
-
-
-/**
- * Computes the label for an output port.
- * @param {number} frameId
- * @param {number} nodeId
- * @param {number} portIndex
- * @private
- */
-audion.entryPoints.outPortLabel_ = function(frameId, nodeId, portIndex) {
-  return audion.entryPoints.computeNodeLabel_(frameId, nodeId) +
-      'output' + portIndex;
-};
-
-
-/**
- * Computes the label for an AudioParam port.
- * @param {number} frameId
- * @param {number} nodeId
- * @param {string} name The name of the AudioParam.
- * @private
- */
-audion.entryPoints.audioParamPortLabel_ = function(frameId, nodeId, name) {
-  return audion.entryPoints.computeNodeLabel_(frameId, nodeId) + 'param' + name;
-};
-
-
-/**
- * Handles the creation of an AudioNode (that might not be part of a graph yet).
- * @param {!AudionNodeCreatedMessage} message
- * @private
- */
-audion.entryPoints.handleNodeCreated_ = function(message) {
-  var frameId = /** @type {number} */ (message.frameId);
-  var nodeId = audion.entryPoints.computeNodeLabel_(frameId, message.nodeId);
-  var nodeLabel = message.nodeType + ' ' + message.nodeId;
-
-  // Create labels for in ports.
-  var ports = [];
-  for (var i = 0; i < message.numberOfInputs; i++) {
-    ports.push({
-      'id': audion.entryPoints.inPortLabel_(frameId, message.nodeId, i),
-      'group': 'inPorts'
-    });
-  }
-
-  // Create labels for out ports.
-  for (var i = 0; i < message.numberOfOutputs; i++) {
-    ports.push({
-      'id': audion.entryPoints.outPortLabel_(frameId, message.nodeId, i),
-      'group': 'outPorts'
-    });
-  }
-
-  // Create labels for AudioParam ports.
-  for (var i = 0; i < message.audioParamNames.length; i++) {
-    ports.push({
-      'id': audion.entryPoints.audioParamPortLabel_(
-          frameId,
-          message.nodeId,
-          message.audioParamNames[i]),
-      'group': 'paramPorts'
-    });
-  }
-
-  // Create a node.
-  new joint.shapes.basic.Rect({
-    'ports': {
-      'groups': {
-          'inPorts': {
-              'attrs': {
-                  'text': {'fill': '#000000'},
-                  'circle':
-                      {
-                        'fill': '#00ff00',
-                        'stroke': '#000000',
-                        'magnet': 'passive'
-                      }
-              },
-              'position': 'left',
-              'label': null,
-          },
-          'outPorts': {
-              'attrs': {
-                  'text': {'fill': '#000000' },
-                  'circle':
-                      {
-                        'fill': '#ff0000',
-                        'stroke': '#000000',
-                        'magnet': true
-                      }
-              },
-              'position': 'right',
-              'label': null
-          },
-          'paramPorts': {
-              'attrs': {
-                  'text': {'fill': '#000000'},
-                  'circle':
-                      {
-                        'fill': '#00ff00',
-                        'stroke': '#000000',
-                        'magnet': 'passive'
-                      }
-              },
-              'position': 'bottom',
-              'label': null,
-          }
-      },
-      'items': ports
-    },
-    'attrs': {
-        'text': { 'text': nodeLabel, 'ref-x': .4, 'ref-y': .2 },
-        '.inPorts circle': {'fill': '#16A085'},
-        '.outPorts circle': {'fill': '#E74C3C'},
-        '.paramPorts circle': {'fill': '#90CAF9'}
-    }
-  }).addTo(audion.entryPoints.visualGraph_);
-  audion.entryPoints.requestPanelRedraw_();
-};
-
-
-/**
- * Handles when an AudioNode connects with another AudioNode.
- * @param {!AudionNodeToNodeConnectedMessage} message
- * @private
- */
-audion.entryPoints.handleNodeToNodeConnected_ = function(message) {
-  // TODO
-  audion.entryPoints.requestPanelRedraw_();
-};
-
-
-/**
- * Handles the case in which we discover that we are missing audio updates that
- * occurred before dev tools opened.
- * @private
- */
-audion.entryPoints.handleMissingAudioUpdates_ = function() {
-  audion.entryPoints.audioUpdatesMissing_ = true;
-};
-
-
-/**
- * Handles the case in which the tab URL changes. We have to reset.
- * @private
- */
-audion.entryPoints.handlePageOfTabChanged_ = function() {
-  // Reset the graph.
-  audion.entryPoints.visualGraph_.clear();
-
-  // Well, the tab just changed, so we can't be missing audio updates.
-  audion.entryPoints.audioUpdatesMissing_ = false;
-
-  // Tell the panel to reset to this empty graph.
-  if (audion.entryPoints.panelWindow_) {
-    audion.entryPoints.panelWindow_.resetUi(audion.entryPoints.visualGraph_);
-  }
-};
-
-
-/**
- * Handles when a node connects to an AudioParam.
- * @param {!AudionNodeToParamConnectedMessage} message
- */
-audion.entryPoints.handleNodeToParamConnected_ = function(message) {
-  // TODO
-  audion.entryPoints.requestPanelRedraw_();
-};
-
-
-/**
- * Handles when an AudioNode disconnects from an AudioNode.
- * @param {!AudionNodeFromNodeDisconnectedMessage} message
- */
-audion.entryPoints.handleNodeFromNodeDisconnected_ = function(message) {
-  // TODO
-  audion.entryPoints.requestPanelRedraw_();
-};
-
-
-/**
- * Handles when an AudioNode disconnects from everything.
- * @param {!AudionAllDisconnectedMessage} message
- */
-audion.entryPoints.handleAllDisconnected_ = function(message) {
-  // TODO
-  audion.entryPoints.requestPanelRedraw_();
-};
-
-
-/**
- * Handles when an AudioNode disconnects from an AudioParam.
- * @param {!AudionNodeFromParamDisconnectedMessage} message
- */
-audion.entryPoints.handleNodeFromParamDisconnected_ = function(message) {
-  // TODO
-  audion.entryPoints.requestPanelRedraw_();
-};
-
-
-/**
- * Handles a message from the background script that contains information on a
- * node being inspected.
- * @param {!AudionAudioNodePropertiesUpdateMessage} message
- * @private
- */
-audion.entryPoints.handleAudioNodePropertiesUpdate_ = function(message) {
-  // TODO
-  audion.entryPoints.panelWindow_.noteAudioNodePropertyUpdate(message);
-};
-
-
-/**
  * Handles a message from the background script.
  * @param {!AudionMessageFromFrame} message
  * @private
  */
 audion.entryPoints.handleMessageFromBackground_ = function(message) {
-  switch(message.type) {
-    case audion.messaging.MessageType.NODE_CREATED:
-      audion.entryPoints.handleNodeCreated_(
-          /** @type {!AudionNodeCreatedMessage} */ (message));
-      break;
-    case audion.messaging.MessageType.NODE_TO_NODE_CONNECTED:
-      audion.entryPoints.handleNodeToNodeConnected_(
-          /** @type {!AudionNodeToNodeConnectedMessage} */ (message));
-      break;
-    case audion.messaging.MessageType.NODE_TO_PARAM_CONNECTED:
-      audion.entryPoints.handleNodeToParamConnected_(
-          /** @type {!AudionNodeToParamConnectedMessage} */ (message));
-      break;
-    case audion.messaging.MessageType.ALL_DISCONNECTED:
-      audion.entryPoints.handleAllDisconnected_(
-          /** @type {!AudionAllDisconnectedMessage} */ (message));
-      break;
-    case audion.messaging.MessageType.NODE_FROM_NODE_DISCONNECTED:
-      audion.entryPoints.handleNodeFromNodeDisconnected_(
-          /** @type {!AudionNodeFromNodeDisconnectedMessage} */ (message));
-      break;
-    case audion.messaging.MessageType.NODE_FROM_PARAM_DISCONNECTED:
-      audion.entryPoints.handleNodeFromParamDisconnected_(
-          /** @type {!AudionNodeFromParamDisconnectedMessage} */ (message));
-      break;
-    case audion.messaging.MessageType.MISSING_AUDIO_UPDATES:
-      audion.entryPoints.handleMissingAudioUpdates_();
-      break;
-    case audion.messaging.MessageType.PAGE_OF_TAB_CHANGED:
-      audion.entryPoints.handlePageOfTabChanged_();
-      break;
-    case audion.messaging.MessageType.AUDIO_NODE_PROPERTIES_UPDATE:
-      audion.entryPoints.handleAudioNodePropertiesUpdate_(
-          /** @type {!AudionAudioNodePropertiesUpdateMessage} */ (message));
-      break;
+  if (audion.entryPoints.panelWindow_) {
+    // The panel window has been created. Route this message to it.
+    audion.entryPoints.panelWindow_.acceptMessage(message);
+  } else {
+    // The panel window has not opened yet. Wait til it opens before routing.
+    audion.entryPoints.messageQueue_.push(message);
   }
 };
 

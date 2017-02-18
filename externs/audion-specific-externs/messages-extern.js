@@ -133,8 +133,8 @@ var AudionNodeCreatedMessage;
  *   frameId: ?number,
  *   sourceNodeId: number,
  *   destinationNodeId: number,
- *   fromChannel: ?number,
- *   toChannel: ?number
+ *   fromChannel: number,
+ *   toChannel: number
  * }}
  */
 var AudionNodeToNodeConnectedMessage;
@@ -151,7 +151,7 @@ var AudionNodeToNodeConnectedMessage;
  *   sourceNodeId: number,
  *   destinationNodeId: number,
  *   destinationParamName: string,
- *   fromChannel: ?number
+ *   fromChannel: number
  * }}
  */
 var AudionNodeToParamConnectedMessage;

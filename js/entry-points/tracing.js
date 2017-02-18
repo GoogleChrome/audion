@@ -441,8 +441,10 @@ audion.entryPoints.tracing = function() {
 
     var otherThing = originalArguments[0];
     var otherThingId = otherThing[audion.entryPoints.resourceIdField_];
-    var fromChannel = originalArguments[1];
-    var toChannel = originalArguments[2];
+
+    // If no input / output is specified, default to 0.
+    var fromChannel = originalArguments[1] || 0;
+    var toChannel = originalArguments[2] || 0;
     if (otherThingId) {
       // Notify the extension of a connection with either an AudioNode or an
       // AudioParam.
@@ -498,8 +500,11 @@ audion.entryPoints.tracing = function() {
     }
 
     var otherThing = originalArguments[0];
-    var fromChannel = originalArguments[1];
-    var toChannel = originalArguments[2];
+
+    // Default to input / output 0.
+    var fromChannel = originalArguments[1] || 0;
+    var toChannel = originalArguments[2] || 0;
+
     var otherThingId = otherThing[audion.entryPoints.resourceIdField_];
     if (otherThingId) {
       // We disconnect from a specific AudioNode or an AudioParam.

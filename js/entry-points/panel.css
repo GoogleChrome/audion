@@ -34,17 +34,13 @@
   top: 0;
 }
 
-/**
- * The #graph contains the innerGraph. 
- * The paper removes the entire DOM element upon its removal. When that happens,
- * we only remove the inner, dynamically created container.
- */
-#innerGraph {
+#text-sandbox {
+  height: auto;
+  visibility: hidden;
   position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  top: 0;
+  white-space: nowrap;
+  width: auto;
+  z-index: -4242;
 }
 
 .utilityBar {

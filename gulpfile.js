@@ -6,6 +6,7 @@
 // The gulp-closure-compiler module uses ES6.
 require('harmonize')();
 var browserSync = require('browser-sync').create();
+var fs = require('fs');
 var gulp = require('gulp');
 var change = require('gulp-change');
 var closureCompiler = require('gulp-closure-compiler');
@@ -85,7 +86,7 @@ function copyThirdPartyJs() {
       'node_modules/jquery/dist/jquery.min.js',
       'node_modules/lodash/index.js',
       'node_modules/backbone/backbone-min.js',
-      'node_modules/graphlib/dist/graphlib.core.min.js',
+      'node_modules/graphlib/dist/graphlib.min.js',
       'node_modules/dagre/dist/dagre.core.min.js',
       'node_modules/jointjs/dist/joint.js',
       'node_modules/jointjs/dist/joint.min.js'
@@ -229,7 +230,6 @@ function compileJs(entryPoint, destDirectory, compiledFileName) {
       .pipe(gulp.dest(destDirectory));
 }
 
-
 /**
  * Compiles CSS.
  * @param {!Function} callback Runs when compileCss completes.
@@ -243,17 +243,22 @@ function compileCss(callback) {
     }
 
     // Minify CSS and create a rename mapping to be used during JS compilation.
+    var renameMappingLocation = TEMPORARY_DIRECTORY + '/rename-mapping.js';
     return gulp.src('js/**/*.css')
       .pipe(less())
       .on('error', logError)
       .pipe(concat('c.css'))
       .pipe(closureCssRenamer({
         compress: true,
-        renameFile: TEMPORARY_DIRECTORY + '/rename-mapping.js'
+        renameFile: renameMappingLocation
       }))
       .on('error', logError)
       .pipe(gulp.dest('build/css'))
-      .on('end', callback);
+      .on('end', function() {
+        // Wait til the vocabulary file is actually written.
+        while (!fs.existsSync(renameMappingLocation)) {}
+        callback.apply(arguments);
+      });
   });
 }
 
