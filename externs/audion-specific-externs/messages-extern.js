@@ -180,8 +180,8 @@ var AudionAllDisconnectedMessage;
  *   frameId: ?number,
  *   sourceNodeId: number,
  *   disconnectedFromNodeId: number,
- *   fromChannel: ?number,
- *   toChannel: ?number
+ *   fromChannel: number,
+ *   toChannel: number
  * }}
  */
 var AudionNodeFromNodeDisconnectedMessage;
@@ -198,7 +198,7 @@ var AudionNodeFromNodeDisconnectedMessage;
  *   sourceNodeId: number,
  *   disconnectedFromNodeId: number,
  *   audioParamName: string,
- *   fromChannel: ?number
+ *   fromChannel: number
  * }}
  */
 var AudionNodeFromParamDisconnectedMessage;

@@ -1,6 +1,5 @@
 /**
- * @fileoverview Contains external variable declarations to make jscompiler
- * work.
+ * @fileoverview Contains external variable declarations for JointJS.
  * @externs
  */
 
@@ -120,6 +119,7 @@ joint.dia.Link = function() {};
  */
 joint.dia.Link.prototype.addTo = function(graph) {};
 joint.dia.Link.prototype.reparent = function() {};
+joint.dia.Link.prototype.remove = function() {};
 
 /**
  * @constructor
@@ -204,7 +204,7 @@ joint.layout.DirectedGraph = {};
  *    x: number,
  *    y: number,
  *    width: number,
- *    height: number 
+ *    height: number
  * }}
  */
 joint.layout.DirectedGraph.LayoutSpecification;

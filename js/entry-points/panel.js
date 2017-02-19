@@ -50,7 +50,15 @@ audion.entryPoints.isRedrawPending_ = false;
 
 
 /**
- * Whether to resize when the graph does a layout. We may want to keep doing 
+ * A mapping between graph node ID to a mapping between edge ID to link. Used
+ * for link deletion.
+ * @private {!Object.<string, !Object.<!joint.dia.Link>>}
+ */
+audion.entryPoints.linkMapping_ = {};
+
+
+/**
+ * Whether to resize when the graph does a layout. We may want to keep doing
  * layouts so long as the user does not interact.
  * @private {boolean}
  */
@@ -73,8 +81,7 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
     'snapLinks': {
       'radius': Infinity,
     },
-    // TODO: Allow for clicks.
-    'interactive': false
+    'linkPinning': false
   });
 };
 
@@ -136,7 +143,8 @@ audion.entryPoints.outPortLabel_ = function(frameId, nodeId, portIndex) {
  * @private
  */
 audion.entryPoints.audioParamPortLabel_ = function(frameId, nodeId, name) {
-  return audion.entryPoints.computeNodeGraphId_(frameId, nodeId) + 'param' + name;
+  return audion.entryPoints.computeNodeGraphId_(frameId, nodeId) +
+      '$param$' + name;
 };
 
 
@@ -150,6 +158,24 @@ audion.entryPoints.audioParamPortLabel_ = function(frameId, nodeId, name) {
 audion.entryPoints.computeEdgeLabel_ = function(
     sourcePortLabel, destinationPortLabel) {
   return sourcePortLabel + '|' + destinationPortLabel;
+};
+
+
+/**
+ * Handles the creation of a new link.
+ * @private
+ */
+audion.entryPoints.handleLinkCreated_ = function(link) {
+  var sourceId = link.get('source').id;
+  if (!sourceId || !link.get('target').id) {
+    return;
+  }
+
+  // This source node lacks a mapping from link ID to link. Create it.
+  if (!audion.entryPoints.linkMapping_[sourceId]) {
+    audion.entryPoints.linkMapping_[sourceId] = {};
+  }
+  audion.entryPoints.linkMapping_[sourceId][link.id] = link;
 };
 
 
@@ -199,7 +225,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
 
   // Create a node.
   new joint.shapes.basic.Rect({
-    'id': audion.entryPoints.computeNodeGraphId_(frameId, message.nodeId), 
+    'id': audion.entryPoints.computeNodeGraphId_(frameId, message.nodeId),
     'size': {
       // Just a heuristic. Add a little padding.
       'width': width,
@@ -289,7 +315,7 @@ audion.entryPoints.addLink_ = function(
       'id': destinationNodeLabel,
       'port': destinationPortLabel
   };
-  var linkObject = new joint.shapes.devs.Link({
+  var link = new joint.shapes.devs.Link({
       'id': audion.entryPoints.computeEdgeLabel_(
           sourcePortLabel, destinationPortLabel),
       'source': source,
@@ -297,7 +323,8 @@ audion.entryPoints.addLink_ = function(
       'router': {name: 'metro'},
       'connector': {name: 'rounded'}
   }).addTo(audion.entryPoints.graph_);
-  linkObject.attr({'.marker-target': {'d': 'M 10 0 L 0 5 L 10 10 z'}});
+  link.attr({'.marker-target': {'d': 'M 10 0 L 0 5 L 10 10 z'}});
+  audion.entryPoints.handleLinkCreated_(link);
   audion.entryPoints.requestRedraw_();
 };
 
@@ -308,6 +335,10 @@ audion.entryPoints.addLink_ = function(
  * @private
  */
 audion.entryPoints.handleNodeToNodeConnected_ = function(message) {
+  if (!message.sourceNodeId || !message.destinationNodeId) {
+    throw 'Undefined node. Message: ' + JSON.stringify(message);
+  }
+
   var frameId = /** @type {number} */ (message.frameId);
   audion.entryPoints.addLink_(
       audion.entryPoints.computeNodeGraphId_(frameId, message.sourceNodeId),
@@ -351,33 +382,105 @@ audion.entryPoints.handlePageOfTabChanged_ = function() {
  * @param {!AudionNodeToParamConnectedMessage} message
  */
 audion.entryPoints.handleNodeToParamConnected_ = function(message) {
+  if (!message.sourceNodeId || !message.destinationNodeId) {
+    throw 'Undefined node. Message: ' + JSON.stringify(message);
+  }
+
   var frameId = /** @type {number} */ (message.frameId);
   audion.entryPoints.addLink_(
       audion.entryPoints.computeNodeGraphId_(frameId, message.sourceNodeId),
       audion.entryPoints.outPortLabel_(
           frameId, message.sourceNodeId, message.fromChannel),
-      audion.entryPoints.computeNodeGraphId_(frameId, message.destinationNodeId),
+      audion.entryPoints.computeNodeGraphId_(
+          frameId, message.destinationNodeId),
       audion.entryPoints.audioParamPortLabel_(
           frameId, message.destinationNodeId, message.destinationParamName));
 };
 
 
 /**
+ * Removes a link.
+ * @param {string} nodeGraphId
+ * @param {string} linkId
+ * @private
+ */
+audion.entryPoints.removeLink_ = function(nodeGraphId, linkId) {
+  var mapping = audion.entryPoints.linkMapping_[nodeGraphId];
+  if (!mapping) {
+    // The source node cannot be found.
+    return;
+  }
+
+  var link = mapping[linkId];
+  if (!link) {
+    // The link could not be found.
+    return;
+  }
+
+  // Remove the link.
+  link.remove();
+  delete mapping[linkId];
+
+  // Remove the mapping for the source node to conserve memory if applicable.
+  var noMoreLinks = true;
+  for (var localLinkId in mapping) {
+    noMoreLinks = false;
+    break;
+  }
+  if (noMoreLinks) {
+    delete audion.entryPoints.linkMapping_[nodeGraphId];
+  }
+
+  // We removed a link and thus changed the graph. Request a redraw.
+  audion.entryPoints.requestRedraw_();
+};
+
+
+/**
  * Handles when an AudioNode disconnects from an AudioNode.
  * @param {!AudionNodeFromNodeDisconnectedMessage} message
+ * @private
  */
 audion.entryPoints.handleNodeFromNodeDisconnected_ = function(message) {
-  // TODO
-  audion.entryPoints.requestRedraw_();
+  var frameId = /** @type {number} */ (message.frameId);
+  var sourceId = audion.entryPoints.computeNodeGraphId_(
+      frameId, message.sourceNodeId);
+  var mapping = audion.entryPoints.linkMapping_[sourceId];
+  if (!mapping) {
+    // The source node cannot be found.
+    return;
+  }
+
+  var linkId = audion.entryPoints.computeEdgeLabel_(
+      audion.entryPoints.outPortLabel_(
+          frameId, message.sourceNodeId, message.fromChannel),
+      audion.entryPoints.inPortLabel_(
+          frameId, message.disconnectedFromNodeId, message.toChannel));
+  audion.entryPoints.removeLink_(sourceId, linkId);
 };
 
 
 /**
  * Handles when an AudioNode disconnects from everything.
  * @param {!AudionAllDisconnectedMessage} message
+ * @private
  */
 audion.entryPoints.handleAllDisconnected_ = function(message) {
-  // TODO
+  var frameId = /** @type {number} */ (message.frameId);
+  var sourceId = audion.entryPoints.computeNodeGraphId_(
+      frameId, message.nodeId);
+  var mapping = audion.entryPoints.linkMapping_[sourceId];
+  if (!mapping) {
+    // The source node cannot be found. Or, it lacks outbound links.
+    return;
+  }
+
+  // Remove all outgoing links.
+  for (var linkId in mapping) {
+    mapping[linkId].remove();
+  }
+  delete audion.entryPoints.linkMapping_[sourceId];
+
   audion.entryPoints.requestRedraw_();
 };
 
@@ -385,10 +488,24 @@ audion.entryPoints.handleAllDisconnected_ = function(message) {
 /**
  * Handles when an AudioNode disconnects from an AudioParam.
  * @param {!AudionNodeFromParamDisconnectedMessage} message
+ * @private
  */
 audion.entryPoints.handleNodeFromParamDisconnected_ = function(message) {
-  // TODO
-  audion.entryPoints.requestRedraw_();
+  var frameId = /** @type {number} */ (message.frameId);
+  var sourceId = audion.entryPoints.computeNodeGraphId_(
+      frameId, message.sourceNodeId);
+  var mapping = audion.entryPoints.linkMapping_[sourceId];
+  if (!mapping) {
+    // The source node cannot be found.
+    return;
+  }
+
+  var linkId = audion.entryPoints.computeEdgeLabel_(
+      audion.entryPoints.outPortLabel_(
+          frameId, message.sourceNodeId, message.fromChannel),
+      audion.entryPoints.audioParamPortLabel_(
+          frameId, message.disconnectedFromNodeId, message.audioParamName));
+  audion.entryPoints.removeLink_(sourceId, linkId);
 };
 
 
@@ -473,6 +590,7 @@ audion.entryPoints.requestRedraw_ = function() {
  */
 audion.entryPoints.resetUi_ = function(visualGraph) {
   audion.entryPoints.graph_ = visualGraph;
+  audion.entryPoints.shouldRescaleOnRelayout_ = true;
   audion.entryPoints.requestRedraw_();
 };
 
@@ -530,6 +648,10 @@ audion.entryPoints.panel = function() {
   // tools script (which has complete access to the panel page window upon
   // creating the panel page) can directly call the functions to change the UI.
   goog.global['acceptMessage'] = audion.entryPoints.acceptMessage_;
+
+  // Handle link creation.
+  audion.entryPoints.graph_.on(
+      'change:source change:target', audion.entryPoints.handleLinkCreated_);
 };
 
 

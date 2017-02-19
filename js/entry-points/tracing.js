@@ -446,13 +446,20 @@ audion.entryPoints.tracing = function() {
     var fromChannel = originalArguments[1] || 0;
     var toChannel = originalArguments[2] || 0;
     if (otherThingId) {
+      // Warn if we cannot identify what we are connecting from.
+      var sourceResourceId = this[audion.entryPoints.resourceIdField_];
+      if (!sourceResourceId) {
+        console.warn(
+            'Audion could not identify the object calling "connect": ', this);
+      }
+
       // Notify the extension of a connection with either an AudioNode or an
       // AudioParam.
       if (otherThing instanceof AudioNode) {
         audion.entryPoints.postToContentScript_(
             /** type {!AudionNodeToNodeConnectedMessage} */ ({
               type: audion.messaging.MessageType.NODE_TO_NODE_CONNECTED,
-              sourceNodeId: this[audion.entryPoints.resourceIdField_],
+              sourceNodeId: sourceResourceId,
               destinationNodeId: otherThingId,
               fromChannel: fromChannel,
               toChannel: toChannel
@@ -464,7 +471,7 @@ audion.entryPoints.tracing = function() {
         audion.entryPoints.postToContentScript_(
             /** type {!AudionNodeToParamConnectedMessage} */ ({
               type: audion.messaging.MessageType.NODE_TO_PARAM_CONNECTED,
-              sourceNodeId: this[audion.entryPoints.resourceIdField_],
+              sourceNodeId: sourceResourceId,
               destinationNodeId: audioParamData.audioNodeId,
               destinationParamName: audioParamData.propertyName,
               fromChannel: fromChannel
@@ -570,6 +577,11 @@ audion.entryPoints.tracing = function() {
 
 
   /** @override */
+  AudioContext.prototype.createScriptProcessor = wrapNativeFunction(
+      AudioContext.prototype.createScriptProcessor, newNodeDecorator);
+
+
+  /** @override */
   AudioContext.prototype.createChannelMerger = wrapNativeFunction(
       AudioContext.prototype.createChannelMerger, newNodeDecorator);
 
@@ -605,6 +617,11 @@ audion.entryPoints.tracing = function() {
 
 
   /** @override */
+  AudioContext.prototype.createWaveShaper = wrapNativeFunction(
+      AudioContext.prototype.createWaveShaper, newNodeDecorator);
+
+
+  /** @override */
   AudioContext.prototype.createMediaElementSource = wrapNativeFunction(
       AudioContext.prototype.createMediaElementSource, newNodeDecorator);
 
@@ -627,6 +644,11 @@ audion.entryPoints.tracing = function() {
   /** @override */
   AudioContext.prototype.createPanner = wrapNativeFunction(
       AudioContext.prototype.createPanner, newNodeDecorator);
+
+
+  /** @override */
+  AudioContext.prototype.createSpatialPanner = wrapNativeFunction(
+      AudioContext.prototype.createSpatialPanner, newNodeDecorator);
 
 
   /** @override */
@@ -656,6 +678,15 @@ audion.entryPoints.tracing = function() {
   };
   AudioContext.prototype = nativeAudioContextConstructor.prototype;
   AudioContext.prototype.constructor = AudioContext;
+
+  if (window['AudioWorker']) {
+    /**
+     * Instrument AudioWorker.
+     * @override
+     */
+    AudioWorker.prototype.createNode = wrapNativeFunction(
+        AudioWorker.prototype.createNode, newNodeDecorator);
+  }
 
   // Listen to messages on the window that are related to the extension.
   // Listen to messages from the page. Relay them to the background script.

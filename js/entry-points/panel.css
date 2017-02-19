@@ -80,3 +80,8 @@
 #text-sandbox {
   font-size: 14px;
 }
+
+/** Make edges directed. Hide the arrowhead in the reverse direction. */
+.marker-arrowhead[end=source] {
+  display: none;
+}
