@@ -72,7 +72,9 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
     'model': graph,
     'snapLinks': {
       'radius': Infinity,
-    }
+    },
+    // TODO: Allow for clicks.
+    'interactive': false
   });
 };
 
