@@ -75,3 +75,7 @@
   box-sizing: border-box;
   border-radius: 5px;
 }
+
+#text-sandbox {
+  font-size: 14px;
+}
