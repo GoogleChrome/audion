@@ -50,10 +50,11 @@ audion.entryPoints.isRedrawPending_ = false;
 
 
 /**
- * The paper on which to render the graph.
- * @private {?joint.dia.Paper}
+ * Whether to resize when the graph does a layout. We may want to keep doing 
+ * layouts so long as the user does not interact.
+ * @private {boolean}
  */
-audion.entryPoints.paper_ = null;
+audion.entryPoints.shouldRescaleOnRelayout_ = true;
 
 
 /**
@@ -74,6 +75,14 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
     }
   });
 };
+
+
+/**
+ * The paper on which to render the graph.
+ * @private {!joint.dia.Paper}
+ */
+audion.entryPoints.paper_ = audion.entryPoints.createPaper_(
+    audion.entryPoints.graphContainer_, audion.entryPoints.graph_);
 
 
 /**
@@ -208,8 +217,9 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
                         'magnet': 'passive'
                       }
               },
+              'interactive': false,
               'position': 'left',
-              'label': null,
+              'label': null
           },
           'out': {
               'attrs': {
@@ -221,6 +231,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
                         'magnet': true
                       }
               },
+              'interactive': false,
               'position': 'right',
               'label': null
           },
@@ -234,8 +245,9 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
                         'magnet': 'passive'
                       }
               },
+              'interactive': false,
               'position': 'bottom',
-              'label': null,
+              'label': null
           }
       },
       'items': ports
@@ -391,6 +403,17 @@ audion.entryPoints.handleAudioNodePropertiesUpdate_ = function(message) {
 
 
 /**
+ * Resizes the paper to fit.
+ * @private
+ */
+audion.entryPoints.resizeToFit_ = function() {
+  audion.entryPoints.paper_.scaleContentToFit({
+    'padding': 30
+  });
+};
+
+
+/**
  * Redraws the graph. Maybe expensive.
  * @private
  */
@@ -398,19 +421,23 @@ audion.entryPoints.redraw_ = function() {
   // Indicate that subsequent changes will need a new redraw.
   audion.entryPoints.isRedrawPending_ = false;
 
-  // Create the paper if we have not done so.
-  if (!audion.entryPoints.paper_) {
-    audion.entryPoints.paper_ = audion.entryPoints.createPaper_(
-        audion.entryPoints.graphContainer_, audion.entryPoints.graph_);
-  }
-
-  joint.layout.DirectedGraph.layout(audion.entryPoints.graph_, {
+  var layout = joint.layout.DirectedGraph.layout(audion.entryPoints.graph_, {
       'rankDir': 'LR',
       'setLinkVertices': false
     });
 
-  // TODO: Find out if this call is necessary.
-  audion.entryPoints.paper_.render();
+  if (!layout.width ||
+      !layout.height ||
+      !isFinite(layout.width) ||
+      !isFinite(layout.height)) {
+    // The layout failed. Perhaps the graph is empty.
+    return;
+  }
+
+  // Resize the paper.
+  if (audion.entryPoints.shouldRescaleOnRelayout_) {
+    audion.entryPoints.resizeToFit_();
+  }
 };
 
 
@@ -420,6 +447,11 @@ audion.entryPoints.redraw_ = function() {
  */
 audion.entryPoints.requestRedraw_ = function() {
   // TODO: Resize the paper when the panel window resizes.
+
+  if (audion.entryPoints.isRedrawPending_) {
+    // A redraw is pending already. Do not excessively redraw.
+    return;
+  }
 
   // Indicate that a redraw is pending.
   audion.entryPoints.isRedrawPending_ = true;

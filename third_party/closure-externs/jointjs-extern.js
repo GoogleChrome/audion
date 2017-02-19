@@ -170,6 +170,11 @@ joint.dia.Paper.prototype.remove = function() {};
  * Renders a paper.
  */
 joint.dia.Paper.prototype.render = function() {};
+/**
+ * Scales a paper's contents to fit.
+ * @param {!Object=} opt_options
+ */
+joint.dia.Paper.prototype.scaleContentToFit = function(opt_options) {};
 
 /** @constructor */
 joint.dia.Graph = function() {};
@@ -193,10 +198,22 @@ joint.dia.Graph.prototype.cloneCells = function(cells) {};
 joint.dia.Graph.prototype.on = function(event, handler) {};
 
 joint.layout.DirectedGraph = {};
+
+/**
+ * @typedef {{
+ *    x: number,
+ *    y: number,
+ *    width: number,
+ *    height: number 
+ * }}
+ */
+joint.layout.DirectedGraph.LayoutSpecification;
+
 /**
  * Lays out a graph.
  * @param {!joint.dia.Graph} graph
  * @param {!Object=} opt_options
+ * @return {!joint.layout.DirectedGraph.LayoutSpecification}
  */
 joint.layout.DirectedGraph.layout = function(graph, opt_options) {};
 
