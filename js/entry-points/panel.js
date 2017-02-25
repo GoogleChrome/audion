@@ -28,6 +28,14 @@ audion.entryPoints.graphContainer_ = /** @type {!Element} */ (
 
 
 /**
+ * The element that is the loading screen. This is normally hidden.
+ * @private {!Element}
+ */
+audion.entryPoints.loadingScreen_ = /** @type {!Element} */ (
+    document.getElementById('loading-screen'));
+
+
+/**
  * The hidden element we render text into to gauge the width of the text.
  * @private {!Element}
  */
@@ -63,6 +71,14 @@ audion.entryPoints.linkMapping_ = {};
  * @private {boolean}
  */
 audion.entryPoints.shouldRescaleOnRelayout_ = true;
+
+
+/**
+ * The ID of the settimeout for showing the loading screen (after some time
+ * frame of inactivity). If any such settimeout is pending.
+ * @private {?number}
+ */
+audion.entryPoints.loadingTimeoutId_ = null;
 
 
 /**
@@ -603,6 +619,14 @@ audion.entryPoints.redraw_ = function() {
   if (audion.entryPoints.shouldRescaleOnRelayout_) {
     audion.entryPoints.resizeToFit_();
   }
+
+  // Hide the loading screen if it is showing.
+  audion.entryPoints.loadingScreen_.classList.remove(goog.getCssName('shown'));
+  if (audion.entryPoints.loadingTimeoutId_) {
+    // Do not later show the loading screen.
+    goog.global.clearTimeout(audion.entryPoints.loadingTimeoutId_);
+    audion.entryPoints.loadingTimeoutId_ = null;
+  }
 };
 
 
@@ -620,6 +644,14 @@ audion.entryPoints.requestRedraw_ = function() {
 
   // Indicate that a redraw is pending.
   audion.entryPoints.isRedrawPending_ = true;
+
+  if (!goog.isNull(audion.entryPoints.loadingTimeoutId_)) {
+    audion.entryPoints.loadingTimeoutId_ = goog.global.setTimeout(function() {
+      // If rendering does not finish within 50 ms, show the loading screen.
+      audion.entryPoints.loadingScreen_.classList.add(goog.getCssName('shown'));
+      audion.entryPoints.loadingScreen_.loadingTimeoutId_ = null;
+    }, 50);
+  }
 
   // Throttle to every other frame.
   goog.global.requestAnimationFrame(function() {
