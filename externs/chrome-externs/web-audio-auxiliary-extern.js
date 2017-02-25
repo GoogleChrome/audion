@@ -21,10 +21,12 @@
  */
 
 
+
 /**
  * @constructor
  */
 function AudioWorkerNode() {}
+
 
 
 /**
@@ -39,6 +41,21 @@ function AudioWorker() {}
  * @return {!AudioWorkerNode}
  */
 AudioWorker.prototype.createNode = function(numberOfInputs, numberOfOutputs) {};
+
+
+
+/**
+ * @constructor
+ */
+function SpatialPannerNode() {}
+
+
+
+/**
+ * @return {!SpatialPannerNode}
+ */
+AudioContext.prototype.createSpatialPanner = function() {};
+
 
 
 /**

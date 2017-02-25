@@ -66,6 +66,35 @@ audion.entryPoints.shouldRescaleOnRelayout_ = true;
 
 
 /**
+ * A mapping from AudioNode type to the color that we should use to visualize
+ * it.
+ * @private @const {!Object.<string, string>}
+ */
+audion.entryPoints.nodeTypeToColorMapping_ = {
+  'Analyser': '#607D88',
+  'AudioBufferSource': '#4CAF50',
+  'AudioDestination': '#37474F',
+  'BiquadFilter': '#4F7942',
+  'ChannelMerger': '#607D8B',
+  'ChannelSplitter': '#607D8B',
+  'Convolver': '#4F7942',
+  'Delay': '#4F7942',
+  'DynamicsCompressor': '#4F7942',
+  'Gain': '#607D8B',
+  'IIRFilter': '#4F7942',
+  'MediaElementAudioSource': '#4CAF50',
+  'MediaStreamAudioDestination': '#37474F',
+  'MediaStreamAudioSource': '#4CAF50',
+  'Oscillator': '#4CAF50',
+  'Panner': '#4F7942',
+  'ScriptProcessor': '#607D88',
+  'SpatialPanner': '#4F7942',
+  'StereoPanner': '#4F7942',
+  'WaveShaper': '#4F7942'
+};
+
+
+/**
  * Creates a paper.
  * @param {!Element} graphContainer The DOM element that is the graph.
  * @param {?joint.dia.Graph} graph The graph to use.
@@ -185,8 +214,16 @@ audion.entryPoints.handleLinkCreated_ = function(link) {
  * @private
  */
 audion.entryPoints.handleNodeCreated_ = function(message) {
+  // Strip the node suffix. It is redundant.
+  var suffix = 'Node';
+  var nodeType = message.nodeType
+  if (nodeType.slice(-4) == suffix) {
+    // Remove "Node" from the type of the node.
+    nodeType = nodeType.substr(0, nodeType.length - suffix.length);
+  }
+
   var frameId = /** @type {number} */ (message.frameId);
-  var nodeLabel = message.nodeType + ' ' + message.nodeId;
+  var nodeLabel = nodeType + ' ' + message.nodeId;
 
   // Create labels for in ports.
   var ports = [];
@@ -224,8 +261,25 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
   var width = Math.max(textWidth, portWidth);
 
   // Create a node.
+  var nodeColor =
+      audion.entryPoints.nodeTypeToColorMapping_[nodeType] || '#000';
   new joint.shapes.basic.Rect({
     'id': audion.entryPoints.computeNodeGraphId_(frameId, message.nodeId),
+    'attrs': {
+        'rect': {
+          'fill': nodeColor,
+          'rx': 2,
+          'ry': 2,
+          'stroke-width': 0
+        },
+        'text': {
+          'fill': '#fff',
+          'text': nodeLabel
+        },
+        '.inPorts circle': {'fill': '#16A085'},
+        '.outPorts circle': {'fill': '#E74C3C'},
+        '.paramPorts circle': {'fill': '#90CAF9'}
+    },
     'size': {
       // Just a heuristic. Add a little padding.
       'width': width,
@@ -279,14 +333,6 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
           }
       },
       'items': ports
-    },
-    'attrs': {
-        'text': {
-          'text': nodeLabel
-        },
-        '.inPorts circle': {'fill': '#16A085'},
-        '.outPorts circle': {'fill': '#E74C3C'},
-        '.paramPorts circle': {'fill': '#90CAF9'}
     }
   }).addTo(audion.entryPoints.graph_);
 
@@ -542,7 +588,7 @@ audion.entryPoints.redraw_ = function() {
 
   var layout = joint.layout.DirectedGraph.layout(audion.entryPoints.graph_, {
       'rankDir': 'LR',
-      'setLinkVertices': false
+      'setLinkVertices': true
     });
 
   if (!layout.width ||
