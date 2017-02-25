@@ -244,6 +244,10 @@ function compileCss(callback) {
 
     // Minify CSS and create a rename mapping to be used during JS compilation.
     var renameMappingLocation = TEMPORARY_DIRECTORY + '/rename-mapping.js';
+    if (fs.existsSync(renameMappingLocation)) {
+      // Remove a potentially outdated version.
+      fs.unlinkSync(renameMappingLocation)
+    }
     return gulp.src('js/**/*.css')
       .pipe(less())
       .on('error', logError)

@@ -645,7 +645,7 @@ audion.entryPoints.requestRedraw_ = function() {
   // Indicate that a redraw is pending.
   audion.entryPoints.isRedrawPending_ = true;
 
-  if (!goog.isNull(audion.entryPoints.loadingTimeoutId_)) {
+  if (goog.isNull(audion.entryPoints.loadingTimeoutId_)) {
     audion.entryPoints.loadingTimeoutId_ = goog.global.setTimeout(function() {
       // If rendering does not finish within 50 ms, show the loading screen.
       audion.entryPoints.loadingScreen_.classList.add(goog.getCssName('shown'));
