@@ -125,6 +125,7 @@ body {
 }
 
 #updates-missing-screen {
+  background: #fff;
   display: none;
   position: absolute;
   bottom: 0;

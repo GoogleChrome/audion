@@ -36,6 +36,14 @@ audion.entryPoints.loadingScreen_ = /** @type {!Element} */ (
 
 
 /**
+ * Whether web audio updates are missing. If we are missing web audio updates,
+ * then the screen below is hidden.
+ * @private {boolean}
+ */
+audion.entryPoints.updatesAreMissing_ = false;
+
+
+/**
  * The element that is the screen notifying the user that web audio updates
  * occurred before dev tools opened, in which case the user must refresh to use
  * this tool. This element is normally hidden.
@@ -469,6 +477,7 @@ audion.entryPoints.handleMissingAudioUpdates_ = function() {
   // Show the screen that notifies the user. This screen occludes the tool.
   audion.entryPoints.missingUpdatesScreen_.classList.add(
       goog.getCssName('shown'));
+  audion.entryPoints.updatesAreMissing_ = true;
 };
 
 
@@ -481,6 +490,7 @@ audion.entryPoints.handlePageOfTabChanged_ = function() {
   audion.entryPoints.graph_.clear();
 
   // Well, the tab just changed, so we can't be missing audio updates.
+  audion.entryPoints.updatesAreMissing_ = false;
   audion.entryPoints.missingUpdatesScreen_.classList.remove(
       goog.getCssName('shown'));
 
@@ -738,6 +748,21 @@ audion.entryPoints.resetUi_ = function() {
  * {!AudionMessageFromFrame} message The message to receive.
  */
 audion.entryPoints.acceptMessage_ = function(message) {
+  if (audion.entryPoints.updatesAreMissing_) {
+    // If updates are missing, ignore web audio updates. The user has to refresh
+    // the page to use this tool. The messages below are web audio updates.
+    switch (message.type) {
+      case audion.messaging.MessageType.NODE_CREATED:
+      case audion.messaging.MessageType.NODE_TO_NODE_CONNECTED:
+      case audion.messaging.MessageType.NODE_TO_PARAM_CONNECTED:
+      case audion.messaging.MessageType.ALL_DISCONNECTED:
+      case audion.messaging.MessageType.NODE_FROM_NODE_DISCONNECTED:
+      case audion.messaging.MessageType.NODE_FROM_PARAM_DISCONNECTED:
+      case audion.messaging.MessageType.AUDIO_NODE_PROPERTIES_UPDATE:
+        return;
+    }
+  }
+
   switch(message.type) {
     case audion.messaging.MessageType.NODE_CREATED:
       audion.entryPoints.handleNodeCreated_(
