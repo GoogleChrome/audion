@@ -101,10 +101,6 @@ body {
   display: none;
 }
 
-#loading-screen.shown {
-  display: block;
-}
-
 #loading-screen.shown #spinner {
   border: 10px solid #f3f3f3;
   border-radius: 50%;
@@ -126,4 +122,18 @@ body {
 @keyframes spin {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
+}
+
+#updates-missing-screen {
+  display: none;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  top: 0;
+  padding: 20px;
+}
+
+#loading-screen.shown, #updates-missing-screen.shown {
+  display: block;
 }

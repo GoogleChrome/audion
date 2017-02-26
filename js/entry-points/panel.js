@@ -21,23 +21,33 @@ goog.require('audion.messaging.Util');
 
 /**
  * The element that contains all graph logic.
- * @private {!Element}
+ * @private @const {!Element}
  */
 audion.entryPoints.graphContainer_ = /** @type {!Element} */ (
     document.getElementById('graph'));
 
 
 /**
- * The element that is the loading screen. This is normally hidden.
- * @private {!Element}
+ * The element that is the loading screen. This element is normally hidden.
+ * @private @const {!Element}
  */
 audion.entryPoints.loadingScreen_ = /** @type {!Element} */ (
     document.getElementById('loading-screen'));
 
 
 /**
+ * The element that is the screen notifying the user that web audio updates
+ * occurred before dev tools opened, in which case the user must refresh to use
+ * this tool. This element is normally hidden.
+ * @private @const {!Element}
+ */
+audion.entryPoints.missingUpdatesScreen_ = /** @type {!Element} */ (
+    document.getElementById('updates-missing-screen'));
+
+
+/**
  * The hidden element we render text into to gauge the width of the text.
- * @private {!Element}
+ * @private @const {!Element}
  */
 audion.entryPoints.textSandbox_ = /** @type {!Element} */ (
     document.getElementById('text-sandbox'));
@@ -45,7 +55,7 @@ audion.entryPoints.textSandbox_ = /** @type {!Element} */ (
 
 /**
  * The last recorded graph to render if any.
- * @private {!joint.dia.Graph}
+ * @private @const {!joint.dia.Graph}
  */
 audion.entryPoints.graph_ = new joint.dia.Graph();
 
@@ -246,7 +256,12 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
   for (var i = 0; i < message.numberOfInputs; i++) {
     ports.push({
       'id': audion.entryPoints.inPortLabel_(frameId, message.nodeId, i),
-      'group': 'in'
+      'group': 'in',
+      'attrs': {
+        'text': {
+          'text': i
+        }
+      }
     });
   }
 
@@ -254,7 +269,12 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
   for (var i = 0; i < message.numberOfOutputs; i++) {
     ports.push({
       'id': audion.entryPoints.outPortLabel_(frameId, message.nodeId, i),
-      'group': 'out'
+      'group': 'out',
+      'attrs': {
+        'text': {
+          'text': i
+        }
+      }
     });
   }
 
@@ -263,7 +283,12 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
     ports.push({
       'id': audion.entryPoints.audioParamPortLabel_(
           frameId, message.nodeId, message.audioParamNames[i]),
-      'group': 'param'
+      'group': 'param',
+      'attrs': {
+        'text': {
+          'text': message.audioParamNames[i]
+        }
+      }
     });
   }
 
@@ -307,45 +332,67 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
       'groups': {
           'in': {
               'attrs': {
-                  'text': {'fill': '#000000'},
-                  'circle':
-                      {
-                        'fill': '#00ff00',
-                        'stroke': '#000000',
-                        'magnet': 'passive'
-                      }
+                  'circle': {
+                    'fill': '#00ff00',
+                    'stroke': '#000000',
+                    'magnet': 'passive'
+                  }
               },
               'interactive': false,
               'position': 'left',
-              'label': null
+              'label': {
+                  'position': {
+                      'name' :'bottom',
+                      'args': {
+                          'x': 0,
+                          'y': -3
+                      }
+                  }
+              }
           },
           'out': {
               'attrs': {
-                  'text': {'fill': '#000000' },
-                  'circle':
-                      {
-                        'fill': '#ff0000',
-                        'stroke': '#000000',
-                        'magnet': true
-                      }
+                  'circle': {
+                    'fill': '#ff0000',
+                    'stroke': '#000000',
+                    'magnet': true
+                  }
               },
               'interactive': false,
               'position': 'right',
-              'label': null
+              'label': {
+                  'position': {
+                      'name' :'bottom',
+                      'args': {
+                          'x': 0,
+                          'y': -3
+                      }
+                  }
+              }
           },
           'param': {
               'attrs': {
-                  'text': {'fill': '#000000'},
-                  'circle':
-                      {
-                        'fill': '#0000ff',
-                        'stroke': '#000000',
-                        'magnet': 'passive'
-                      }
+                  'text': {
+                    'fill': '#707070',
+                  },
+                  'circle': {
+                    'fill': '#0000ff',
+                    'stroke': '#000000',
+                    'magnet': 'passive'
+                  }
               },
               'interactive': false,
               'position': 'bottom',
-              'label': null
+              'label': {
+                  'position': {
+                      'name' : 'right',
+                      'args': {
+                          'x': 0,
+                          'y': 13,
+                          'angle': 80
+                      }
+                  }
+              }
           }
       },
       'items': ports
@@ -419,7 +466,9 @@ audion.entryPoints.handleNodeToNodeConnected_ = function(message) {
  * @private
  */
 audion.entryPoints.handleMissingAudioUpdates_ = function() {
-  audion.entryPoints.audioUpdatesMissing_ = true;
+  // Show the screen that notifies the user. This screen occludes the tool.
+  audion.entryPoints.missingUpdatesScreen_.classList.add(
+      goog.getCssName('shown'));
 };
 
 
@@ -432,10 +481,11 @@ audion.entryPoints.handlePageOfTabChanged_ = function() {
   audion.entryPoints.graph_.clear();
 
   // Well, the tab just changed, so we can't be missing audio updates.
-  audion.entryPoints.audioUpdatesMissing_ = false;
+  audion.entryPoints.missingUpdatesScreen_.classList.remove(
+      goog.getCssName('shown'));
 
   // Tell the panel to reset to this empty graph.
-  audion.entryPoints.resetUi_(audion.entryPoints.graph_);
+  audion.entryPoints.resetUi_();
 };
 
 
@@ -595,6 +645,23 @@ audion.entryPoints.resizeToFit_ = function() {
 
 
 /**
+ * Removes the loading screen. And prevents it from showing if a request to load
+ * the screen is pending. Does nothing if the screen is not showing and is not
+ * slated to be shown.
+ * @private
+ */
+audion.entryPoints.removeLoadingScreen_ = function() {
+  // Hide the loading screen if it is showing.
+  audion.entryPoints.loadingScreen_.classList.remove(goog.getCssName('shown'));
+  if (!goog.isNull(audion.entryPoints.loadingTimeoutId_)) {
+    // Do not later show the loading screen.
+    goog.global.clearTimeout(audion.entryPoints.loadingTimeoutId_);
+    audion.entryPoints.loadingTimeoutId_ = null;
+  }
+};
+
+
+/**
  * Redraws the graph. Maybe expensive.
  * @private
  */
@@ -612,6 +679,7 @@ audion.entryPoints.redraw_ = function() {
       !isFinite(layout.width) ||
       !isFinite(layout.height)) {
     // The layout failed. Perhaps the graph is empty.
+    audion.entryPoints.removeLoadingScreen_();
     return;
   }
 
@@ -620,13 +688,7 @@ audion.entryPoints.redraw_ = function() {
     audion.entryPoints.resizeToFit_();
   }
 
-  // Hide the loading screen if it is showing.
-  audion.entryPoints.loadingScreen_.classList.remove(goog.getCssName('shown'));
-  if (audion.entryPoints.loadingTimeoutId_) {
-    // Do not later show the loading screen.
-    goog.global.clearTimeout(audion.entryPoints.loadingTimeoutId_);
-    audion.entryPoints.loadingTimeoutId_ = null;
-  }
+  audion.entryPoints.removeLoadingScreen_();
 };
 
 
@@ -663,11 +725,9 @@ audion.entryPoints.requestRedraw_ = function() {
 /**
  * Resets the UI. Hides warning about missing audio updates. Resets panning and
  * zooming.
- * @param {!joint.dia.Graph} visualGraph
  * @private
  */
-audion.entryPoints.resetUi_ = function(visualGraph) {
-  audion.entryPoints.graph_ = visualGraph;
+audion.entryPoints.resetUi_ = function() {
   audion.entryPoints.shouldRescaleOnRelayout_ = true;
   audion.entryPoints.requestRedraw_();
 };
@@ -730,6 +790,14 @@ audion.entryPoints.panel = function() {
   // Handle link creation.
   audion.entryPoints.graph_.on(
       'change:source change:target', audion.entryPoints.handleLinkCreated_);
+
+  // When the window resizes, resize the tool.
+  window.addEventListener('resize', function() {
+    audion.entryPoints.paper_.setDimensions(
+        audion.entryPoints.graphContainer_.offsetWidth,
+        audion.entryPoints.graphContainer_.offsetHeight);
+    audion.entryPoints.requestRedraw_();
+  });
 };
 
 
