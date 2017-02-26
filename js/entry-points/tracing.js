@@ -655,6 +655,260 @@ audion.entryPoints.tracing = function() {
   AudioContext.prototype.createStereoPanner = wrapNativeFunction(
       AudioContext.prototype.createStereoPanner, newNodeDecorator);
 
+  // Instrument the AudioNode constructors. AudioNodes could be created from
+  // either "create methods" or constructors.
+
+  /**
+   * Creates an AudioNode using a constructor. Instruments the AudioNode.
+   * @param {!Function} originalConstructor
+   * @return {!Array.<*>} argumentsList A *list* of arguments.
+   */
+  function createAudioNodeUsingConstructor(originalConstructor, argumentsList) {
+    // Null is the context. We cannot append to Arguments because it's not a
+    // list. We convert it to a list by slicing.
+    var audioNode = /** @type {!AudioNode} */ (
+        new (Function.prototype.bind.apply(
+            originalConstructor, [null].concat(argumentsList))));
+    instrumentNode(audioNode)
+    return audioNode;
+  }
+  if (typeof window['AudioWorkerNode'] == 'function') {
+    var constructorName = 'AudioWorkerNode';
+    var originalAudioWorkerNodeConstructor = AudioWorkerNode;
+    AudioWorkerNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalAudioWorkerNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    AudioWorkerNode['prototype'] = originalAudioWorkerNodeConstructor.prototype;
+    AudioWorkerNode['prototype']['constructor'] = AudioWorkerNode;
+  }
+  if (typeof window['AnalyserNode'] == 'function') {
+    var constructorName = 'AnalyserNode';
+    var originalAnalyserNodeConstructor = AnalyserNode;
+    AnalyserNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalAnalyserNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    AnalyserNode['prototype'] = originalAnalyserNodeConstructor.prototype;
+    AnalyserNode['prototype']['constructor'] = AnalyserNode;
+  }
+  if (typeof window['BiquadFilterNode'] == 'function') {
+    var constructorName = 'BiquadFilterNode';
+    var originalBiquadFilterNodeConstructor = BiquadFilterNode;
+    BiquadFilterNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalBiquadFilterNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    BiquadFilterNode['prototype'] =
+        originalBiquadFilterNodeConstructor.prototype;
+    BiquadFilterNode['prototype']['constructor'] = BiquadFilterNode;
+  }
+  if (typeof window['AudioBufferSourceNode'] == 'function') {
+    var constructorName = 'AudioBufferSourceNode';
+    var originalAudioBufferSourceNodeConstructor = AudioBufferSourceNode;
+    AudioBufferSourceNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalAudioBufferSourceNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    AudioBufferSourceNode['prototype'] =
+        originalAudioBufferSourceNodeConstructor.prototype;
+    AudioBufferSourceNode['prototype']['constructor'] = AudioBufferSourceNode;
+  }
+  if (typeof window['ScriptProcessorNode'] == 'function') {
+    var constructorName = 'ScriptProcessorNode';
+    var originalScriptProcessorNodeConstructor = ScriptProcessorNode;
+    ScriptProcessorNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalScriptProcessorNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    ScriptProcessorNode['prototype'] =
+        originalScriptProcessorNodeConstructor.prototype;
+    ScriptProcessorNode['prototype']['constructor'] = ScriptProcessorNode;
+  }
+  if (typeof window['ChannelMergerNode'] == 'function') {
+    var constructorName = 'ChannelMergerNode';
+    var originalChannelMergerNodeConstructor = ChannelMergerNode;
+    ChannelMergerNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalChannelMergerNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    ChannelMergerNode['prototype'] =
+        originalChannelMergerNodeConstructor.prototype;
+    ChannelMergerNode['prototype']['constructor'] = ChannelMergerNode;
+  }
+  if (typeof window['ChannelSplitterNode'] == 'function') {
+    var constructorName = 'ChannelSplitterNode';
+    var originalChannelSplitterNodeConstructor = ChannelSplitterNode;
+    ChannelSplitterNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalChannelSplitterNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    ChannelSplitterNode['prototype'] =
+        originalChannelSplitterNodeConstructor.prototype;
+    ChannelSplitterNode['prototype']['constructor'] = ChannelSplitterNode;
+  }
+  if (typeof window['ConvolverNode'] == 'function') {
+    var constructorName = 'ConvolverNode';
+    var originalConvolverNodeConstructor = ConvolverNode;
+    ConvolverNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalConvolverNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    ConvolverNode['prototype'] = originalConvolverNodeConstructor.prototype;
+    ConvolverNode['prototype']['constructor'] = ConvolverNode;
+  }
+  if (typeof window['DelayNode'] == 'function') {
+    var constructorName = 'DelayNode';
+    var originalDelayNodeConstructor = DelayNode;
+    DelayNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalDelayNodeConstructor, Array.prototype.slice.call(arguments));
+    };
+    DelayNode['prototype'] = originalDelayNodeConstructor.prototype;
+    DelayNode['prototype']['constructor'] = DelayNode;
+  }
+  if (typeof window['DynamicsCompressorNode'] == 'function') {
+    var constructorName = 'DynamicsCompressorNode';
+    var originalDynamicsCompressorNodeConstructor = DynamicsCompressorNode;
+    DynamicsCompressorNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalDynamicsCompressorNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    DynamicsCompressorNode['prototype'] =
+        originalDynamicsCompressorNodeConstructor.prototype;
+    DynamicsCompressorNode['prototype']['constructor'] = DynamicsCompressorNode;
+  }
+  if (typeof window['GainNode'] == 'function') {
+    var constructorName = 'GainNode';
+    var originalGainNodeConstructor = GainNode;
+    GainNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalGainNodeConstructor, Array.prototype.slice.call(arguments));
+    };
+    GainNode['prototype'] = originalGainNodeConstructor.prototype;
+    GainNode['prototype']['constructor'] = GainNode;
+  }
+  if (typeof window['IIRFilterNode'] == 'function') {
+    var constructorName = 'IIRFilterNode';
+    var originalIIRFilterNodeConstructor = IIRFilterNode;
+    IIRFilterNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalIIRFilterNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    IIRFilterNode['prototype'] = originalIIRFilterNodeConstructor.prototype;
+    IIRFilterNode['prototype']['constructor'] = IIRFilterNode;
+  }
+  if (typeof window['WaveShaperNode'] == 'function') {
+    var constructorName = 'WaveShaperNode';
+    var originalWaveShaperNodeConstructor = WaveShaperNode;
+    WaveShaperNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalWaveShaperNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    WaveShaperNode['prototype'] = originalWaveShaperNodeConstructor.prototype;
+    WaveShaperNode['prototype']['constructor'] = WaveShaperNode;
+  }
+  if (typeof window['MediaElementAudioSourceNode'] == 'function') {
+    var constructorName = 'MediaElementAudioSourceNode';
+    var originalMediaElementAudioSourceNodeConstructor =
+        MediaElementAudioSourceNode;
+    MediaElementAudioSourceNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalMediaElementAudioSourceNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    MediaElementAudioSourceNode['prototype'] =
+        originalMediaElementAudioSourceNodeConstructor.prototype;
+    MediaElementAudioSourceNode['prototype']['constructor'] =
+        MediaElementAudioSourceNode;
+  }
+  if (typeof window['MediaStreamAudioDestinationNode'] == 'function') {
+    var constructorName = 'MediaStreamAudioDestinationNode';
+    var originalMediaStreamAudioDestinationNodeConstructor =
+        MediaStreamAudioDestinationNode;
+    MediaStreamAudioDestinationNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalMediaStreamAudioDestinationNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    MediaStreamAudioDestinationNode['prototype'] =
+        originalMediaStreamAudioDestinationNodeConstructor.prototype;
+    MediaStreamAudioDestinationNode['prototype']['constructor'] =
+        MediaStreamAudioDestinationNode;
+  }
+  if (typeof window['MediaStreamAudioSourceNode'] == 'function') {
+    var constructorName = 'MediaStreamAudioSourceNode';
+    var originalMediaStreamAudioSourceNodeConstructor =
+        MediaStreamAudioSourceNode;
+    MediaStreamAudioSourceNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalMediaStreamAudioSourceNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    MediaStreamAudioSourceNode['prototype'] =
+        originalMediaStreamAudioSourceNodeConstructor.prototype;
+    MediaStreamAudioSourceNode['prototype']['constructor'] =
+        MediaStreamAudioSourceNode;
+  }
+  if (typeof window['OscillatorNode'] == 'function') {
+    var constructorName = 'OscillatorNode';
+    var originalOscillatorNodeConstructor = OscillatorNode;
+    OscillatorNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalOscillatorNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    OscillatorNode['prototype'] =
+        originalOscillatorNodeConstructor.prototype;
+    OscillatorNode['prototype']['constructor'] = OscillatorNode;
+  }
+  if (typeof window['PannerNode'] == 'function') {
+    var constructorName = 'PannerNode';
+    var originalPannerNodeConstructor = PannerNode;
+    PannerNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalPannerNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    PannerNode['prototype'] = originalPannerNodeConstructor.prototype;
+    PannerNode['prototype']['constructor'] = PannerNode;
+  }
+  if (typeof window['SpatialPannerNode'] == 'function') {
+    var constructorName = 'SpatialPannerNode';
+    var originalSpatialPannerNodeConstructor = SpatialPannerNode;
+    SpatialPannerNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalSpatialPannerNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    SpatialPannerNode['prototype'] =
+        originalSpatialPannerNodeConstructor.prototype;
+    SpatialPannerNode['prototype']['constructor'] = SpatialPannerNode;
+  }
+  if (typeof window['StereoPannerNode'] == 'function') {
+    var constructorName = 'StereoPannerNode';
+    var originalStereoPannerNodeConstructor = StereoPannerNode;
+    StereoPannerNode = function() {
+      return createAudioNodeUsingConstructor(
+          originalStereoPannerNodeConstructor,
+          Array.prototype.slice.call(arguments));
+    };
+    StereoPannerNode['prototype'] =
+        originalStereoPannerNodeConstructor.prototype;
+    StereoPannerNode['prototype']['constructor'] = StereoPannerNode;
+  }
+
   // Instrument the native AudioContext constructor. Patch the prototype chain.
   AudioContext = function() {
     var newContext = new nativeAudioContextConstructor();

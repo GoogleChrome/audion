@@ -24,6 +24,15 @@
 
 /**
  * @constructor
+ * @extends {AudioNode}
+ */
+function AnalyserNode() {}
+
+
+
+/**
+ * @constructor
+ * @extends {AudioNode}
  */
 function AudioWorkerNode() {}
 
@@ -46,6 +55,23 @@ AudioWorker.prototype.createNode = function(numberOfInputs, numberOfOutputs) {};
 
 /**
  * @constructor
+ * @extends {AudioNode}
+ */
+function ChannelMergerNode() {}
+
+
+
+/**
+ * @constructor
+ * @extends {AudioNode}
+ */
+function ChannelSplitterNode() {}
+
+
+
+/**
+ * @constructor
+ * @extends {AudioNode}
  */
 function SpatialPannerNode() {}
 
@@ -60,6 +86,7 @@ AudioContext.prototype.createSpatialPanner = function() {};
 
 /**
  * @constructor
+ * @extends {AudioNode}
  */
 function IIRFilterNode() {}
 
@@ -70,3 +97,10 @@ function IIRFilterNode() {}
  * @return {!IIRFilterNode}
  */
 AudioContext.prototype.createIIRFilter = function(feedforward, feedback) {};
+
+
+/**
+ * @constructor
+ * @extends {AudioNode}
+ */
+function PannerNode() {}
