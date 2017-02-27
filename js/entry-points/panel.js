@@ -142,7 +142,7 @@ audion.entryPoints.nodeTypeToColorMapping_ = {
  * @private
  */
 audion.entryPoints.createPaper_ = function(graphContainer, graph) {
-  return new joint.dia.Paper({
+  var paper = new joint.dia.Paper({
     'el': graphContainer,
     'width': graphContainer.offsetWidth,
     'height': graphContainer.offsetHeight,
@@ -165,6 +165,8 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
       return true;
     }
   });
+
+  return paper;
 };
 
 
@@ -174,6 +176,24 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
  */
 audion.entryPoints.paper_ = audion.entryPoints.createPaper_(
     audion.entryPoints.graphContainer_, audion.entryPoints.graph_);
+
+
+/**
+ * An object that manages panning and zooming.
+ * @private {!Object}
+ */
+audion.entryPoints.panZoomObject_ = goog.global['svgPanZoom'](
+    audion.entryPoints.graphContainer_.firstChild, {
+    'viewportSelector':
+        audion.entryPoints.graphContainer_.firstChild.firstChild,
+    'zoomEnabled': true,
+    'controlIconsEnabled': false,
+    'minZoom': 0.1,
+    'zoomScaleSensitivity': 0.3,
+    'dblClickZoomEnabled': false,
+    'fit': false,
+    'center': false
+  });
 
 
 /**
@@ -683,11 +703,12 @@ audion.entryPoints.handleAudioNodePropertiesUpdate_ = function(message) {
  * @private
  */
 audion.entryPoints.resizeToFit_ = function() {
+  audion.entryPoints.panZoomObject_['updateBBox']();
+  audion.entryPoints.panZoomObject_['fit']();
+  audion.entryPoints.panZoomObject_['center']();
   audion.entryPoints.paper_.scaleContentToFit({
     'padding': 30
   });
-  audion.entryPoints.zoom_ = goog.global['V'](
-      audion.entryPoints.paper_.viewport)['scale']()['sx'];
 };
 
 
@@ -757,7 +778,6 @@ audion.entryPoints.resetUi_ = function() {
   // actively manipulates the view, in which case we do not want to override
   // the user's preference for a view.
   audion.entryPoints.shouldRescaleOnRelayout_ = true;
-  audion.entryPoints.paper_.setOrigin(0, 0);
   audion.entryPoints.requestRedraw_();
 };
 
@@ -821,69 +841,36 @@ audion.entryPoints.acceptMessage_ = function(message) {
 };
 
 
-// /**
-//  * The entry point for the script to run in our web audio Chrome dev panel -
-//  * the actual UI of the panel.
-//  */
-// audion.entryPoints.panel = function() {
-//   // Define some functions global to the panel window namespace so that the dev
-//   // tools script (which has complete access to the panel page window upon
-//   // creating the panel page) can directly call the functions to change the UI.
-//   goog.global['acceptMessage'] = audion.entryPoints.acceptMessage_;
+/**
+ * The entry point for the script to run in our web audio Chrome dev panel -
+ * the actual UI of the panel.
+ */
+audion.entryPoints.panel = function() {
+  // Define some functions global to the panel window namespace so that the dev
+  // tools script (which has complete access to the panel page window upon
+  // creating the panel page) can directly call the functions to change the UI.
+  goog.global['acceptMessage'] = audion.entryPoints.acceptMessage_;
 
-//   // Handle link creation.
-//   audion.entryPoints.graph_.on(
-//       'change:source change:target', audion.entryPoints.handleLinkCreated_);
+  // Handle link creation.
+  audion.entryPoints.graph_.on(
+      'change:source change:target', audion.entryPoints.handleLinkCreated_);
 
-//   // When the window resizes, resize the tool.
-//   window.addEventListener('resize', function() {
-//     audion.entryPoints.paper_.setDimensions(
-//         audion.entryPoints.graphContainer_.offsetWidth,
-//         audion.entryPoints.graphContainer_.offsetHeight);
-//     audion.entryPoints.requestRedraw_();
-//   });
+  // When the window resizes, resize the tool.
+  window.addEventListener('resize', function() {
+    audion.entryPoints.paper_.setDimensions(
+        audion.entryPoints.graphContainer_.offsetWidth,
+        audion.entryPoints.graphContainer_.offsetHeight);
+    audion.entryPoints.panZoomObject_['resize']();
+    audion.entryPoints.requestRedraw_();
+  });
 
-//   // Let the user resize the graph to fit the whole graph.
-//   document.getElementById('resize-to-fit-button').addEventListener('click',
-//       function(event) {
-//     event.preventDefault();
-//     audion.entryPoints.resetUi_();
-//     return false;
-//   });
-
-//   // Let the user zoom in or out.
-//   audion.entryPoints.paper_['$el']['on']('wheel',
-//       function(event) {
-//     event = /** @type {!WheelEvent} */ (event['originalEvent']);
-//     event.preventDefault();
-//     var factor = audion.entryPoints.zoomSensitivity_;
-//     if (event.deltaY > 0) {
-//       // This was a zoom out.
-//       factor = 1 / factor;
-//     }
-//     var newZoom = audion.entryPoints.zoom_ * factor;
-//     audion.entryPoints.zoom_ = newZoom;
-
-//     // TODO: Use a much more stable means of converting to viewport coordinates.
-//     // Today, if the user is zoomed too far out, the inverse matrix has some
-//     // crazy values.
-//     var svgPoint = audion.entryPoints.paper_.svg.createSVGPoint();
-//     svgPoint.x = event.offsetX;
-//     svgPoint.y = event.offsetY;
-//     var pointTransformed = svgPoint.matrixTransform(
-//         audion.entryPoints.paper_.viewport.getCTM().inverse());
-
-//     audion.entryPoints.paper_.setOrigin(0, 0);
-//     audion.entryPoints.paper_.scale(
-//         audion.entryPoints.zoom_,
-//         audion.entryPoints.zoom_,
-//         pointTransformed.x,
-//         pointTransformed.y);
-//     // Do not rescale the graph now during redraws. We might override a user
-//     // preference for a view.
-//     audion.entryPoints.shouldRescaleOnRelayout_ = false;
-//     return false;
-//   });
+  // Let the user resize the graph to fit the whole graph.
+  document.getElementById('resize-to-fit-button').addEventListener('click',
+      function(event) {
+    event.preventDefault();
+    audion.entryPoints.resetUi_();
+    return false;
+  });
 };
 
 

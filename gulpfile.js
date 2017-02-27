@@ -89,7 +89,8 @@ function copyThirdPartyJs() {
       'node_modules/graphlib/dist/graphlib.min.js',
       'node_modules/dagre/dist/dagre.core.min.js',
       'node_modules/jointjs/dist/joint.js',
-      'node_modules/jointjs/dist/joint.min.js'
+      'node_modules/jointjs/dist/joint.min.js',
+      'third_party/js/**/*.js'
     ])
     .pipe(gulp.dest('build/js'));
 }
@@ -111,7 +112,7 @@ function copyThirdPartyCss() {
  */
 function compileBackgroundScript() {
   return compileJs(
-      'audion.entryPoints.background', 'build/js', 'background.js');
+      'audion.entryPoints.background', 'build/js', 'background.js', false);
 }
 
 
@@ -121,7 +122,10 @@ function compileBackgroundScript() {
  */
 function compileTabPageChangedEntryPoint() {
   return compileJs(
-      'audion.entryPoints.tabPageChanged', 'build/js', 'tab-page-changed.js');
+      'audion.entryPoints.tabPageChanged',
+      'build/js',
+      'tab-page-changed.js',
+      false);
 }
 
 
@@ -132,7 +136,10 @@ function compileTabPageChangedEntryPoint() {
  */
 function compileTracingInjectorEntryPoint() {
   return compileJs(
-      'audion.entryPoints.injectTracing', 'build/js', 'inject-tracing.js');
+      'audion.entryPoints.injectTracing',
+      'build/js',
+      'inject-tracing.js',
+      false);
 }
 
 
@@ -141,7 +148,11 @@ function compileTracingInjectorEntryPoint() {
  * @return {!Object} The gulp result from compilation.
  */
 function compileDevToolsEntryPoint() {
-  return compileJs('audion.entryPoints.devTools', 'build/js', 'dev-tools.js');
+  return compileJs(
+      'audion.entryPoints.devTools',
+      'build/js',
+      'dev-tools.js',
+      false);
 }
 
 
@@ -150,7 +161,7 @@ function compileDevToolsEntryPoint() {
  * @return {!Object} The gulp result from compilation.
  */
 function compilePanelEntryPoint() {
-  return compileJs('audion.entryPoints.panel', 'build/js', 'panel.js');
+  return compileJs('audion.entryPoints.panel', 'build/js', 'panel.js', true);
 }
 
 
@@ -164,7 +175,8 @@ function compileTracingEntryPoint() {
   return compileJs(
       'audion.entryPoints.tracing',
       TEMPORARY_DIRECTORY,
-      'instrument-web-audio-code.js')
+      'instrument-web-audio-code.js',
+      false)
            .pipe(change(function(content) {
              // Wrap the generated code to inject for tracing with a closure.
              // Directly call the closure within this string.
@@ -187,16 +199,24 @@ function compileTracingEntryPoint() {
  * @param {string} entryPoint The entry point. Must be provided somewhere.
  * @param {string} destDirectory The destination directory of compilation.
  * @param {string} compiledFileName The file name of the compiled script.
+ * @param {boolean} requireCssVocabulary If true, the compilation requires
+ *     the CSS vocabulary from CSS compilation to already exist.
  * @return {!Object} The gulp result from compilation.
  */
-function compileJs(entryPoint, destDirectory, compiledFileName) {
+function compileJs(
+    entryPoint,
+    destDirectory,
+    compiledFileName,
+    requireCssVocabulary) {
+  var entryPoints = [entryPoint];
+  if (requireCssVocabulary) {
+    entryPoints.push('cssVocabulary');
+  }
+
   // Determine whether to compile in whitespace mode for debugging.
   var closureCompilerFlags = {
     // The entry point for JS to run.
-    closure_entry_point: [
-      'cssVocabulary',
-      entryPoint,
-    ],
+    closure_entry_point: entryPoints,
 
     externs: ['externs/**/*.js', 'third_party/closure-externs/**/*.js'],
     // Do not include any un-needed JS in our app.
