@@ -970,6 +970,26 @@ audion.entryPoints.tracing = function() {
         break;
     }
   });
+
+  /**
+   * A global method for the user (developer) to be able to fetch AudioNodes
+   * from the console. The user gleans the ID from the graph visualization.
+   * @param {number} audioNodeId The ID of the AudioNode assigned by this tool.
+   * @return {?AudioNode} The AudioNode if there is one with the ID.
+   */
+  window['__node__'] = function(audioNodeId) {
+    var resource = audion.entryPoints.idToResource_[audioNodeId];
+    if (!resource) {
+      // No such node with this ID.
+      return null;
+    }
+    resource = /** @type {!audion.entryPoints.AudioNodeData_} */ (resource);
+    if (!(resource.node instanceof AudioNode)) {
+      // This is not an AudioNode. It could be an AudioContext. Or a param.
+      return null;
+    }
+    return resource.node;
+  };
 };
 
 

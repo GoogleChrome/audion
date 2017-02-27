@@ -133,6 +133,14 @@ joint.dia.Paper = function(attrs) {};
 joint.dia.Paper.prototype.options;
 joint.dia.Paper.prototype.viewport;
 /**
+ * @type {!SVGSVGElement}
+ */
+joint.dia.Paper.prototype.svg;
+/**
+ * @type {!SVGElement}
+ */
+joint.dia.Paper.prototype.viewport;
+/**
  * @type {!joint.dia.Graph}
  */
 joint.dia.Paper.prototype.model;
@@ -160,8 +168,10 @@ joint.dia.Paper.prototype.setOrigin = function(x, y) {};
 /**
  * @param {number} sx
  * @param {number} sy
+ * @param {number=} opt_x
+ * @param {number=} opt_y
  */
-joint.dia.Paper.prototype.scale = function(sx, sy) {};
+joint.dia.Paper.prototype.scale = function(sx, sy, opt_x, opt_y) {};
 /**
  * Removes a paper.
  */
@@ -191,6 +201,11 @@ joint.dia.Graph.prototype.resetCells = function(cells) {};
  * @param {!Array<!joint.dia.Cell>} cells
  */
 joint.dia.Graph.prototype.cloneCells = function(cells) {};
+/**
+ * TODO(chizeng): Figure out the type of the elements.
+ * @return {!Array<!Object>}
+ */
+joint.dia.Graph.prototype.getElements = function() {};
 /**
  * @param {string} event
  * @param {!Function} handler

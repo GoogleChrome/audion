@@ -64,22 +64,29 @@ body {
   opacity: 1;
 }
 
-.resizeToFitButton {
-  border: 5px dashed;
-  border-radius: 5px;
-  box-sizing: border-box;
-  cursor: pointer;
-  padding: 4px;
-  width: 40px;
-  height: 40px;
+#lower-left-menu {
+  position: absolute;
+  bottom: 10px;
+  left: 10px;
 }
 
-.resizeToFitButton > div {
-  border: 1px dashed;
-  width: 100%;
-  height: 100%;
-  box-sizing: border-box;
-  border-radius: 5px;
+#lower-left-menu img {
+  user-select: none;
+  -webkit-user-drag: none;
+  user-drag: none;
+  -webkit-touch-callout: none;
+}
+
+#resize-to-fit-button {
+  cursor: pointer;
+  opacity: 0.5;
+  height: 35px;
+  transition: opacity 0.3s;
+  width: 35px;
+}
+
+#resize-to-fit-button:hover {
+  opacity: 1;
 }
 
 #text-sandbox {
@@ -98,7 +105,13 @@ body {
   left: 0;
   right: 0;
   top: 0;
-  display: none;
+  visibility: hidden;
+  opacity: 0;
+}
+
+#loading-screen.shown {
+  visibility: visible;
+  opacity: 1;
 }
 
 #loading-screen.shown #spinner {
@@ -135,6 +148,6 @@ body {
   padding: 20px;
 }
 
-#loading-screen.shown, #updates-missing-screen.shown {
+#updates-missing-screen.shown {
   display: block;
 }

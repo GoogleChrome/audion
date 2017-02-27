@@ -1,12 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
+  <title>Web Audio</title>
   <link rel='stylesheet' type='text/css' href='css/c.css'>
   <link rel='stylesheet' type='text/css' href='css/joint.min.css'>
+  <style>
+    /** Hide JointJS tools that appear on links during hover. */
+    .connection-wrap, .marker-arrowhead, .link-tools, .marker-vertices {
+      display: none;
+    }
+  </style>
 </head>
 <body>
   <div id='text-sandbox'></div>
   <div id='graph'></div>
+  <div id='lower-left-menu'>
+    <img src='media/images/see-whole-graph.svg'
+        id='resize-to-fit-button'
+        alt='Resize to fit.'
+        title='Resize to fit.'>
+  </div>
   <div id='loading-screen'>
     <div id="spinner"></div>
   </div>

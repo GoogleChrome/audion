@@ -28,6 +28,20 @@ audion.entryPoints.graphContainer_ = /** @type {!Element} */ (
 
 
 /**
+ * The current zoom relative to the entire graph fitting in the screen.
+ * @private {!number}
+ */
+audion.entryPoints.zoom_ = 1;
+
+
+/**
+ * How much to zoom in / out per mouse wheel event.
+ * @private @const {!number}
+ */
+audion.entryPoints.zoomSensitivity_ = 1.2;
+
+
+/**
  * The element that is the loading screen. This element is normally hidden.
  * @private @const {!Element}
  */
@@ -92,14 +106,6 @@ audion.entryPoints.shouldRescaleOnRelayout_ = true;
 
 
 /**
- * The ID of the settimeout for showing the loading screen (after some time
- * frame of inactivity). If any such settimeout is pending.
- * @private {?number}
- */
-audion.entryPoints.loadingTimeoutId_ = null;
-
-
-/**
  * A mapping from AudioNode type to the color that we should use to visualize
  * it.
  * @private @const {!Object.<string, string>}
@@ -144,7 +150,20 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
     'snapLinks': {
       'radius': Infinity,
     },
-    'linkPinning': false
+    'linkPinning': false,
+    'interactive': function(cellView) {
+      if (cellView['model']['isLink']()) {
+        return {
+          'vertexAdd': false,
+          'vertexRemove': false,
+          'arrowheadMove': false,
+          'vertexMove': true
+        }
+      }
+
+      // In general, allow interactions.
+      return true;
+    }
   });
 };
 
@@ -343,6 +362,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
                   'circle': {
                     'fill': '#00ff00',
                     'stroke': '#000000',
+                    // Prevent interactions with the port.
                     'magnet': 'passive'
                   }
               },
@@ -363,7 +383,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
                   'circle': {
                     'fill': '#ff0000',
                     'stroke': '#000000',
-                    'magnet': true
+                    'magnet': 'passive'
                   }
               },
               'interactive': false,
@@ -482,6 +502,18 @@ audion.entryPoints.handleMissingAudioUpdates_ = function() {
 
 
 /**
+ * Removes the loading screen. And prevents it from showing if a request to load
+ * the screen is pending. Does nothing if the screen is not showing and is not
+ * slated to be shown.
+ * @private
+ */
+audion.entryPoints.removeLoadingScreen_ = function() {
+  // Hide the loading screen if it is showing.
+  audion.entryPoints.loadingScreen_.classList.remove(goog.getCssName('shown'));
+};
+
+
+/**
  * Handles the case in which the tab URL changes. We have to reset.
  * @private
  */
@@ -493,6 +525,9 @@ audion.entryPoints.handlePageOfTabChanged_ = function() {
   audion.entryPoints.updatesAreMissing_ = false;
   audion.entryPoints.missingUpdatesScreen_.classList.remove(
       goog.getCssName('shown'));
+
+  // Hide the loading screen.
+  audion.entryPoints.removeLoadingScreen_();
 
   // Tell the panel to reset to this empty graph.
   audion.entryPoints.resetUi_();
@@ -651,23 +686,8 @@ audion.entryPoints.resizeToFit_ = function() {
   audion.entryPoints.paper_.scaleContentToFit({
     'padding': 30
   });
-};
-
-
-/**
- * Removes the loading screen. And prevents it from showing if a request to load
- * the screen is pending. Does nothing if the screen is not showing and is not
- * slated to be shown.
- * @private
- */
-audion.entryPoints.removeLoadingScreen_ = function() {
-  // Hide the loading screen if it is showing.
-  audion.entryPoints.loadingScreen_.classList.remove(goog.getCssName('shown'));
-  if (!goog.isNull(audion.entryPoints.loadingTimeoutId_)) {
-    // Do not later show the loading screen.
-    goog.global.clearTimeout(audion.entryPoints.loadingTimeoutId_);
-    audion.entryPoints.loadingTimeoutId_ = null;
-  }
+  audion.entryPoints.zoom_ = goog.global['V'](
+      audion.entryPoints.paper_.viewport)['scale']()['sx'];
 };
 
 
@@ -688,7 +708,7 @@ audion.entryPoints.redraw_ = function() {
       !layout.height ||
       !isFinite(layout.width) ||
       !isFinite(layout.height)) {
-    // The layout failed. Perhaps the graph is empty.
+    // The layout failed.
     audion.entryPoints.removeLoadingScreen_();
     return;
   }
@@ -717,13 +737,8 @@ audion.entryPoints.requestRedraw_ = function() {
   // Indicate that a redraw is pending.
   audion.entryPoints.isRedrawPending_ = true;
 
-  if (goog.isNull(audion.entryPoints.loadingTimeoutId_)) {
-    audion.entryPoints.loadingTimeoutId_ = goog.global.setTimeout(function() {
-      // If rendering does not finish within 50 ms, show the loading screen.
-      audion.entryPoints.loadingScreen_.classList.add(goog.getCssName('shown'));
-      audion.entryPoints.loadingScreen_.loadingTimeoutId_ = null;
-    }, 50);
-  }
+  // Show the loading screen.
+  audion.entryPoints.loadingScreen_.classList.add(goog.getCssName('shown'));
 
   // Throttle to every other frame.
   goog.global.requestAnimationFrame(function() {
@@ -738,7 +753,11 @@ audion.entryPoints.requestRedraw_ = function() {
  * @private
  */
 audion.entryPoints.resetUi_ = function() {
+  // Keep resizing to fit as web audio updates come in. ... until the user
+  // actively manipulates the view, in which case we do not want to override
+  // the user's preference for a view.
   audion.entryPoints.shouldRescaleOnRelayout_ = true;
+  audion.entryPoints.paper_.setOrigin(0, 0);
   audion.entryPoints.requestRedraw_();
 };
 
@@ -802,27 +821,69 @@ audion.entryPoints.acceptMessage_ = function(message) {
 };
 
 
-/**
- * The entry point for the script to run in our web audio Chrome dev panel -
- * the actual UI of the panel.
- */
-audion.entryPoints.panel = function() {
-  // Define some functions global to the panel window namespace so that the dev
-  // tools script (which has complete access to the panel page window upon
-  // creating the panel page) can directly call the functions to change the UI.
-  goog.global['acceptMessage'] = audion.entryPoints.acceptMessage_;
+// /**
+//  * The entry point for the script to run in our web audio Chrome dev panel -
+//  * the actual UI of the panel.
+//  */
+// audion.entryPoints.panel = function() {
+//   // Define some functions global to the panel window namespace so that the dev
+//   // tools script (which has complete access to the panel page window upon
+//   // creating the panel page) can directly call the functions to change the UI.
+//   goog.global['acceptMessage'] = audion.entryPoints.acceptMessage_;
 
-  // Handle link creation.
-  audion.entryPoints.graph_.on(
-      'change:source change:target', audion.entryPoints.handleLinkCreated_);
+//   // Handle link creation.
+//   audion.entryPoints.graph_.on(
+//       'change:source change:target', audion.entryPoints.handleLinkCreated_);
 
-  // When the window resizes, resize the tool.
-  window.addEventListener('resize', function() {
-    audion.entryPoints.paper_.setDimensions(
-        audion.entryPoints.graphContainer_.offsetWidth,
-        audion.entryPoints.graphContainer_.offsetHeight);
-    audion.entryPoints.requestRedraw_();
-  });
+//   // When the window resizes, resize the tool.
+//   window.addEventListener('resize', function() {
+//     audion.entryPoints.paper_.setDimensions(
+//         audion.entryPoints.graphContainer_.offsetWidth,
+//         audion.entryPoints.graphContainer_.offsetHeight);
+//     audion.entryPoints.requestRedraw_();
+//   });
+
+//   // Let the user resize the graph to fit the whole graph.
+//   document.getElementById('resize-to-fit-button').addEventListener('click',
+//       function(event) {
+//     event.preventDefault();
+//     audion.entryPoints.resetUi_();
+//     return false;
+//   });
+
+//   // Let the user zoom in or out.
+//   audion.entryPoints.paper_['$el']['on']('wheel',
+//       function(event) {
+//     event = /** @type {!WheelEvent} */ (event['originalEvent']);
+//     event.preventDefault();
+//     var factor = audion.entryPoints.zoomSensitivity_;
+//     if (event.deltaY > 0) {
+//       // This was a zoom out.
+//       factor = 1 / factor;
+//     }
+//     var newZoom = audion.entryPoints.zoom_ * factor;
+//     audion.entryPoints.zoom_ = newZoom;
+
+//     // TODO: Use a much more stable means of converting to viewport coordinates.
+//     // Today, if the user is zoomed too far out, the inverse matrix has some
+//     // crazy values.
+//     var svgPoint = audion.entryPoints.paper_.svg.createSVGPoint();
+//     svgPoint.x = event.offsetX;
+//     svgPoint.y = event.offsetY;
+//     var pointTransformed = svgPoint.matrixTransform(
+//         audion.entryPoints.paper_.viewport.getCTM().inverse());
+
+//     audion.entryPoints.paper_.setOrigin(0, 0);
+//     audion.entryPoints.paper_.scale(
+//         audion.entryPoints.zoom_,
+//         audion.entryPoints.zoom_,
+//         pointTransformed.x,
+//         pointTransformed.y);
+//     // Do not rescale the graph now during redraws. We might override a user
+//     // preference for a view.
+//     audion.entryPoints.shouldRescaleOnRelayout_ = false;
+//     return false;
+//   });
 };
 
 
