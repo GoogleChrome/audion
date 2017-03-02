@@ -17,6 +17,9 @@ goog.provide('audion.entryPoints.panel');
 
 goog.require('audion.messaging.MessageType');
 goog.require('audion.messaging.Util');
+goog.require('audion.ui.pane.AudioNodeMode');
+goog.require('audion.ui.pane.ModeType');
+goog.require('audion.ui.pane.Pane');
 
 
 /**
@@ -39,6 +42,22 @@ audion.entryPoints.zoom_ = 1;
  * @private @const {!number}
  */
 audion.entryPoints.zoomSensitivity_ = 1.2;
+
+
+/**
+ * @typedef {{
+ *   frameId: number,
+ *   audioNodeId: number
+ * }}
+ */
+audion.entryPoints.AudioNodeEntry_;
+
+
+/**
+ * The currently highlighted audio node if any.
+ * @private {?audion.entryPoints.AudioNodeEntry_}
+ */
+audion.entryPoints.highlightedAudioNode_ = null;
 
 
 /**
@@ -106,6 +125,14 @@ audion.entryPoints.shouldRescaleOnRelayout_ = true;
 
 
 /**
+ * The pane used to say highlight information such as information on an
+ * inspected AudioNode.
+ * @private {!audion.ui.pane.Pane}
+ */
+audion.entryPoints.pane_ = new audion.ui.pane.Pane();
+
+
+/**
  * A mapping from AudioNode type to the color that we should use to visualize
  * it.
  * @private @const {!Object.<string, string>}
@@ -135,6 +162,74 @@ audion.entryPoints.nodeTypeToColorMapping_ = {
 
 
 /**
+ * Unhighlights the current Audio Node if one is highlighted.
+ * @private
+ */
+audion.entryPoints.unhighlightCurrentAudioNode_ = function() {
+  var nodeEntry = audion.entryPoints.highlightedAudioNode_;
+  if (!nodeEntry) {
+    // No AudioNode highlighted. Nothing to do.
+    return;
+  }
+
+  audion.entryPoints.highlightedAudioNode_ = null;
+  audion.messaging.Util.postMessageToWindow(
+    /** @type {!AudionNodeUnhighlightedMessage} */ ({
+      type: audion.messaging.MessageType.AUDIO_NODE_UNHIGHLIGHTED,
+      audioNodeId: nodeEntry.audioNodeId,
+      frameId: nodeEntry.frameId
+    }));
+};
+
+
+/**
+ * Handles a click on a cell in the graph. A cell can be a node, an edge, or
+ * some other entity in the graph.
+ * @param {!Object} cellView A JointJS cell view.
+ * @private
+ */
+audion.entryPoints.handleCellClick_ = function(cellView) {
+  // When the user clicks on a node, highlight it.
+  var model = cellView['model'];
+  if (!model) {
+    return;
+  }
+  var modelId = /** @type {string} */ (model['id']);
+  if (!modelId) {
+    return;
+  }
+
+  var groups = modelId.match(/^f(\d+)n(\d+)$/);
+  if (!groups || groups.length != 3) {
+    // No frame ID, node ID combo found.
+    return;
+  }
+
+  // If an AudioNode is highlighted, unhighlight it. The user is interested in
+  // a different one now.
+  audion.entryPoints.unhighlightCurrentAudioNode_();
+
+  var frameId = groups[1];
+  var audioNodeId = groups[2];
+
+  // Update the highlighted AudioNode to be the new one.
+  audion.entryPoints.highlightedAudioNode_ =
+      /** @type {?audion.entryPoints.AudioNodeEntry_} */ ({
+    frameId: frameId,
+    audioNodeId: audioNodeId
+  });
+
+  // Tell the dev tools script about the new highlighted node.
+  audion.messaging.Util.postMessageToWindow(
+    /** @type {!AudionNodeHighlightedMessage} */ ({
+      type: audion.messaging.MessageType.AUDIO_NODE_HIGHLIGHTED,
+      frameId: frameId,
+      audioNodeId: audioNodeId
+    }));
+};
+
+
+/**
  * Creates a paper.
  * @param {!Element} graphContainer The DOM element that is the graph.
  * @param {?joint.dia.Graph} graph The graph to use.
@@ -150,6 +245,8 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
     'snapLinks': {
       'radius': Infinity,
     },
+    // Trigger cell:pointerclick events.
+    'clickThreshold': 1,
     'linkPinning': false,
     'interactive': function(cellView) {
       if (cellView['model']['isLink']()) {
@@ -165,6 +262,8 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
       return true;
     }
   });
+
+  paper.on('cell:pointerclick', audion.entryPoints.handleCellClick_);
 
   return paper;
 };
@@ -693,8 +792,38 @@ audion.entryPoints.handleNodeFromParamDisconnected_ = function(message) {
  * @private
  */
 audion.entryPoints.handleAudioNodePropertiesUpdate_ = function(message) {
-  // TODO
-  audion.entryPoints.requestRedraw_();
+  var mode = audion.entryPoints.pane_.getMode();
+  if (mode && mode.getType() == audion.ui.pane.ModeType.AUDIO_NODE) {
+    mode = /** @type {!audion.ui.pane.AudioNodeMode} */ (mode);
+    console.log('handleAudioNodePropertiesUpdate_', mode.getFrameId(),
+        mode.getAudioNodeId(), message);
+    if (mode.getFrameId() == message.frameId &&
+        mode.getAudioNodeId() == message.audioNodeId) {
+      // If the pane is currently showing the properties of this AudioNode, just
+      // have it update current property values.
+      mode.updateAudioProperties(message);
+      return;
+    }
+  }
+
+  // We are now inspecting a new AudioNode. Delete the old mode of display in
+  // the pane and create a new one.
+  mode = new audion.ui.pane.AudioNodeMode(message);
+  // When the mode is done (ie, the pane is closed or swapped to something
+  // else like a new node), tell the content script to stop sending updates.
+  mode.setCleanUpCallback(function() {
+    var nodeEntry = audion.entryPoints.highlightedAudioNode_;
+    if (!nodeEntry ||
+        nodeEntry.frameId != mode.getFrameId() ||
+        nodeEntry.audioNodeId != mode.getAudioNodeId()) {
+      // This node is irrelevant. We are unhighlighting a completely different
+      // node.
+      return;
+    }
+    // Unhighlight the previous node.
+    audion.entryPoints.unhighlightCurrentAudioNode_();
+  });
+  audion.entryPoints.pane_.setMode(mode);
 };
 
 
@@ -871,6 +1000,9 @@ audion.entryPoints.panel = function() {
     audion.entryPoints.resetUi_();
     return false;
   });
+
+  // Add the pane to the DOM.
+  goog.global.document.body.appendChild(audion.entryPoints.pane_.getDom());
 };
 
 

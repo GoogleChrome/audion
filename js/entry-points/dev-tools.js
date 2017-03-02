@@ -118,7 +118,14 @@ audion.entryPoints.postToBackgroundScript_ = function(message) {
  * @private
  */
 audion.entryPoints.handleNewAudioNodeHighlightedRequest_ = function(message) {
-  // TODO: Tell the web page to send back info on this audio node.
+  // Tell the content script to issue data on the new node.
+  audion.entryPoints.postToBackgroundScript_(
+      /** @type {!AudionNodeHighlightedMessage} */ ({
+    type: audion.messaging.MessageType.AUDIO_NODE_HIGHLIGHTED,
+    frameId: message.frameId,
+    audioNodeId: message.audioNodeId,
+    inspectedTabId: chrome.devtools.inspectedWindow.tabId
+  }));
 };
 
 
@@ -128,7 +135,14 @@ audion.entryPoints.handleNewAudioNodeHighlightedRequest_ = function(message) {
  * @private
  */
 audion.entryPoints.handleAudioNodeUnhighlightedRequest_ = function(message) {
-  // TODO: Tell the web page to stop sending back info on this audio node.
+  // Notify the content script so that it stops sending info on the node.
+  audion.entryPoints.postToBackgroundScript_(
+      /** @type {!AudionNodeUnhighlightedMessage} */ ({
+    type: audion.messaging.MessageType.AUDIO_NODE_UNHIGHLIGHTED,
+    frameId: message.frameId,
+    audioNodeId: message.audioNodeId,
+    inspectedTabId: chrome.devtools.inspectedWindow.tabId
+  }));
 };
 
 
