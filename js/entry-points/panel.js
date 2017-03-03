@@ -831,8 +831,6 @@ audion.entryPoints.handleAudioNodePropertiesUpdate_ = function(message) {
   var mode = audion.entryPoints.pane_.getMode();
   if (mode && mode.getType() == audion.ui.pane.ModeType.AUDIO_NODE) {
     mode = /** @type {!audion.ui.pane.AudioNodeMode} */ (mode);
-    console.log('handleAudioNodePropertiesUpdate_', mode.getFrameId(),
-        mode.getAudioNodeId(), message);
     if (mode.getFrameId() == message.frameId &&
         mode.getAudioNodeId() == message.audioNodeId) {
       // If the pane is currently showing the properties of this AudioNode, just
