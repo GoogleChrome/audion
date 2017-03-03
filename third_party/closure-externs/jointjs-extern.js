@@ -150,7 +150,7 @@ joint.dia.Paper.prototype.model;
  */
 joint.dia.Paper.prototype.on = function(event, handler) {};
 /**
- * @param {!joint.dia.Cell} model
+ * @param {!joint.dia.Cell|string} model
  * @return {!joint.dia.CellView}
  */
 joint.dia.Paper.prototype.findViewByModel = function(model) {};

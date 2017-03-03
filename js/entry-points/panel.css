@@ -151,3 +151,8 @@ body {
 #updates-missing-screen.shown {
   display: block;
 }
+
+.highlightedAudioNode rect {
+  stroke: #ffa500;
+  stroke-width: 5px;
+}

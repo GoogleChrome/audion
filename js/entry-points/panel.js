@@ -162,6 +162,16 @@ audion.entryPoints.nodeTypeToColorMapping_ = {
 
 
 /**
+ * Computes the JointJS cell ID for the shape of an AudioNode.
+ * @return {string}
+ * @private
+ */
+audion.entryPoints.computeCellId_ = function(frameId, nodeId) {
+  return 'f' + frameId + 'n' + nodeId;
+};
+
+
+/**
  * Unhighlights the current Audio Node if one is highlighted.
  * @private
  */
@@ -173,6 +183,11 @@ audion.entryPoints.unhighlightCurrentAudioNode_ = function() {
   }
 
   audion.entryPoints.highlightedAudioNode_ = null;
+
+  var cellId = audion.entryPoints.computeCellId_(
+      nodeEntry.frameId, nodeEntry.audioNodeId);
+  V(audion.entryPoints.paper_.findViewByModel(cellId)['el'])['removeClass'](
+      goog.getCssName('highlightedAudioNode'));
   audion.messaging.Util.postMessageToWindow(
     /** @type {!AudionNodeUnhighlightedMessage} */ ({
       type: audion.messaging.MessageType.AUDIO_NODE_UNHIGHLIGHTED,
@@ -205,12 +220,19 @@ audion.entryPoints.handleCellClick_ = function(cellView) {
     return;
   }
 
+  var frameId = groups[1];
+  var audioNodeId = groups[2];
+
+  if (audion.entryPoints.highlightedAudioNode_ &&
+      audion.entryPoints.highlightedAudioNode_.frameId == frameId &&
+      audion.entryPoints.highlightedAudioNode_.audioNodeId == audioNodeId) {
+    // This audio node is already highlighted. Nothing to do.
+    return;
+  }
+
   // If an AudioNode is highlighted, unhighlight it. The user is interested in
   // a different one now.
   audion.entryPoints.unhighlightCurrentAudioNode_();
-
-  var frameId = groups[1];
-  var audioNodeId = groups[2];
 
   // Update the highlighted AudioNode to be the new one.
   audion.entryPoints.highlightedAudioNode_ =
@@ -278,6 +300,15 @@ audion.entryPoints.paper_ = audion.entryPoints.createPaper_(
 
 
 /**
+ * Turns off auto-resize, ie resizing the canvas when the screen resizes.
+ * @private
+ */
+audion.entryPoints.turnOffAutoResize_ = function() {
+  audion.entryPoints.shouldRescaleOnRelayout_ = false;
+};
+
+
+/**
  * An object that manages panning and zooming.
  * @private {!Object}
  */
@@ -291,7 +322,12 @@ audion.entryPoints.panZoomObject_ = goog.global['svgPanZoom'](
     'zoomScaleSensitivity': 0.3,
     'dblClickZoomEnabled': false,
     'fit': false,
-    'center': false
+    'center': false,
+
+    // Do not override user view configurations by resetting once the user has
+    // interacted with the graph.
+    'onPan': audion.entryPoints.turnOffAutoResize_,
+    'onZoom': audion.entryPoints.turnOffAutoResize_
   });
 
 
@@ -823,6 +859,12 @@ audion.entryPoints.handleAudioNodePropertiesUpdate_ = function(message) {
     // Unhighlight the previous node.
     audion.entryPoints.unhighlightCurrentAudioNode_();
   });
+
+  var cellId = audion.entryPoints.computeCellId_(
+      mode.getFrameId(), mode.getAudioNodeId());
+  V(audion.entryPoints.paper_.findViewByModel(cellId)['el'])['addClass'](
+      goog.getCssName('highlightedAudioNode'));
+
   audion.entryPoints.pane_.setMode(mode);
 };
 
@@ -894,6 +936,18 @@ audion.entryPoints.requestRedraw_ = function() {
   goog.global.requestAnimationFrame(function() {
     goog.global.requestAnimationFrame(audion.entryPoints.redraw_);
   });
+};
+
+
+/**
+ * Handles a resize of the graph container.
+ */
+audion.entryPoints.handleResize_ = function() {
+  audion.entryPoints.paper_.setDimensions(
+      audion.entryPoints.graphContainer_.offsetWidth,
+      audion.entryPoints.graphContainer_.offsetHeight);
+  audion.entryPoints.panZoomObject_['resize']();
+  audion.entryPoints.requestRedraw_();
 };
 
 
@@ -985,13 +1039,7 @@ audion.entryPoints.panel = function() {
       'change:source change:target', audion.entryPoints.handleLinkCreated_);
 
   // When the window resizes, resize the tool.
-  window.addEventListener('resize', function() {
-    audion.entryPoints.paper_.setDimensions(
-        audion.entryPoints.graphContainer_.offsetWidth,
-        audion.entryPoints.graphContainer_.offsetHeight);
-    audion.entryPoints.panZoomObject_['resize']();
-    audion.entryPoints.requestRedraw_();
-  });
+  window.addEventListener('resize', audion.entryPoints.handleResize_);
 
   // Let the user resize the graph to fit the whole graph.
   document.getElementById('resize-to-fit-button').addEventListener('click',
