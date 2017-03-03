@@ -241,6 +241,10 @@ audion.entryPoints.handleCellClick_ = function(cellView) {
     audioNodeId: audioNodeId
   });
 
+  var cellId = audion.entryPoints.computeCellId_(frameId, audioNodeId);
+  V(audion.entryPoints.paper_.findViewByModel(cellId)['el'])['addClass'](
+      goog.getCssName('highlightedAudioNode'));
+
   // Tell the dev tools script about the new highlighted node.
   audion.messaging.Util.postMessageToWindow(
     /** @type {!AudionNodeHighlightedMessage} */ ({
@@ -861,11 +865,6 @@ audion.entryPoints.handleAudioNodePropertiesUpdate_ = function(message) {
     // Unhighlight the previous node.
     audion.entryPoints.unhighlightCurrentAudioNode_();
   });
-
-  var cellId = audion.entryPoints.computeCellId_(
-      mode.getFrameId(), mode.getAudioNodeId());
-  V(audion.entryPoints.paper_.findViewByModel(cellId)['el'])['addClass'](
-      goog.getCssName('highlightedAudioNode'));
 
   audion.entryPoints.pane_.setMode(mode);
 };
