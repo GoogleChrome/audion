@@ -17,7 +17,7 @@
   background: #eceff1; 
   border-left: 1px solid #78909c;
   color: #78909c;
-  position: absolute;
+  position: fixed;
   top: 0;
   right: 0;
   bottom: 0;
@@ -25,6 +25,7 @@
   padding: 15px;
   z-index: 3;
   box-sizing: border-box;
+  overflow-y: auto;
 }
 
 #paneContainer .contentArea {
