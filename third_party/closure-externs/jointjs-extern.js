@@ -211,6 +211,10 @@ joint.dia.Graph.prototype.getElements = function() {};
  * @param {!Function} handler
  */
 joint.dia.Graph.prototype.on = function(event, handler) {};
+/**
+ * @param {(function(!Object):(!Object|boolean))|boolean} interactivity
+ */
+joint.dia.Paper.prototype.setInteractivity = function(interactivity) {};
 
 joint.layout.DirectedGraph = {};
 

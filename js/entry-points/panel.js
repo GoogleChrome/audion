@@ -256,10 +256,40 @@ audion.entryPoints.handleCellClick_ = function(cellView) {
 
 
 /**
+ * Turns off auto-resize, ie resizing the canvas when the screen resizes.
+ * @private
+ */
+audion.entryPoints.turnOffAutoResize_ = function() {
+  audion.entryPoints.shouldRescaleOnRelayout_ = false;
+};
+
+
+/**
+ * Determines whether the paper is interactive given the cell view.
+ * @param {!Object} cellView The view of the relevant cell in the graph.
+ * @return {boolean|!Object}
+ * @private
+ */
+audion.entryPoints.decideInteractivity_ = function(cellView) {
+  if (cellView['model']['isLink']()) {
+    return {
+      'vertexAdd': false,
+      'vertexRemove': false,
+      'arrowheadMove': false,
+      'vertexMove': false
+    };
+  }
+
+  // Allow most interactions.
+  return true;
+};
+
+
+/**
  * Creates a paper.
  * @param {!Element} graphContainer The DOM element that is the graph.
  * @param {?joint.dia.Graph} graph The graph to use.
- * @return {!joint.dia.Paper}
+ * @return {!joint.dia.Paper}''
  * @private
  */
 audion.entryPoints.createPaper_ = function(graphContainer, graph) {
@@ -271,25 +301,38 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
     'snapLinks': {
       'radius': Infinity,
     },
+    // Asynchronously render the paper. Don't update UI on every node update.
+    'async': true,
     // Trigger cell:pointerclick events.
     'clickThreshold': 1,
     'linkPinning': false,
-    'interactive': function(cellView) {
-      if (cellView['model']['isLink']()) {
-        return {
-          'vertexAdd': false,
-          'vertexRemove': false,
-          'arrowheadMove': false,
-          'vertexMove': true
-        }
-      }
-
-      // In general, allow interactions.
-      return true;
-    }
+    'interactive': audion.entryPoints.decideInteractivity_
   });
 
   paper.on('cell:pointerclick', audion.entryPoints.handleCellClick_);
+
+  // When the user interacts with the graph, do not reset the view on every
+  // layout - that might override user configurations.
+  var nonResetInteractions = [
+      'blank:mousewheel',
+      'blank:pointerclick',
+      'cell:mousewheel',
+      'cell:pointermove'
+    ];
+  for (var i = 0; i < nonResetInteractions.length; i++) {
+    paper.on(nonResetInteractions[i], audion.entryPoints.turnOffAutoResize_);
+  }
+
+  paper.on('cell:pointerdown', function(cellView, evt) {
+    // Don't let the user drag the graph around via JointJS. We have the pan
+    // zoom library handle that.
+    paper.setInteractivity(false);
+  });
+
+  paper.on('cell:pointerup', function(cellView, evt) {
+    // Re-enable some interactions.
+    paper.setInteractivity(audion.entryPoints.decideInteractivity_);
+  });
 
   return paper;
 };
@@ -301,15 +344,6 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
  */
 audion.entryPoints.paper_ = audion.entryPoints.createPaper_(
     audion.entryPoints.graphContainer_, audion.entryPoints.graph_);
-
-
-/**
- * Turns off auto-resize, ie resizing the canvas when the screen resizes.
- * @private
- */
-audion.entryPoints.turnOffAutoResize_ = function() {
-  audion.entryPoints.shouldRescaleOnRelayout_ = false;
-};
 
 
 /**
@@ -326,12 +360,7 @@ audion.entryPoints.panZoomObject_ = goog.global['svgPanZoom'](
     'zoomScaleSensitivity': 0.3,
     'dblClickZoomEnabled': false,
     'fit': false,
-    'center': false,
-
-    // Do not override user view configurations by resetting once the user has
-    // interacted with the graph.
-    'onPan': audion.entryPoints.turnOffAutoResize_,
-    'onZoom': audion.entryPoints.turnOffAutoResize_
+    'center': false
   });
 
 

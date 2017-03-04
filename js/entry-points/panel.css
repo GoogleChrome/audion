@@ -32,6 +32,7 @@ body {
 }
 
 #graph {
+  cursor: move;
   overflow: hidden;
   position: fixed;
   bottom: 0;
