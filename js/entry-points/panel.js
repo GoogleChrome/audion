@@ -364,7 +364,7 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
     tooltip.setPosition(
         boundingBox.left + (boundingBox.width - tooltip.getWidth()) / 2,
         boundingBox.top - tooltip.getHeight() - 3);
-    audion.entryPoints.tooltip_.setShown(true);
+    tooltip.setShown(true);
   });
 
   paper.on('cell:mouseout', function(cellView, evt) {
