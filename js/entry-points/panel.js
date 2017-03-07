@@ -134,7 +134,7 @@ audion.entryPoints.pane_ = new audion.ui.pane.Pane();
 
 
 /**
- * A tooltip used to clarify info in the UI
+ * A tooltip used to clarify info in the UI.
  * @private @const {!audion.ui.tooltip.Tooltip}
  */
 audion.entryPoints.tooltip_ = new audion.ui.tooltip.Tooltip();
