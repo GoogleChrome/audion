@@ -362,7 +362,7 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
     // Position the tooltip based on the center of the Audio Param.
     var tooltip = audion.entryPoints.tooltip_;
     tooltip.setPosition(
-        boundingBox.left + boundingBox.width / 2 - tooltip.getWidth() / 2,
+        boundingBox.left + (boundingBox.width - tooltip.getWidth()) / 2,
         boundingBox.top - tooltip.getHeight() - 3);
     audion.entryPoints.tooltip_.setShown(true);
   });
