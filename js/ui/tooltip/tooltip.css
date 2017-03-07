@@ -1,0 +1,14 @@
+#tooltip {
+  background: rgba(0, 0, 0, 0.94);
+  border: 1px solid #000;
+  border-radius: 2px;
+  color: #fff;
+  padding: 4px;
+  pointer-events: none;
+  position: absolute;
+  visibility: hidden;
+}
+
+#tooltip.shown {
+  visibility: visible;
+}

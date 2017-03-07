@@ -20,6 +20,7 @@ goog.require('audion.messaging.Util');
 goog.require('audion.ui.pane.AudioNodeMode');
 goog.require('audion.ui.pane.ModeType');
 goog.require('audion.ui.pane.Pane');
+goog.require('audion.ui.tooltip.Tooltip');
 
 
 /**
@@ -127,9 +128,16 @@ audion.entryPoints.shouldRescaleOnRelayout_ = true;
 /**
  * The pane used to say highlight information such as information on an
  * inspected AudioNode.
- * @private {!audion.ui.pane.Pane}
+ * @private @const {!audion.ui.pane.Pane}
  */
 audion.entryPoints.pane_ = new audion.ui.pane.Pane();
+
+
+/**
+ * A tooltip used to clarify info in the UI
+ * @private @const {!audion.ui.tooltip.Tooltip}
+ */
+audion.entryPoints.tooltip_ = new audion.ui.tooltip.Tooltip();
 
 
 /**
@@ -332,6 +340,36 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
   paper.on('cell:pointerup', function(cellView, evt) {
     // Re-enable some interactions.
     paper.setInteractivity(audion.entryPoints.decideInteractivity_);
+  });
+
+  paper.on('cell:mouseover', function(cellView, evt) {
+    var target = evt.target;
+    var portId = target.getAttribute('port');
+    if (!portId) {
+      return;
+    }
+
+    var match = portId.match(/param\$([a-zA-Z\d]+)$/);
+    if (!match || match.length != 2) {
+      // This is irrelevant.
+      return;
+    }
+
+    // The user is hovering over some audio param port.
+    var paramName = match[1];
+    audion.entryPoints.tooltip_.setText(paramName);
+    var boundingBox = target.getBoundingClientRect();
+    // Position the tooltip based on the center of the Audio Param.
+    var tooltip = audion.entryPoints.tooltip_;
+    tooltip.setPosition(
+        boundingBox.left + boundingBox.width / 2 - tooltip.getWidth() / 2,
+        boundingBox.top - tooltip.getHeight() - 3);
+    audion.entryPoints.tooltip_.setShown(true);
+  });
+
+  paper.on('cell:mouseout', function(cellView, evt) {
+    // The user exited an element, perhaps a param port.
+    audion.entryPoints.tooltip_.setShown(false);
   });
 
   return paper;
@@ -1088,8 +1126,9 @@ audion.entryPoints.panel = function() {
     return false;
   });
 
-  // Add the pane to the DOM.
+  // Add the pane and tooltip to the DOM. The tooltip can be atop the pane.
   goog.global.document.body.appendChild(audion.entryPoints.pane_.getDom());
+  goog.global.document.body.appendChild(audion.entryPoints.tooltip_.getDom());
 };
 
 
