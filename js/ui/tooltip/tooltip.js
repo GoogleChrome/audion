@@ -21,7 +21,8 @@ goog.require('audion.ui.Widget');
 
 
 /**
- * A tooltip that hovers over various UI elements to clarify content.
+ * A tooltip that appears when the user hovers over various UI elements such as
+ * AudioParam ports.
  * @constructor
  * @extends {audion.ui.Widget}
  */
