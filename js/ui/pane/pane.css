@@ -23,7 +23,6 @@
   bottom: 0;
   width: 300px;
   padding: 15px;
-  z-index: 3;
   box-sizing: border-box;
   overflow-y: auto;
 }
