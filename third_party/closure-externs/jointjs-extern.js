@@ -38,6 +38,18 @@ var MatrixData;
  */
 V.createSVGMatrix = function(opt_matrix) {};
 
+/**
+ * @param {!MatrixData=} opt_matrix Matrix data.
+ * @return {boolean}
+ */
+V.isUndefined = function(opt_matrix) {};
+
+/**
+ * @param {!MatrixData=} opt_matrix Matrix data.
+ * @return {string}
+ */
+V.matrixToTransformString = function(opt_matrix) {};
+
 joint.dia = {};
 joint.layout = {};
 joint.shapes = {};
