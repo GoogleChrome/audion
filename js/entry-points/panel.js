@@ -1105,6 +1105,7 @@ audion.entryPoints.acceptMessage_ = function(message) {
  * Patches the SVGTransformList API, which is broken in at least Chrome 57, 58,
  * and 59. This is a temporary workaround.
  * TODO: Remove this function when the API is fixed.
+ * @private
  */
 audion.entryPoints.patchSvgTransformList_ = function() {
   V['matrixToTransformString'] = function(matrix) {
