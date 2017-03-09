@@ -1102,10 +1102,61 @@ audion.entryPoints.acceptMessage_ = function(message) {
 
 
 /**
+ * Patches the SVGTransformList API, which is broken in at least Chrome 57, 58,
+ * and 59. This is a temporary workaround.
+ * TODO: Remove this function when the API is fixed.
+ * @private
+ */
+audion.entryPoints.patchSvgTransformList_ = function() {
+  V['matrixToTransformString'] = function(matrix) {
+    if (!matrix) {
+      matrix = {};
+    } 
+    return 'matrix(' + [
+        matrix['a'] || 1,
+        matrix['b'] || 0,
+        matrix['c'] || 0,
+        matrix['d'] || 1,
+        matrix['e'] || 0,
+        matrix['f'] || 0
+    ] + ')';
+  };
+
+  /**
+   * @param {!MatrixData} matrix
+   * @param {!Object=} opt
+   * @this {!SVGGElement}
+   * @return {*}
+   */
+  V['prototype']['transform'] = function(matrix, opt) {
+    var node = /** @type {!SVGGElement} */ (this['node']);
+    if (V.isUndefined(matrix)) {
+        return (node.parentNode)
+            ? this.getTransformToElement(
+                /** @type {!SVGElement|undefined} */ (node.parentNode))
+            : node.getScreenCTM();
+    }
+
+    if (opt && opt['absolute']) {
+        return this['attr']('transform', V.matrixToTransformString(matrix));
+    }
+
+    var svgTransform = V['createSVGTransform'](matrix);
+    node.transform.baseVal.appendItem(svgTransform);
+    return this;
+  };
+};
+
+
+/**
  * The entry point for the script to run in our web audio Chrome dev panel -
  * the actual UI of the panel.
  */
 audion.entryPoints.panel = function() {
+  // Patch the SVGTransformList API. It is broken in Chrome > 57.
+  // TODO: Remove this call after the API is fixed.
+  audion.entryPoints.patchSvgTransformList_();
+
   // Define some functions global to the panel window namespace so that the dev
   // tools script (which has complete access to the panel page window upon
   // creating the panel page) can directly call the functions to change the UI.
