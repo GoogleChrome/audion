@@ -359,11 +359,11 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
     var paramName = match[1];
     audion.entryPoints.tooltip_.setText(paramName);
     var boundingBox = target.getBoundingClientRect();
-    // Position the tooltip based on the center of the Audio Param.
+    // Position the tooltip left of the Audio Param.
     var tooltip = audion.entryPoints.tooltip_;
     tooltip.setPosition(
-        boundingBox.left + (boundingBox.width - tooltip.getWidth()) / 2,
-        boundingBox.top - tooltip.getHeight() - 3);
+        boundingBox.left - tooltip.getWidth() - 3,
+        boundingBox.top + (boundingBox.height - tooltip.getHeight()));
     tooltip.setShown(true);
   });
 
@@ -554,6 +554,10 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
   var portWidth = message.audioParamNames.length * portDim;
   var width = Math.max(textWidth, portWidth);
 
+  // Compute the number of ports on the left side.
+  var portCountOnLeftSide =
+      message.numberOfInputs + message.audioParamNames.length;
+
   // Create a node.
   var nodeColor =
       audion.entryPoints.nodeTypeToColorMapping_[nodeType] || '#000';
@@ -579,7 +583,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
       'width': width,
       'height': Math.max(
           40,
-          Math.max(message.numberOfInputs, message.numberOfOutputs) * portDim)
+          Math.max(portCountOnLeftSide, message.numberOfOutputs) * portDim)
     },
     'ports': {
       'groups': {
@@ -636,14 +640,14 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
                   }
               },
               'interactive': false,
-              'position': 'bottom',
+              'position': 'left',
               'label': {
                   'position': {
-                      'name' : 'right',
+                      'name' : 'left',
                       'args': {
-                          'x': 0,
-                          'y': 13,
-                          'angle': 80
+                          'x': 5,
+                          'y': 0,
+                          'angle': 0
                       }
                   }
               }
@@ -1111,7 +1115,7 @@ audion.entryPoints.patchSvgTransformList_ = function() {
   V['matrixToTransformString'] = function(matrix) {
     if (!matrix) {
       matrix = {};
-    } 
+    }
     return 'matrix(' + [
         matrix['a'] || 1,
         matrix['b'] || 0,
