@@ -513,7 +513,47 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
       'attrs': {
         'text': {
           'text': i
+        },
+        'circle': {
+          'fill': '#00ff00'
         }
+      },
+      'label': {
+        'position': {
+            'name' :'bottom',
+            'args': {
+                'x': 0,
+                'y': -3
+            }
+        }
+      }
+    });
+  }
+
+  // Create labels for audio param ports.
+  for (var i = 0; i < message.audioParamNames.length; i++) {
+    ports.push({
+      'id': audion.entryPoints.audioParamPortLabel_(
+          frameId, message.nodeId, message.audioParamNames[i]),
+      'group': 'in',
+      'attrs': {
+        'circle': {
+          'fill': '#0000ff'
+        },
+        'text': {
+          'fill': '#707070',
+          'text': message.audioParamNames[i]
+        }
+      },
+      'label': {
+          'position': {
+              'name' : 'left',
+              'args': {
+                  'x': -12,
+                  'y': 0,
+                  'angle': 0
+              }
+          }
       }
     });
   }
@@ -526,20 +566,6 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
       'attrs': {
         'text': {
           'text': i
-        }
-      }
-    });
-  }
-
-  // Create labels for audio param ports.
-  for (var i = 0; i < message.audioParamNames.length; i++) {
-    ports.push({
-      'id': audion.entryPoints.audioParamPortLabel_(
-          frameId, message.nodeId, message.audioParamNames[i]),
-      'group': 'param',
-      'attrs': {
-        'text': {
-          'text': message.audioParamNames[i]
         }
       }
     });
@@ -574,9 +600,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
           'fill': '#fff',
           'text': nodeLabel
         },
-        '.inPorts circle': {'fill': '#16A085'},
-        '.outPorts circle': {'fill': '#E74C3C'},
-        '.paramPorts circle': {'fill': '#90CAF9'}
+        '.outPorts circle': {'fill': '#E74C3C'}
     },
     'size': {
       // Just a heuristic. Add a little padding.
@@ -590,23 +614,13 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
           'in': {
               'attrs': {
                   'circle': {
-                    'fill': '#00ff00',
                     'stroke': '#000000',
                     // Prevent interactions with the port.
                     'magnet': 'passive'
                   }
               },
               'interactive': false,
-              'position': 'left',
-              'label': {
-                  'position': {
-                      'name' :'bottom',
-                      'args': {
-                          'x': 0,
-                          'y': -3
-                      }
-                  }
-              }
+              'position': 'left'
           },
           'out': {
               'attrs': {
@@ -624,30 +638,6 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
                       'args': {
                           'x': 0,
                           'y': -3
-                      }
-                  }
-              }
-          },
-          'param': {
-              'attrs': {
-                  'text': {
-                    'fill': '#707070',
-                  },
-                  'circle': {
-                    'fill': '#0000ff',
-                    'stroke': '#000000',
-                    'magnet': 'passive'
-                  }
-              },
-              'interactive': false,
-              'position': 'left',
-              'label': {
-                  'position': {
-                      'name' : 'left',
-                      'args': {
-                          'x': 5,
-                          'y': 0,
-                          'angle': 0
                       }
                   }
               }
@@ -974,7 +964,8 @@ audion.entryPoints.redraw_ = function() {
 
   var layout = joint.layout.DirectedGraph.layout(audion.entryPoints.graph_, {
       'rankDir': 'LR',
-      'setLinkVertices': true
+      'setLinkVertices': true,
+      'rankSep': 100
     });
 
   if (!layout.width ||
