@@ -23,3 +23,5 @@ use GitHub pull requests for this purpose. Consult [GitHub Help] for more
 information on using pull requests.
 
 [GitHub Help]: https://help.github.com/articles/about-pull-requests/
+
+This project moves quickly: If you're interested in implementing something, please open an issue first to let us know about it!
