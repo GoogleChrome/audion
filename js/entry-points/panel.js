@@ -342,36 +342,6 @@ audion.entryPoints.createPaper_ = function(graphContainer, graph) {
     paper.setInteractivity(audion.entryPoints.decideInteractivity_);
   });
 
-  paper.on('cell:mouseover', function(cellView, evt) {
-    var target = evt.target;
-    var portId = target.getAttribute('port');
-    if (!portId) {
-      return;
-    }
-
-    var match = portId.match(/param\$([a-zA-Z\d]+)$/);
-    if (!match || match.length != 2) {
-      // This is irrelevant.
-      return;
-    }
-
-    // The user is hovering over some audio param port.
-    var paramName = match[1];
-    audion.entryPoints.tooltip_.setText(paramName);
-    var boundingBox = target.getBoundingClientRect();
-    // Position the tooltip left of the Audio Param.
-    var tooltip = audion.entryPoints.tooltip_;
-    tooltip.setPosition(
-        boundingBox.left - tooltip.getWidth() - 3,
-        boundingBox.top + (boundingBox.height - tooltip.getHeight()));
-    tooltip.setShown(true);
-  });
-
-  paper.on('cell:mouseout', function(cellView, evt) {
-    // The user exited an element, perhaps a param port.
-    audion.entryPoints.tooltip_.setShown(false);
-  });
-
   return paper;
 };
 
@@ -506,16 +476,19 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
 
   // Create labels for in ports.
   var ports = [];
+  var isLeftSideFilled = message.audioParamNames.length > 1;
+  var marginTop = isLeftSideFilled ? 4 : 0;
   for (var i = 0; i < message.numberOfInputs; i++) {
     ports.push({
       'id': audion.entryPoints.inPortLabel_(frameId, message.nodeId, i),
       'group': 'in',
       'attrs': {
         'text': {
-          'text': i
+          'text': i,
         },
         'circle': {
-          'fill': '#00ff00'
+          'fill': '#00ff00',
+          'cy': marginTop,
         }
       },
       'label': {
@@ -523,40 +496,66 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
             'name' :'bottom',
             'args': {
                 'x': 0,
-                'y': -3
+                // -3 to vertically center the text.
+                'y': marginTop - 3
             }
         }
       }
     });
   }
 
-  // Create labels for audio param ports.
+  // Create labels for audio param ports. At the same time, determine how far
+  // the label for the node itself must be from the left.
+  var labelDistance = 0;
+  // Style the invisible text sandbox so that it accurately sizes text.
+  audion.entryPoints.textSandbox_.classList.add(
+      goog.getCssName('audioParamText'));
+  var audioParamPortRadius = 5;
+  var leftTextIndent = 12;
+  var distanceFromInputPorts = isLeftSideFilled ? 7 : 0;
+  var upShift = distanceFromInputPorts;
   for (var i = 0; i < message.audioParamNames.length; i++) {
+    var paramName = message.audioParamNames[i];
     ports.push({
       'id': audion.entryPoints.audioParamPortLabel_(
-          frameId, message.nodeId, message.audioParamNames[i]),
+          frameId, message.nodeId, paramName),
       'group': 'in',
       'attrs': {
         'circle': {
-          'fill': '#0000ff'
+          'fill': '#00bcd4',
+          'r': audioParamPortRadius,
+          'cy': upShift
         },
         'text': {
-          'fill': '#707070',
-          'text': message.audioParamNames[i]
+          'fill': '#bbdefb',
+          'text': paramName
         }
       },
       'label': {
           'position': {
-              'name' : 'left',
+              'name' : 'right',
               'args': {
-                  'x': -12,
-                  'y': 0,
+                  'x': leftTextIndent,
+                  'y': upShift,
                   'angle': 0
               }
           }
       }
     });
+    upShift -= 3;
+
+    // Size the text.
+    audion.entryPoints.textSandbox_.textContent = paramName;
+    var textWidth = audion.entryPoints.textSandbox_.clientWidth;
+    if (textWidth > labelDistance) {
+      labelDistance = textWidth;
+    }
   }
+  audion.entryPoints.textSandbox_.classList.remove(
+      goog.getCssName('audioParamText'));
+  labelDistance += leftTextIndent;
+
+  var leftSidePortCount = ports.length;
 
   // Create labels for out ports.
   for (var i = 0; i < message.numberOfOutputs; i++) {
@@ -577,16 +576,15 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
   // The width should be wide enough for both text and ports.
   var portDim = 23;
   var textWidth = audion.entryPoints.textSandbox_.clientWidth + 41;
-  var portWidth = message.audioParamNames.length * portDim;
-  var width = Math.max(textWidth, portWidth);
-
-  // Compute the number of ports on the left side.
-  var portCountOnLeftSide =
-      message.numberOfInputs + message.audioParamNames.length;
+  var width = textWidth + labelDistance;
 
   // Create a node.
   var nodeColor =
       audion.entryPoints.nodeTypeToColorMapping_[nodeType] || '#000';
+  var leftSideHeight = message.numberOfInputs * portDim +
+      distanceFromInputPorts +
+      message.audioParamNames.length * (audioParamPortRadius * 2 + 2);
+  var rightSideHeight = message.numberOfOutputs * portDim;
   new joint.shapes.basic.Rect({
     'id': audion.entryPoints.computeNodeGraphId_(frameId, message.nodeId),
     'attrs': {
@@ -598,6 +596,13 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
         },
         'text': {
           'fill': '#fff',
+          'ref-x': leftTextIndent,
+          // Only manually y-position the node label if we have several input
+          // ports. Otherwise, the label won't align with the port.
+          'ref-y': leftSidePortCount > 1 ? 5 : undefined,
+          'y-alignment': leftSidePortCount > 1 ? 'top' : undefined,
+          'text-anchor': 'left',
+          'x-alignment': 'left',
           'text': nodeLabel
         },
         '.outPorts circle': {'fill': '#E74C3C'}
@@ -605,9 +610,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
     'size': {
       // Just a heuristic. Add a little padding.
       'width': width,
-      'height': Math.max(
-          40,
-          Math.max(portCountOnLeftSide, message.numberOfOutputs) * portDim)
+      'height': Math.max(leftSideHeight, rightSideHeight)
     },
     'ports': {
       'groups': {
@@ -965,7 +968,7 @@ audion.entryPoints.redraw_ = function() {
   var layout = joint.layout.DirectedGraph.layout(audion.entryPoints.graph_, {
       'rankDir': 'LR',
       'setLinkVertices': true,
-      'rankSep': 100
+      'rankSep': 50
     });
 
   if (!layout.width ||
