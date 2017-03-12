@@ -37,6 +37,7 @@
 
 #paneContainer .xButton {
   cursor: pointer;
+  user-select: none;
 }
 
 #paneContainer .widgetRowLeft, #paneContainer .widgetRowRight {
