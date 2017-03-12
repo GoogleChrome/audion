@@ -116,11 +116,19 @@ audion.entryPoints.modifiableAudioNodeProperties_ = ['channelCount'];
 
 
 /**
- * Enum properties present on all nodes.
+ * Properties present on all nodes.
  * @private @const {!Array.<string>}
  */
 audion.entryPoints.enumAudioNodeProperties_ =
     ['channelCountMode', 'channelInterpretation'];
+
+
+/**
+ * Properties present on AudioBuffers.
+ * @private @const {!Array.<string>}
+ */
+audion.entryPoints.enumAudioBufferProperties_ =
+    ['sampleRate', 'length', 'duration', 'numberOfChannels'];
 
 
 /**
@@ -163,6 +171,145 @@ audion.entryPoints.countHighlightedAudioNodes_ = function() {
  */
 audion.entryPoints.coerceStringToNumber_ = function(someString) {
   return someString;
+};
+
+
+/**
+ * Adds AudioNode properties related to an AudioBuffer to a list.
+ * @param {!Array.<!AudionPropertyValuePair>} propertyValues The list to append
+ *     to. This list is destructively modified.
+ * @param {?AudioBuffer} buffer The AudioBuffer to glean properties from if any.
+ * @private
+ */
+audion.entryPoints.addBufferRelatedProperties_ = function(
+    propertyValues, buffer) {
+  if (buffer) {
+    // Get info on the audio buffer.
+    var bufferReadOnlyProperties =
+        audion.entryPoints.enumAudioBufferProperties_;
+    for (var i = 0; i < bufferReadOnlyProperties.length; i++) {
+      propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
+        property: 'buffer__' + bufferReadOnlyProperties[i],
+        propertyType: audion.messaging.NodePropertyType.READ_ONLY,
+        value: buffer[bufferReadOnlyProperties[i]]
+      }));
+    }
+  } else {
+    propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
+      property: 'buffer',
+      propertyType: audion.messaging.NodePropertyType.MUTABLE_OBJECT,
+      value: null
+    }));
+  }
+};
+
+
+/**
+ * Adds properties specific to the AudioNode type to a given list.
+ * @param {!Array.<!AudionPropertyValuePair>} propertyValues The list to append
+ *     to. This list is destructively modified.
+ * @param {!AudioNode} node The AudioNode to glean properties from.
+ * @private
+ */
+audion.entryPoints.addAudioNodeSpecificProperties_ = function(
+    propertyValues, node) {
+  var readOnlyProperties;
+  var mutableBooleanProperties;
+  var mutableNumberProperties;
+  var mutableObjectProperties;
+  var enumProperties;
+  switch (node.constructor) {
+    case AnalyserNode:
+      readOnlyProperties = ['frequencyBinCount'];
+      mutableNumberProperties =
+          ['fftSize', 'minDecibels', 'maxDecibels', 'smoothingTimeConstant'];
+      break;
+    case AudioBufferSourceNode:
+      node = /** @type {!AudioBufferSourceNode} */ (node);
+      mutableBooleanProperties = ['loop'];
+      mutableNumberProperties = ['loopStart', 'loopEnd'];
+      audion.entryPoints.addBufferRelatedProperties_(
+          propertyValues, node.buffer);
+      break;
+    case AudioDestinationNode:
+      readOnlyProperties = ['maxChannelCount'];
+      break;
+    case BiquadFilterNode:
+      enumProperties = ['type'];
+      break;
+    case ConvolverNode:
+      node = /** @type {!ConvolverNode} */ (node);
+      mutableBooleanProperties = ['normalize'];
+      audion.entryPoints.addBufferRelatedProperties_(
+          propertyValues, node.buffer);
+      break;
+    case DynamicsCompressorNode:
+      readOnlyProperties = ['reduction'];
+      break;
+    case OscillatorNode:
+      enumProperties = ['type'];
+      break;
+    case PannerNode:
+      mutableNumberProperties = [
+          'coneInnerAngle',
+          'coneOuterAngle',
+          'coneOuterGain',
+          'maxDistance',
+          'refDistance',
+          'rolloffFactor'
+        ];
+      enumProperties = ['distanceModel', 'panningModel'];
+      break;
+    case ScriptProcessorNode:
+      readOnlyProperties = ['bufferSize'];
+      break;
+    case WaveShaperNode:
+      node = /** @type {!WaveShaperNode} */ (node);
+      propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
+        property: 'curve__length',
+        propertyType: audion.messaging.NodePropertyType.READ_ONLY,
+        value: node.curve ? node.curve.length : 0
+      }));
+      enumProperties = ['oversample'];
+      break;
+  }
+
+  if (readOnlyProperties) {
+    for (var i = 0; i < readOnlyProperties.length; i++) {
+      propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
+        property: readOnlyProperties[i],
+        propertyType: audion.messaging.NodePropertyType.READ_ONLY,
+        value: node[readOnlyProperties[i]]
+      }));
+    }
+  }
+  if (mutableBooleanProperties) {
+    for (var i = 0; i < mutableBooleanProperties.length; i++) {
+      propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
+        property: mutableBooleanProperties[i],
+        propertyType: audion.messaging.NodePropertyType.MUTABLE_BOOLEAN,
+        value: node[mutableBooleanProperties[i]]
+      }));
+    }
+  }
+  if (mutableNumberProperties) {
+    for (var i = 0; i < mutableNumberProperties.length; i++) {
+      propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
+        property: mutableNumberProperties[i],
+        propertyType: audion.messaging.NodePropertyType.MUTABLE_NUMBER,
+        value: node[mutableNumberProperties[i]]
+      }));
+    }
+  }
+  if (enumProperties) {
+    for (var i = 0; i < enumProperties.length; i++) {
+      propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
+        property: enumProperties[i],
+        propertyType: audion.messaging.NodePropertyType.ENUM,
+        value: node[enumProperties[i]]
+      }));
+    }
+  }
 };
 
 
@@ -240,7 +387,8 @@ audion.entryPoints.sendBackNodeData_ = function() {
       }));
     }
 
-    // TODO(chizeng): Issue property values specific to the node.
+    // Obtain values specific to the type of AudioNode.
+    audion.entryPoints.addAudioNodeSpecificProperties_(propertyValues, node);
 
     // Issue a message that contains data on this node.
     audion.entryPoints.postToContentScript_(

@@ -74,7 +74,9 @@ audion.ui.pane.AudioNodeMode = function(message) {
       case audion.messaging.NodePropertyType.READ_ONLY:
         readOnlyPropertyWidgets.push(widget);
         break;
+      case audion.messaging.NodePropertyType.MUTABLE_BOOLEAN:
       case audion.messaging.NodePropertyType.MUTABLE_NUMBER:
+      case audion.messaging.NodePropertyType.MUTABLE_OBJECT:
       case audion.messaging.NodePropertyType.ENUM:
         modifiablePropertyWidgets.push(widget);
         break;
