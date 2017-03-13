@@ -74,7 +74,9 @@ audion.ui.pane.AudioNodeMode = function(message) {
       case audion.messaging.NodePropertyType.READ_ONLY:
         readOnlyPropertyWidgets.push(widget);
         break;
+      case audion.messaging.NodePropertyType.MUTABLE_BOOLEAN:
       case audion.messaging.NodePropertyType.MUTABLE_NUMBER:
+      case audion.messaging.NodePropertyType.MUTABLE_OBJECT:
       case audion.messaging.NodePropertyType.ENUM:
         modifiablePropertyWidgets.push(widget);
         break;
@@ -82,8 +84,11 @@ audion.ui.pane.AudioNodeMode = function(message) {
   }
 
   // Render the property value data.
-  this.renderCategoryOfWidgets_(
-      this.getDom(), 'AudioParams', audioParamWidgets);
+  if (audioParamWidgets.length) {
+    // Only include the AudioParams section if AudioParams exist.
+    this.renderCategoryOfWidgets_(
+        this.getDom(), 'AudioParams', audioParamWidgets);
+  }
   this.renderCategoryOfWidgets_(
       this.getDom(), 'Read-only', readOnlyPropertyWidgets);
   this.renderCategoryOfWidgets_(

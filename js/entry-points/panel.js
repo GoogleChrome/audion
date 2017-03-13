@@ -755,7 +755,7 @@ audion.entryPoints.removeLoadingScreen_ = function() {
  */
 audion.entryPoints.handlePageOfTabChanged_ = function() {
   // Unhighlight the current highlighted node if there is one.
-  audion.entryPoints.unhighlightCurrentAudioNode_();
+  audion.entryPoints.pane_.setMode(null);
 
   // Reset the graph.
   audion.entryPoints.graph_.clear();
