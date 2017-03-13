@@ -84,8 +84,11 @@ audion.ui.pane.AudioNodeMode = function(message) {
   }
 
   // Render the property value data.
-  this.renderCategoryOfWidgets_(
-      this.getDom(), 'AudioParams', audioParamWidgets);
+  if (audioParamWidgets.length) {
+    // Only include the AudioParams section if AudioParams exist.
+    this.renderCategoryOfWidgets_(
+        this.getDom(), 'AudioParams', audioParamWidgets);
+  }
   this.renderCategoryOfWidgets_(
       this.getDom(), 'Read-only', readOnlyPropertyWidgets);
   this.renderCategoryOfWidgets_(
