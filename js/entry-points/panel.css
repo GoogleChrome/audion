@@ -100,7 +100,7 @@ body {
 }
 
 #loading-screen {
-  background: rgba(0, 0, 0, 0.8);
+  background: rgba(255, 255, 255, 0.4);
   position: absolute;
   bottom: 0;
   left: 0;
@@ -116,7 +116,7 @@ body {
 }
 
 #loading-screen.shown #spinner {
-  border: 10px solid #f3f3f3;
+  border: 10px solid #ccc;
   border-radius: 50%;
   border-top: 10px solid #3498db;
   width: 50px;
@@ -139,7 +139,7 @@ body {
 }
 
 #updates-missing-screen {
-  background: #fff;
+  background: #ccc;
   display: none;
   position: absolute;
   bottom: 0;
