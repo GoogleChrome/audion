@@ -42,12 +42,17 @@ body {
 }
 
 #text-sandbox {
+  font-size: 14px;
   height: auto;
   visibility: hidden;
   position: absolute;
   white-space: nowrap;
   width: auto;
   z-index: -4242;
+}
+
+#text-sandbox.audioParamText {
+  font-size: 12px;
 }
 
 .utilityBar {

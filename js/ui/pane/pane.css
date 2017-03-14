@@ -37,11 +37,18 @@
 
 #paneContainer .xButton {
   cursor: pointer;
+  user-select: none;
 }
 
-#paneContainer .widgetRowLeft, #paneContainer .widgetRowRight {
+#paneContainer .widgetRowLeft {
   display: inline-block;
-  width: 50%;
+  width: 60%;
+}
+
+#paneContainer .widgetRowRight {
+  display: inline-block;
+  overflow: hidden;
+  width: 40%;
 }
 
 .propertyValueCategoryTitle {
