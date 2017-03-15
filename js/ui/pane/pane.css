@@ -42,13 +42,13 @@
 
 #paneContainer .widgetRowLeft {
   display: inline-block;
-  width: 60%;
+  width: 55%;
 }
 
 #paneContainer .widgetRowRight {
   display: inline-block;
   overflow: hidden;
-  width: 40%;
+  width: 45%;
 }
 
 .propertyValueCategoryTitle {

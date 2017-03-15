@@ -104,3 +104,14 @@ AudioContext.prototype.createIIRFilter = function(feedforward, feedback) {};
  * @extends {AudioNode}
  */
 function PannerNode() {}
+
+
+
+/**
+ * Note: ... in actuality, AudioContext extends BaseAudioContext. However, the
+ * default Closure externs currently do not recognize BaseAudioContext. This
+ * definition should really go away once Closure externs update.
+ * @constructor
+ * @extends {AudioContext}
+ */
+function BaseAudioContext() {}
