@@ -463,7 +463,7 @@ audion.entryPoints.handleLinkCreated_ = function(link) {
  * @private
  */
 audion.entryPoints.handleNodeCreated_ = function(message) {
-    // Strip the node suffix. It is redundant.
+  // Strip the node suffix. It is redundant.
   var suffix = 'Node';
   var nodeType = message.nodeType
   if (nodeType.slice(-4) == suffix) {
@@ -680,7 +680,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
         }
       },
       'items': ports
-    },
+    }
   }).addTo(audion.entryPoints.graph_);
 
   audion.entryPoints.requestRedraw_();
