@@ -459,18 +459,15 @@ audion.entryPoints.sendBackNodeData_ = function() {
     }
 
     // Report the context of this node.
-    var contextResourceId = node.context[audion.entryPoints.resourceIdField_];
-    var contextData = /** @type {!audion.entryPoints.AudioContextData_} */ (
-        audion.entryPoints.idToResource_[contextResourceId]);
-    var contextLabel = 'Context ' + contextResourceId;
-    if (contextData.isOffline) {
-      // If applicable, tell the user that this is an OfflineAudioContext.
-      contextLabel = 'Offline ' + contextLabel;
-    }
     propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
-      property: 'context (id)',
+      property: 'context type',
       propertyType: audion.messaging.NodePropertyType.READ_ONLY,
-      value: contextLabel
+      value: node.context.constructor.name
+    }));
+    propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
+      property: 'context ID',
+      propertyType: audion.messaging.NodePropertyType.READ_ONLY,
+      value: node.context[audion.entryPoints.resourceIdField_]
     }));
 
     // Obtain info on certain params present on all AudioNodes.
