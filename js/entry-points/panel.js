@@ -474,88 +474,49 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
   var frameId = /** @type {number} */ (message.frameId);
   var nodeLabel = nodeType + ' ' + message.nodeId;
 
+  var leftSidePortCount =
+      message.numberOfInputs + message.audioParamNames.length;
+
+  var portPadding = 2;
+  var inputPortRadius = 10;
+  var totalInputPortHeight = inputPortRadius * 2 + portPadding;
+  var audioParamPortRadius = 5;
+  var totalParamPortHeight = audioParamPortRadius * 2 + portPadding;
+  var leftTextIndent = 12;
+
+  // Even if there are no input ports, leave room for the node label.
+  var inputPortSectionHeight =
+      totalInputPortHeight * Math.max(1, message.numberOfInputs);
+  var paramPortSectionHeight =
+      totalParamPortHeight * message.audioParamNames.length;
+
+  // Use the max of the left and right side heights as the total height.
+  // Include a little padding on the left.
+  var leftSideTopPadding = 5;
+  var leftSideBottomPadding = message.audioParamNames.length ? 3 : 5;
+  var totalHeight = Math.max(
+      inputPortSectionHeight + paramPortSectionHeight + leftSideTopPadding +
+          leftSideBottomPadding,
+      totalInputPortHeight * message.numberOfOutputs);
+
   // Create labels for in ports.
   var ports = [];
-  var isLeftSideFilled = message.audioParamNames.length > 1;
-  var marginTop = isLeftSideFilled ? 4 : 0;
+  var inputPortY = inputPortRadius + leftSideTopPadding;
   for (var i = 0; i < message.numberOfInputs; i++) {
     ports.push({
       'id': audion.entryPoints.inPortLabel_(frameId, message.nodeId, i),
       'group': 'in',
       'attrs': {
         'text': {
-          'text': i,
+          'text': i
         },
-        'circle': {
-          'fill': '#00ff00',
-          'cy': marginTop,
-        }
       },
-      'label': {
-        'position': {
-            'name' :'bottom',
-            'args': {
-                'x': 0,
-                // -3 to vertically center the text.
-                'y': marginTop - 3
-            }
-        }
+      'args': {
+        'y': inputPortY
       }
     });
+    inputPortY += totalInputPortHeight
   }
-
-  // Create labels for audio param ports. At the same time, determine how far
-  // the label for the node itself must be from the left.
-  var labelDistance = 0;
-  // Style the invisible text sandbox so that it accurately sizes text.
-  audion.entryPoints.textSandbox_.classList.add(
-      goog.getCssName('audioParamText'));
-  var audioParamPortRadius = 5;
-  var leftTextIndent = 12;
-  var distanceFromInputPorts = isLeftSideFilled ? 7 : 0;
-  var upShift = distanceFromInputPorts;
-  for (var i = 0; i < message.audioParamNames.length; i++) {
-    var paramName = message.audioParamNames[i];
-    ports.push({
-      'id': audion.entryPoints.audioParamPortLabel_(
-          frameId, message.nodeId, paramName),
-      'group': 'in',
-      'attrs': {
-        'circle': {
-          'fill': '#00bcd4',
-          'r': audioParamPortRadius,
-          'cy': upShift
-        },
-        'text': {
-          'fill': '#bbdefb',
-          'text': paramName
-        }
-      },
-      'label': {
-          'position': {
-              'name' : 'right',
-              'args': {
-                  'x': leftTextIndent,
-                  'y': upShift,
-                  'angle': 0
-              }
-          }
-      }
-    });
-    upShift -= 3;
-
-    // Size the text.
-    audion.entryPoints.textSandbox_.textContent = paramName;
-    var textWidth = audion.entryPoints.textSandbox_.clientWidth;
-    if (textWidth > labelDistance) {
-      labelDistance = textWidth;
-    }
-  }
-  audion.entryPoints.textSandbox_.classList.remove(
-      goog.getCssName('audioParamText'));
-  labelDistance += leftTextIndent;
-
-  var leftSidePortCount = ports.length;
 
   // Create labels for out ports.
   for (var i = 0; i < message.numberOfOutputs; i++) {
@@ -570,81 +531,153 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
     });
   }
 
-  // Determine the would-be length of the text.
-  audion.entryPoints.textSandbox_.textContent = nodeLabel;
+  // Compute the max width. Part of that entails computing the max param label
+  // length. Style the invisible text sandbox so that it accurately sizes text.
+  var maxTextLength = 0;
+  audion.entryPoints.textSandbox_.classList.add(
+      goog.getCssName('audioParamText'));
 
-  // The width should be wide enough for both text and ports.
-  var portDim = 23;
-  var textWidth = audion.entryPoints.textSandbox_.clientWidth + 41;
-  var width = textWidth + labelDistance;
+  // Create labels for audio param ports.
+  var audioParamY =
+      inputPortSectionHeight + leftSideTopPadding + audioParamPortRadius;
+  for (var i = 0; i < message.audioParamNames.length; i++) {
+    ports.push({
+      'id': audion.entryPoints.audioParamPortLabel_(
+          frameId, message.nodeId, message.audioParamNames[i]),
+      'group': 'param',
+      'attrs': {
+        'text': {
+          'text': message.audioParamNames[i]
+        }
+      },
+      'args': {
+        'y': audioParamY
+      },
+    });
+    audioParamY += totalParamPortHeight;
+
+    // Determine the audio param label max length.
+    audion.entryPoints.textSandbox_.textContent = message.audioParamNames[i];
+    maxTextLength = Math.max(
+        maxTextLength, audion.entryPoints.textSandbox_.clientWidth);
+  }
+
+  // No longer size the text based on the smaller audio param text font.
+  audion.entryPoints.textSandbox_.classList.remove(
+      goog.getCssName('audioParamText'));
+
+  // Determine the would-be length of the node label text.
+  audion.entryPoints.textSandbox_.textContent = nodeLabel;
+  maxTextLength = Math.max(
+        maxTextLength, audion.entryPoints.textSandbox_.clientWidth);
 
   // Create a node.
   var nodeColor =
       audion.entryPoints.nodeTypeToColorMapping_[nodeType] || '#000';
-  var leftSideHeight = message.numberOfInputs * portDim +
-      distanceFromInputPorts +
-      message.audioParamNames.length * (audioParamPortRadius * 2 + 2);
-  var rightSideHeight = message.numberOfOutputs * portDim;
+      
+  var textSpecifications = {
+    'fill': '#fff',
+    'text': nodeLabel
+  };
+  // Only manually y-position the node label if we have several input
+  // ports. Otherwise, the label won't align with the port.
+  if (leftSidePortCount > 1 || message.numberOfOutputs > 1) {
+    textSpecifications = Object.assign(textSpecifications, {
+      'text-anchor': 'left',
+      'x-alignment': 'left',
+      'y-alignment': 'top',
+      'ref-x': leftTextIndent,
+      'ref-y': 4 + leftSideTopPadding,
+    });
+  }
   new joint.shapes.basic.Rect({
     'id': audion.entryPoints.computeNodeGraphId_(frameId, message.nodeId),
     'attrs': {
-        'rect': {
-          'fill': nodeColor,
-          'rx': 2,
-          'ry': 2,
-          'stroke-width': 0
-        },
-        'text': {
-          'fill': '#fff',
-          'ref-x': leftTextIndent,
-          // Only manually y-position the node label if we have several input
-          // ports. Otherwise, the label won't align with the port.
-          'ref-y': leftSidePortCount > 1 ? 5 : undefined,
-          'y-alignment': leftSidePortCount > 1 ? 'top' : undefined,
-          'text-anchor': 'left',
-          'x-alignment': 'left',
-          'text': nodeLabel
-        },
-        '.outPorts circle': {'fill': '#E74C3C'}
+      'rect': {
+        'fill': nodeColor,
+        'rx': 2,
+        'ry': 2,
+        'stroke-width': 0
+      },
+      'text': textSpecifications,
+      '.inPorts circle': {'fill': '#16A085'},
+      '.outPorts circle': {'fill': '#E74C3C'},
+      '.paramPorts circle': {'fill': '#90CAF9'}
     },
     'size': {
-      // Just a heuristic. Add a little padding.
-      'width': width,
-      'height': Math.max(leftSideHeight, rightSideHeight)
+      'width': maxTextLength + leftTextIndent + 30,
+      'height': totalHeight
     },
     'ports': {
       'groups': {
-          'in': {
-              'attrs': {
-                  'circle': {
-                    'stroke': '#000000',
-                    // Prevent interactions with the port.
-                    'magnet': 'passive'
-                  }
-              },
-              'interactive': false,
-              'position': 'left'
+        'in': {
+          'attrs': {
+            'circle': {
+              'fill': '#00ff00',
+              'r': inputPortRadius,
+              'stroke': '#000000',
+              // Prevent interactions with the port.
+              'magnet': 'passive'
+            }
           },
-          'out': {
-              'attrs': {
-                  'circle': {
-                    'fill': '#ff0000',
-                    'stroke': '#000000',
-                    'magnet': 'passive'
-                  }
-              },
-              'interactive': false,
-              'position': 'right',
-              'label': {
-                  'position': {
-                      'name' :'bottom',
-                      'args': {
-                          'x': 0,
-                          'y': -3
-                      }
-                  }
+          'interactive': false,
+          'position': 'left',
+          'label': {
+            'position': {
+              'name' :'bottom',
+              'args': {
+                'x': 0,
+                'y': -3
               }
+            }
           }
+        },
+        'out': {
+          'attrs': {
+            'circle': {
+              'fill': '#ff0000',
+              'r': inputPortRadius,
+              'stroke': '#000000',
+              'magnet': 'passive'
+            }
+          },
+          'interactive': false,
+          'position': 'right',
+          'label': {
+            'position': {
+              'name' :'bottom',
+              'args': {
+                  'x': 0,
+                  'y': -3
+              }
+            }
+          }
+        },
+        'param': {
+          'attrs': {
+            'text': {
+              'fill': '#bbdefb',
+            },
+            'circle': {
+              'fill': '#00bcd4',
+              'r': audioParamPortRadius,
+              'stroke': '#000000',
+              'magnet': 'passive'
+            }
+          },
+          'interactive': false,
+          'position': 'left',
+          'label': {
+            'position': {
+              'name' : 'right',
+              'args': {
+                'x': leftTextIndent,
+                'y': 0,
+                'angle': 0
+              }
+            }
+          }
+        }
       },
       'items': ports
     }
