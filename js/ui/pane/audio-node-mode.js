@@ -52,6 +52,41 @@ audion.ui.pane.AudioNodeMode = function(message) {
    */
   this.propertyToWidgetMapping_ = {};
 
+  /**
+   * A mapping from key to container of widgets.
+   * @private {!Object.<string, !Element>}
+   */
+  this.keyToContainer_ = {};
+
+  /**
+   * The container for all content related to properties.
+   * @private {!Element}
+   */
+  this.propertyContentContainer_ = document.createElement('div');
+  this.getDom().appendChild(this.propertyContentContainer_);
+
+  this.renderPropertyContent_(message);
+};
+goog.inherits(audion.ui.pane.AudioNodeMode, audion.ui.pane.Mode);
+
+
+/**
+ * Renders information on properties.
+ * @param {!AudionAudioNodePropertiesUpdateMessage} message An AudioNode
+ *     properties message update we can use to fill in fields for the mode.
+ * @private
+ */
+audion.ui.pane.AudioNodeMode.prototype.renderPropertyContent_ = function(
+    message) {
+  // Empty all content. We're re-rendering.
+  while (this.propertyContentContainer_.firstChild) {
+    this.propertyContentContainer_.removeChild(
+        this.propertyContentContainer_.firstChild);
+  }
+
+  this.propertyToWidgetMapping_ = {};
+  this.keyToContainer_ = {};
+
   // Group property values by type. Lets present them to the user by category.
   var audioParamWidgets = [];
   var readOnlyPropertyWidgets = [];
@@ -92,38 +127,56 @@ audion.ui.pane.AudioNodeMode = function(message) {
   if (audioParamWidgets.length) {
     // Only include the AudioParams section if AudioParams exist.
     this.renderCategoryOfWidgets_(
-        this.getDom(), 'AudioParams', audioParamWidgets);
+        this.propertyContentContainer_,
+        'AudioParams',
+        'audioParams',
+        audioParamWidgets);
   }
   this.renderCategoryOfWidgets_(
-      this.getDom(), 'Read-only', readOnlyPropertyWidgets);
+      this.propertyContentContainer_,
+      'Read-only',
+      'readOnly',
+      readOnlyPropertyWidgets);
   this.renderCategoryOfWidgets_(
-      this.getDom(), 'Mutable', modifiablePropertyWidgets);
+      this.propertyContentContainer_,
+      'Mutable',
+      'mutable',
+      modifiablePropertyWidgets);
   if (bufferWidgets.length) {
-    this.renderCategoryOfWidgets_(this.getDom(), 'AudioBuffer', bufferWidgets);
+    this.renderCategoryOfWidgets_(
+        this.propertyContentContainer_,
+        'AudioBuffer',
+        'audioBuffer',
+        bufferWidgets);
   }
 };
-goog.inherits(audion.ui.pane.AudioNodeMode, audion.ui.pane.Mode);
 
 
 /**
  * Renders a category of widgets.
  * @param {!Element} container The container to append sections to.
  * @param {string} title The title of the category of widgets.
+ * @param {string} categoryKey A key used to refer to the container of widgets.
  * @param {!Array.<!audion.ui.pane.AudioPropertyWidget>} widgets The widgets to
  *     render.
  * @private
  */
 audion.ui.pane.AudioNodeMode.prototype.renderCategoryOfWidgets_ = function(
-    container, title, widgets) {
+    container, title, categoryKey, widgets) {
+  var subContainer = document.createElement('div');
+  container.appendChild(subContainer);
+  // Keep a reference to this container.
+  this.keyToContainer_[categoryKey] = subContainer;
+
   var titleElement = document.createElement('h4');
   titleElement.classList.add(goog.getCssName('propertyValueCategoryTitle'));
   titleElement.textContent = title;
-  container.appendChild(titleElement);
+  subContainer.appendChild(titleElement);
 
   for (var i = 0; i < widgets.length; i++) {
     var widgetRow = document.createElement('div');
     widgetRow.classList.add(goog.getCssName('widgetRow'));
-    container.appendChild(widgetRow);
+    subContainer.appendChild(widgetRow);
 
     var widgetRowLeft = document.createElement('div');
     widgetRowLeft.classList.add(goog.getCssName('widgetRowLeft'));
@@ -151,8 +204,11 @@ audion.ui.pane.AudioNodeMode.prototype.updateAudioProperties = function(
   for (var i = 0; i < propertyValues.length; i++) {
     var widget = this.propertyToWidgetMapping_[propertyValues[i].property];
     if (!widget) {
-      // This property could not be found.
-      continue;
+      // Odd. We don't recognize this property. Something changed. Perhaps the
+      // node has a new AudioBuffer. Re-render the pane to make sure we have the
+      // right widgets rendered.
+      this.renderPropertyContent_(message);
+      return;
     }
 
     // Have the widget update its value.
