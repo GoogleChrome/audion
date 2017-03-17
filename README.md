@@ -22,10 +22,11 @@ Performance trade offs ... when you benchmark your app for performance, disable 
 
 ## Set up
 1. Review CONTRIBUTING.md. Note that Google requires contributors to sign a [Contributors License Agreement](https://cla.developers.google.com/about/google-individual).
-2. Set up [2-factor authentication for Github](https://github.com/blog/1614-two-factor-authentication) (as Google requires).
-3. Add this origin as a remote to your local git repo. Use the `git@` address. The `https` address does not work with 2-factor authentication.
-4. Make sure your version of node is at least 6. Install npm if you lack it.
-5. Run `npm install` in the repo directory to install node modules.
+2. Make sure your version of the [Java SE Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/index.html) is at least 7. Many Mac users may have to install it. This download is unfortunately big.
+3. Set up [2-factor authentication for Github](https://github.com/blog/1614-two-factor-authentication) (as Google requires).
+4. Add this origin as a remote to your local git repo. Use the `git@` address. The `https` address does not work with 2-factor authentication.
+5. Make sure your version of node is at least 6. Install npm if you lack it.
+6. Run `npm install` in the repo directory to install node modules.
 
 ## Build and run
 

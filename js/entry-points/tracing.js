@@ -32,7 +32,8 @@ audion.entryPoints.Id_;
 /**
  * Stores data on an AudioContext.
  * @typedef{{
- *   id: audion.entryPoints.Id_
+ *   id: audion.entryPoints.Id_,
+ *   isOffline: boolean
  * }}
  * @private
  */
@@ -71,6 +72,14 @@ audion.entryPoints.AudioParamData_;
  * @private @const {string}
  */
 audion.entryPoints.resourceIdField_ = '__resource_id__';
+
+
+/**
+ * If we need a new ID for anything, we just increment this value. Every
+ * BaseAudioContext, AudioNode, and AudioParam gets a unique ID.
+ * @type {number}
+ */
+audion.entryPoints.nextAvailableId_ = 1;
 
 
 /**
@@ -201,6 +210,102 @@ audion.entryPoints.addBufferRelatedProperties_ = function(
       value: null
     }));
   }
+};
+
+
+/**
+ * Assigns a read-only ID property to an object.
+ * @param {!Object} resource
+ * @param {audion.entryPoints.Id_} id
+ * @private
+ */
+audion.entryPoints.assignIdProperty_ = function(resource, id) {
+  Object.defineProperty(resource, audion.entryPoints.resourceIdField_, {
+    value: id,
+    writable: false
+  });
+};
+
+
+/**
+ * Instruments a newly created node and its AudioParams.
+ * @param {!AudioNode} node
+ * @private
+ */
+audion.entryPoints.instrumentNode_ = function(node) {
+  var nodeId = audion.entryPoints.nextAvailableId_++;
+  audion.entryPoints.assignIdProperty_(node, nodeId);
+  audion.entryPoints.idToResource_[nodeId] =
+      /** @type {!audion.entryPoints.AudioNodeData_} */ ({
+    id: nodeId,
+    node: node
+  });
+
+  // Instrument AudioParams.
+  var audioParamNames = [];
+  for (var prop in node) {
+    var audioParam = node[prop];
+    if (audioParam instanceof AudioParam) {
+      // Store the ID of the node the param belongs to. And the param name.
+      var audioParamId = audion.entryPoints.nextAvailableId_++;
+      audion.entryPoints.assignIdProperty_(audioParam, audioParamId);
+      audion.entryPoints.idToResource_[audioParamId] =
+          /** @type {!audion.entryPoints.AudioParamData_} */ ({
+            id: audioParamId,
+            audioNodeId: nodeId,
+            propertyName: prop
+          });
+      audioParamNames.push(prop);
+    }
+  }
+
+  // Notify extension about the addition of a new node.
+  audion.entryPoints.postToContentScript_(
+      /** @type {!AudionNodeCreatedMessage} */ ({
+    type: audion.messaging.MessageType.NODE_CREATED,
+    nodeId: nodeId,
+    nodeType: node.constructor.name,
+    numberOfInputs: node.numberOfInputs,
+    numberOfOutputs: node.numberOfOutputs,
+    audioParamNames: audioParamNames
+    // TODO(chizeng): Include a stack trace for the creation of the node.
+  }));
+};
+
+
+/**
+ * Creates either an AudioContext or OfflineAudioContext.
+ * @param {!Function} nativeConstructor
+ * @param {!Array.<*>} argumentsList A list of argument params.
+ * @param {boolean} isOffline Whether this context is an offline one.
+ * @return {!BaseAudioContext} The constructed subclass.
+ * @private
+ */
+audion.entryPoints.createBaseAudioContextSubclass_ = function(
+    nativeConstructor, argumentsList, isOffline) {
+  // Null is the context. We cannot append to Arguments because it's not a
+  // list. We convert it to a list by slicing.
+  var newContext = /** @type {!BaseAudioContext} */ (
+      new (Function.prototype.bind.apply(
+          nativeConstructor, [null].concat(argumentsList))));
+  var audioContextId = audion.entryPoints.nextAvailableId_++;
+  audion.entryPoints.assignIdProperty_(newContext, audioContextId);
+  audion.entryPoints.idToResource_[audioContextId] =
+      /** @type {!audion.entryPoints.AudioContextData_} */ ({
+        id: audioContextId,
+        isOffline: isOffline
+      });
+
+  // Tell the extension that we have created a new AudioContext.
+  audion.entryPoints.postToContentScript_(
+      /** @type {!AudionContextCreatedMessage} */ ({
+        type: audion.messaging.MessageType.CONTEXT_CREATED,
+        contextId: audioContextId
+      }));
+
+  // Instrument the destination node.
+  audion.entryPoints.instrumentNode_(newContext.destination);
+  return newContext;
 };
 
 
@@ -355,7 +460,12 @@ audion.entryPoints.sendBackNodeData_ = function() {
 
     // Report the context of this node.
     propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
-      property: 'context (id)',
+      property: 'context type',
+      propertyType: audion.messaging.NodePropertyType.READ_ONLY,
+      value: node.context.constructor.name
+    }));
+    propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
+      property: 'context ID',
       propertyType: audion.messaging.NodePropertyType.READ_ONLY,
       value: node.context[audion.entryPoints.resourceIdField_]
     }));
@@ -473,14 +583,6 @@ audion.entryPoints.handleAudioNodeUnhighlighted_ = function(message) {
  */
 audion.entryPoints.tracing = function() {
   /**
-   * If we need a new ID for anything, we just increment this value. Every
-   * AudioContext, AudioNode, and AudioParam gets a unique ID.
-   * @type {number}
-   */
-  var nextAvailableId = 1;
-
-
-  /**
    * Logs a message to the console for debugging.
    * @param {string} message
    */
@@ -504,64 +606,6 @@ audion.entryPoints.tracing = function() {
     return function() {
       return decorator.call(this, originalNativeFunction, arguments);
     };
-  }
-
-
-  /**
-   * Assigns a read-only ID property to an object.
-   * @param {!Object} resource
-   * @param {audion.entryPoints.Id_} id
-   */
-  function assignIdProperty(resource, id) {
-    Object.defineProperty(resource, audion.entryPoints.resourceIdField_, {
-      value: id,
-      writable: false
-    });
-  }
-
-
-  /**
-   * Instruments a newly created node and its AudioParams.
-   * @param {!AudioNode} node
-   */
-  function instrumentNode(node) {
-    var nodeId = nextAvailableId++;
-    assignIdProperty(node, nodeId);
-    audion.entryPoints.idToResource_[nodeId] =
-        /** @type {!audion.entryPoints.AudioNodeData_} */ ({
-      id: nodeId,
-      node: node
-    });
-
-    // Instrument AudioParams.
-    var audioParamNames = [];
-    for (var prop in node) {
-      var audioParam = node[prop];
-      if (audioParam instanceof AudioParam) {
-        // Store the ID of the node the param belongs to. And the param name.
-        var audioParamId = nextAvailableId++;
-        assignIdProperty(audioParam, audioParamId);
-        audion.entryPoints.idToResource_[audioParamId] =
-            /** @type {!audion.entryPoints.AudioParamData_} */ ({
-              id: audioParamId,
-              audioNodeId: nodeId,
-              propertyName: prop
-            });
-        audioParamNames.push(prop);
-      }
-    }
-
-    // Notify extension about the addition of a new node.
-    audion.entryPoints.postToContentScript_(
-        /** @type {!AudionNodeCreatedMessage} */ ({
-      type: audion.messaging.MessageType.NODE_CREATED,
-      nodeId: nodeId,
-      nodeType: node.constructor.name,
-      numberOfInputs: node.numberOfInputs,
-      numberOfOutputs: node.numberOfOutputs,
-      audioParamNames: audioParamNames
-      // TODO(chizeng): Include a stack trace for the creation of the node.
-    }));
   }
 
   // Keep a reference to the native AudioContext constructor. We later override
@@ -704,104 +748,104 @@ audion.entryPoints.tracing = function() {
    */
   function newNodeDecorator(nativeMethod, originalArguments) {
     var result = nativeMethod.apply(this, originalArguments);
-    instrumentNode(result);
+    audion.entryPoints.instrumentNode_(result);
     return result;
   };
 
 
   /** @override */
-  AudioContext.prototype.createAnalyser = wrapNativeFunction(
-      AudioContext.prototype.createAnalyser, newNodeDecorator);
+  BaseAudioContext.prototype.createAnalyser = wrapNativeFunction(
+      BaseAudioContext.prototype.createAnalyser, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createBiquadFilter = wrapNativeFunction(
-      AudioContext.prototype.createBiquadFilter, newNodeDecorator);
+  BaseAudioContext.prototype.createBiquadFilter = wrapNativeFunction(
+      BaseAudioContext.prototype.createBiquadFilter, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createBufferSource = wrapNativeFunction(
-      AudioContext.prototype.createBufferSource, newNodeDecorator);
+  BaseAudioContext.prototype.createBufferSource = wrapNativeFunction(
+      BaseAudioContext.prototype.createBufferSource, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createScriptProcessor = wrapNativeFunction(
-      AudioContext.prototype.createScriptProcessor, newNodeDecorator);
+  BaseAudioContext.prototype.createScriptProcessor = wrapNativeFunction(
+      BaseAudioContext.prototype.createScriptProcessor, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createChannelMerger = wrapNativeFunction(
-      AudioContext.prototype.createChannelMerger, newNodeDecorator);
+  BaseAudioContext.prototype.createChannelMerger = wrapNativeFunction(
+      BaseAudioContext.prototype.createChannelMerger, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createChannelSplitter = wrapNativeFunction(
-      AudioContext.prototype.createChannelSplitter, newNodeDecorator);
+  BaseAudioContext.prototype.createChannelSplitter = wrapNativeFunction(
+      BaseAudioContext.prototype.createChannelSplitter, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createConvolver = wrapNativeFunction(
-      AudioContext.prototype.createConvolver, newNodeDecorator);
+  BaseAudioContext.prototype.createConvolver = wrapNativeFunction(
+      BaseAudioContext.prototype.createConvolver, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createDelay = wrapNativeFunction(
-      AudioContext.prototype.createDelay, newNodeDecorator);
+  BaseAudioContext.prototype.createDelay = wrapNativeFunction(
+      BaseAudioContext.prototype.createDelay, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createDynamicsCompressor = wrapNativeFunction(
-      AudioContext.prototype.createDynamicsCompressor, newNodeDecorator);
+  BaseAudioContext.prototype.createDynamicsCompressor = wrapNativeFunction(
+      BaseAudioContext.prototype.createDynamicsCompressor, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createGain = wrapNativeFunction(
-      AudioContext.prototype.createGain, newNodeDecorator);
+  BaseAudioContext.prototype.createGain = wrapNativeFunction(
+      BaseAudioContext.prototype.createGain, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createIIRFilter = wrapNativeFunction(
-      AudioContext.prototype.createIIRFilter, newNodeDecorator);
+  BaseAudioContext.prototype.createIIRFilter = wrapNativeFunction(
+      BaseAudioContext.prototype.createIIRFilter, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createWaveShaper = wrapNativeFunction(
-      AudioContext.prototype.createWaveShaper, newNodeDecorator);
+  BaseAudioContext.prototype.createWaveShaper = wrapNativeFunction(
+      BaseAudioContext.prototype.createWaveShaper, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createMediaElementSource = wrapNativeFunction(
-      AudioContext.prototype.createMediaElementSource, newNodeDecorator);
+  BaseAudioContext.prototype.createMediaElementSource = wrapNativeFunction(
+      BaseAudioContext.prototype.createMediaElementSource, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createMediaStreamDestination = wrapNativeFunction(
-      AudioContext.prototype.createMediaStreamDestination, newNodeDecorator);
+  BaseAudioContext.prototype.createMediaStreamDestination = wrapNativeFunction(
+      BaseAudioContext.prototype.createMediaStreamDestination, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createMediaStreamSource = wrapNativeFunction(
-      AudioContext.prototype.createMediaStreamSource, newNodeDecorator);
+  BaseAudioContext.prototype.createMediaStreamSource = wrapNativeFunction(
+      BaseAudioContext.prototype.createMediaStreamSource, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createOscillator = wrapNativeFunction(
-      AudioContext.prototype.createOscillator, newNodeDecorator);
+  BaseAudioContext.prototype.createOscillator = wrapNativeFunction(
+      BaseAudioContext.prototype.createOscillator, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createPanner = wrapNativeFunction(
-      AudioContext.prototype.createPanner, newNodeDecorator);
+  BaseAudioContext.prototype.createPanner = wrapNativeFunction(
+      BaseAudioContext.prototype.createPanner, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createSpatialPanner = wrapNativeFunction(
-      AudioContext.prototype.createSpatialPanner, newNodeDecorator);
+  BaseAudioContext.prototype.createSpatialPanner = wrapNativeFunction(
+      BaseAudioContext.prototype.createSpatialPanner, newNodeDecorator);
 
 
   /** @override */
-  AudioContext.prototype.createStereoPanner = wrapNativeFunction(
-      AudioContext.prototype.createStereoPanner, newNodeDecorator);
+  BaseAudioContext.prototype.createStereoPanner = wrapNativeFunction(
+      BaseAudioContext.prototype.createStereoPanner, newNodeDecorator);
 
   // Instrument the AudioNode constructors. AudioNodes could be created from
   // either "create methods" or constructors.
@@ -817,7 +861,7 @@ audion.entryPoints.tracing = function() {
     var audioNode = /** @type {!AudioNode} */ (
         new (Function.prototype.bind.apply(
             originalConstructor, [null].concat(argumentsList))));
-    instrumentNode(audioNode)
+    audion.entryPoints.instrumentNode_(audioNode)
     return audioNode;
   }
   if (typeof window['AudioWorkerNode'] == 'function') {
@@ -1059,27 +1103,27 @@ audion.entryPoints.tracing = function() {
 
   // Instrument the native AudioContext constructor. Patch the prototype chain.
   AudioContext = function() {
-    var newContext = new nativeAudioContextConstructor();
-    var audioContextId = nextAvailableId++;
-    assignIdProperty(newContext, audioContextId);
-    audion.entryPoints.idToResource_[audioContextId] =
-        /** @type {!audion.entryPoints.AudioContextData_} */ ({
-          id: audioContextId
-        });
-
-    // Tell the extension that we have created a new AudioContext.
-    audion.entryPoints.postToContentScript_(
-        /** @type {!AudionContextCreatedMessage} */ ({
-          type: audion.messaging.MessageType.CONTEXT_CREATED,
-          contextId: audioContextId
-        }));
-
-    // Instrument the destination node.
-    instrumentNode(newContext.destination);
-    return newContext;
+    // We must pass a list (not an Arguments object), so we use the slice method
+    // on the Array constructor's prototype to quickly convert to a list.
+    return audion.entryPoints.createBaseAudioContextSubclass_(
+        nativeAudioContextConstructor,
+        Array.prototype.slice.call(arguments), false);
   };
   AudioContext.prototype = nativeAudioContextConstructor.prototype;
   AudioContext.prototype.constructor = AudioContext;
+
+  // Do the same for OfflineAudioContext.
+  var nativeOfflineAudioContextConstructor = OfflineAudioContext;
+  OfflineAudioContext = function() {
+    // We must pass a list (not an Arguments object), so we use the slice method
+    // on the Array constructor's prototype to quickly convert to a list.
+    return audion.entryPoints.createBaseAudioContextSubclass_(
+        nativeOfflineAudioContextConstructor,
+        Array.prototype.slice.call(arguments), true);
+  };
+  OfflineAudioContext.prototype =
+      nativeOfflineAudioContextConstructor.prototype;
+  OfflineAudioContext.prototype.constructor = OfflineAudioContext;
 
   if (window['AudioWorker']) {
     /**
