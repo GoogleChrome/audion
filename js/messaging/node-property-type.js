@@ -20,7 +20,7 @@ goog.provide('audion.messaging.NodePropertyType');
  * Enumerates types of properties of AudioNodes. These values are used within
  * AudionPropertyValuePair messages, which are routed to dev tools in order to
  * update the properties of nodes shown to the user.
- * Increment this value upon adding a new value - next available value: 7
+ * Increment this value upon adding a new value - next available value: 9
  * @enum {number}
  */
 audion.messaging.NodePropertyType = {
@@ -29,5 +29,7 @@ audion.messaging.NodePropertyType = {
   MUTABLE_BOOLEAN: 3,
   MUTABLE_NUMBER: 4,
   MUTABLE_OBJECT: 5,
-  ENUM: 6
+  ENUM: 6,
+  BUFFER_MUTABLE_NUMBER: 7,
+  BUFFER_READ_ONLY: 8
 };

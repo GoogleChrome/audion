@@ -189,15 +189,15 @@ audion.entryPoints.addBufferRelatedProperties_ = function(
         audion.entryPoints.enumAudioBufferProperties_;
     for (var i = 0; i < bufferReadOnlyProperties.length; i++) {
       propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
-        property: 'buffer__' + bufferReadOnlyProperties[i],
-        propertyType: audion.messaging.NodePropertyType.READ_ONLY,
+        property: bufferReadOnlyProperties[i],
+        propertyType: audion.messaging.NodePropertyType.BUFFER_MUTABLE_NUMBER,
         value: buffer[bufferReadOnlyProperties[i]]
       }));
     }
   } else {
     propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
       property: 'buffer',
-      propertyType: audion.messaging.NodePropertyType.MUTABLE_OBJECT,
+      propertyType: audion.messaging.NodePropertyType.BUFFER_READ_ONLY,
       value: null
     }));
   }

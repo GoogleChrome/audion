@@ -56,6 +56,7 @@ audion.ui.pane.AudioNodeMode = function(message) {
   var audioParamWidgets = [];
   var readOnlyPropertyWidgets = [];
   var modifiablePropertyWidgets = [];
+  var bufferWidgets = [];
 
   // Group group group.
   // TODO(chizeng): Use different widgets to render each property.
@@ -80,6 +81,10 @@ audion.ui.pane.AudioNodeMode = function(message) {
       case audion.messaging.NodePropertyType.ENUM:
         modifiablePropertyWidgets.push(widget);
         break;
+      case audion.messaging.NodePropertyType.BUFFER_MUTABLE_NUMBER:
+      case audion.messaging.NodePropertyType.BUFFER_READ_ONLY:
+        bufferWidgets.push(widget);
+        break;
     }
   }
 
@@ -93,6 +98,9 @@ audion.ui.pane.AudioNodeMode = function(message) {
       this.getDom(), 'Read-only', readOnlyPropertyWidgets);
   this.renderCategoryOfWidgets_(
       this.getDom(), 'Mutable', modifiablePropertyWidgets);
+  if (bufferWidgets.length) {
+    this.renderCategoryOfWidgets_(this.getDom(), 'AudioBuffer', bufferWidgets);
+  }
 };
 goog.inherits(audion.ui.pane.AudioNodeMode, audion.ui.pane.Mode);
 
