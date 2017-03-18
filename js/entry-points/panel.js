@@ -146,26 +146,25 @@ audion.entryPoints.tooltip_ = new audion.ui.tooltip.Tooltip();
  * @private @const {!Object.<string, string>}
  */
 audion.entryPoints.nodeTypeToColorMapping_ = {
-  'Analyser': '#607D88',
-  'AudioBufferSource': '#4CAF50',
+  'Analyser': '#00BCD4',
+  'AudioBufferSource': '#009688',
   'AudioDestination': '#37474F',
-  'BiquadFilter': '#4F7942',
-  'ChannelMerger': '#607D8B',
-  'ChannelSplitter': '#607D8B',
-  'Convolver': '#4F7942',
-  'Delay': '#4F7942',
-  'DynamicsCompressor': '#4F7942',
-  'Gain': '#607D8B',
-  'IIRFilter': '#4F7942',
-  'MediaElementAudioSource': '#4CAF50',
-  'MediaStreamAudioDestination': '#37474F',
-  'MediaStreamAudioSource': '#4CAF50',
-  'Oscillator': '#4CAF50',
-  'Panner': '#4F7942',
-  'ScriptProcessor': '#607D88',
-  'SpatialPanner': '#4F7942',
-  'StereoPanner': '#4F7942',
-  'WaveShaper': '#4F7942'
+  'BiquadFilter': '#2196F3',
+  'ChannelMerger': '#3F51B5',
+  'ChannelSplitter': '#3F51B5',
+  'Convolver': '#2196F3',
+  'Delay': '#2196F3',
+  'DynamicsCompressor': '#2196F3',
+  'Gain': '#3F51B5',
+  'IIRFilter': '#2196F3',
+  'MediaElementAudioSource': '#9C27B0',
+  'MediaStreamAudioDestination': '#9C27B0',
+  'MediaStreamAudioSource': '#9C27B0',
+  'Oscillator': '#009688',
+  'Panner': '#2196F3',
+  'ScriptProcessor': '#C62828',
+  'StereoPanner': '#2196F3',
+  'WaveShaper': '#2196F3'
 };
 
 
@@ -477,7 +476,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
   var leftSidePortCount =
       message.numberOfInputs + message.audioParamNames.length;
 
-  var portPadding = 2;
+  var portPadding = 4;
   var inputPortRadius = 10;
   var totalInputPortHeight = inputPortRadius * 2 + portPadding;
   var audioParamPortRadius = 5;
@@ -493,7 +492,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
   // Use the max of the left and right side heights as the total height.
   // Include a little padding on the left.
   var leftSideTopPadding = 5;
-  var leftSideBottomPadding = message.audioParamNames.length ? 3 : 5;
+  var leftSideBottomPadding = message.audioParamNames.length ? 6 : 8;
   var totalHeight = Math.max(
       inputPortSectionHeight + paramPortSectionHeight + leftSideTopPadding +
           leftSideBottomPadding,
@@ -595,14 +594,15 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
     'attrs': {
       'rect': {
         'fill': nodeColor,
-        'rx': 2,
-        'ry': 2,
+        'rx': 3,
+        'ry': 3,
         'stroke-width': 0
       },
       'text': textSpecifications,
-      '.inPorts circle': {'fill': '#16A085'},
-      '.outPorts circle': {'fill': '#E74C3C'},
-      '.paramPorts circle': {'fill': '#90CAF9'}
+      // What does this do?
+      // '.inPorts circle': {'fill': '#4CAF50'},
+      // '.outPorts circle': {'fill': '#FF9800'},
+      // '.paramPorts circle': {'fill': '#A5D6A7'}
     },
     'size': {
       'width': maxTextLength + leftTextIndent + 30,
@@ -613,7 +613,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
         'in': {
           'attrs': {
             'circle': {
-              'fill': '#00ff00',
+              'fill': '#4CAF50',
               'r': inputPortRadius,
               'stroke': '#000000',
               // Prevent interactions with the port.
@@ -635,7 +635,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
         'out': {
           'attrs': {
             'circle': {
-              'fill': '#ff0000',
+              'fill': '#E91E63',
               'r': inputPortRadius,
               'stroke': '#000000',
               'magnet': 'passive'
@@ -656,10 +656,10 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
         'param': {
           'attrs': {
             'text': {
-              'fill': '#bbdefb',
+              'fill': '#B0BEC5',
             },
             'circle': {
-              'fill': '#00bcd4',
+              'fill': '#CDDC39',
               'r': audioParamPortRadius,
               'stroke': '#000000',
               'magnet': 'passive'
