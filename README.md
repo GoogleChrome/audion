@@ -5,7 +5,7 @@ Web Audio Inspector is a Chrome extension that adds a "WebAudio" panel to DevToo
 - [Chrome Web Store]()
 - [How to Use](https://github.com/google/audion/wiki/How-to-Use)
 
-# Development and Contribution
+# Development
 
 ## Dependency
 
@@ -23,7 +23,7 @@ Web Audio Inspector is a Chrome extension that adds a "WebAudio" panel to DevToo
 Run the following commands in the project root directory.
 
 ```bash
-npm install   # Installs Node modules
+npm install   # Install Node modules
 gulp          # Build the extension
 ```
 
