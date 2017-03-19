@@ -656,7 +656,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
         'param': {
           'attrs': {
             'text': {
-              'fill': '#B0BEC5',
+              'fill': '#CFD8DC'
             },
             'circle': {
               'fill': '#CDDC39',
