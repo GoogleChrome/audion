@@ -1,22 +1,6 @@
-# Introduction
-
 Audion is a Chrome extension that adds a Web Audio panel to dev tools. This panel lets the user inspect the web audio graph in real-time.
 
-# Navigate the graph
-
-Info on how the graph works, what colors encode, etc.
-
-# Inspect nodes
-
-How the user could inspect and modify nodes.
-
-# Have fun
-
-Some examples of cool audio graphs you can make and tinker with.
-
-# Caveats
-
-Performance trade offs ... when you benchmark your app for performance, disable this extension.
+Refer to the wiki for documentation on usage.
 
 # Documentation For Developers
 
