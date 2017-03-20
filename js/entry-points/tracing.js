@@ -141,6 +141,33 @@ audion.entryPoints.enumAudioBufferProperties_ =
 
 
 /**
+ * @return {string} The target that postMessage should use to issue messages to
+ *     this page.
+ * @private
+ */
+audion.entryPoints.determinePostMessageTarget_ = function() {
+   var origin = window.location.origin
+   if (origin && origin.indexOf('file:') != 0) {
+     // We try to use as specific an origin as possible. But also, as of this
+     // writing, posting a message to a page at a file: URL requires that the
+     // target origin argument be '*', so we accommodate that.
+     return origin;
+   }
+   return '*';
+};
+
+
+/**
+ * The target that postMessage uses to issue messages to this page. Those
+ * messages could be picked up by the tracing code injected into the page via
+ * the content script.
+ * @private @const {string}
+ */
+audion.entryPoints.postMessageTarget_ =
+    audion.entryPoints.determinePostMessageTarget_();
+
+
+/**
  * Posts a message to the content script. Adds a tag to the message to
  * indicate that the message comes from this extension.
  * @param {!AudionMessage} messageToSend
@@ -149,7 +176,7 @@ audion.entryPoints.enumAudioBufferProperties_ =
 audion.entryPoints.postToContentScript_ = function(messageToSend) {
   messageToSend.tag = audion.entryPoints.ExtensionTag.FromTracing;
   // Post the message to this window only. The content script will pick it up.
-  window.postMessage(messageToSend, window.location.origin || '*');
+  window.postMessage(messageToSend, audion.entryPoints.postMessageTarget_);
 }
 
 
