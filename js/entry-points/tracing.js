@@ -33,7 +33,6 @@ audion.entryPoints.Id_;
  * Stores data on an AudioContext.
  * @typedef{{
  *   id: audion.entryPoints.Id_,
- *   isOffline: boolean
  * }}
  * @private
  */
@@ -294,7 +293,8 @@ audion.entryPoints.instrumentNode_ = function(node) {
     nodeType: node.constructor.name,
     numberOfInputs: node.numberOfInputs,
     numberOfOutputs: node.numberOfOutputs,
-    audioParamNames: audioParamNames
+    audioParamNames: audioParamNames,
+    isOffline: node.context instanceof OfflineAudioContext
     // TODO(chizeng): Include a stack trace for the creation of the node.
   }));
 };
@@ -319,8 +319,7 @@ audion.entryPoints.createBaseAudioContextSubclass_ = function(
   audion.entryPoints.assignIdProperty_(newContext, audioContextId);
   audion.entryPoints.idToResource_[audioContextId] =
       /** @type {!audion.entryPoints.AudioContextData_} */ ({
-        id: audioContextId,
-        isOffline: isOffline
+        id: audioContextId
       });
 
   // Tell the extension that we have created a new AudioContext.

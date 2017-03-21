@@ -113,6 +113,7 @@ var AudionContextCreatedMessage;
  *   type: number,
  *   tag: ?number,
  *   frameId: ?number,
+ *   isOffline: boolean,
  *   nodeId: number,
  *   nodeType: string,
  *   numberOfInputs: number,

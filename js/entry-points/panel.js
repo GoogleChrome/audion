@@ -141,30 +141,59 @@ audion.entryPoints.tooltip_ = new audion.ui.tooltip.Tooltip();
 
 
 /**
- * A mapping from AudioNode type to the color that we should use to visualize
- * it.
- * @private @const {!Object.<string, string>}
+ * Computes the color that should be used to visualize an AudioNode.
+ * @param {string} nodeType The type of the node. With the Node suffix removed.
+ * @param {boolean} isOffline Whether this node pertains to an
+ *     OfflineAudioContext.
+ * @return {string} The hex color used to visualize the AudioNode.
+ * @private
  */
-audion.entryPoints.nodeTypeToColorMapping_ = {
-  'Analyser': '#00BCD4',
-  'AudioBufferSource': '#009688',
-  'AudioDestination': '#37474F',
-  'BiquadFilter': '#2196F3',
-  'ChannelMerger': '#3F51B5',
-  'ChannelSplitter': '#3F51B5',
-  'Convolver': '#2196F3',
-  'Delay': '#2196F3',
-  'DynamicsCompressor': '#2196F3',
-  'Gain': '#3F51B5',
-  'IIRFilter': '#2196F3',
-  'MediaElementAudioSource': '#9C27B0',
-  'MediaStreamAudioDestination': '#9C27B0',
-  'MediaStreamAudioSource': '#9C27B0',
-  'Oscillator': '#009688',
-  'Panner': '#2196F3',
-  'ScriptProcessor': '#C62828',
-  'StereoPanner': '#2196F3',
-  'WaveShaper': '#2196F3'
+audion.entryPoints.computeNodeColor_ = function(nodeType, isOffline) {
+  switch (nodeType) {
+    case 'Analyser':
+      return '#00BCD4';
+    case 'AudioBufferSource':
+      return '#009688';
+    case 'AudioDestination':
+      // The destination nodes of OfflineAudioContexts are brown. Those of
+      // "non-offline" AudioContexts are a dark grey.
+      return isOffline ? '#5D4037' : '#37474F';
+    case 'BiquadFilter':
+      return '#2196F3';
+    case 'ChannelMerger':
+      return '#3F51B5';
+    case 'ChannelSplitter':
+      return '#3F51B5';
+    case 'Convolver':
+      return '#2196F3';
+    case 'Delay':
+      return '#2196F3';
+    case 'DynamicsCompressor':
+      return '#2196F3';
+    case 'Gain':
+      return '#3F51B5';
+    case 'IIRFilter':
+      return '#2196F3';
+    case 'MediaElementAudioSource':
+      return '#9C27B0';
+    case 'MediaStreamAudioDestination':
+      return '#9C27B0';
+    case 'MediaStreamAudioSource':
+      return '#9C27B0';
+    case 'Oscillator':
+      return '#009688';
+    case 'Panner':
+      return '#2196F3';
+    case 'ScriptProcessor':
+      return '#C62828';
+    case 'StereoPanner':
+      return '#2196F3';
+    case 'WaveShaper':
+      return '#2196F3';
+  }
+
+  // Nothing matched. Odd. Just use black.
+  return '#000';
 };
 
 
@@ -571,8 +600,8 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
         maxTextLength, audion.entryPoints.textSandbox_.clientWidth);
 
   // Create a node.
-  var nodeColor =
-      audion.entryPoints.nodeTypeToColorMapping_[nodeType] || '#000';
+  var nodeColor = audion.entryPoints.computeNodeColor_(
+      nodeType, message.isOffline);
       
   var textSpecifications = {
     'fill': '#fff',
