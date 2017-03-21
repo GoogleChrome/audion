@@ -149,51 +149,40 @@ audion.entryPoints.tooltip_ = new audion.ui.tooltip.Tooltip();
  * @private
  */
 audion.entryPoints.computeNodeColor_ = function(nodeType, isOffline) {
+  // AudioNodes are grouped into color categories based on their purposes.
   switch (nodeType) {
-    case 'Analyser':
-      return '#00BCD4';
-    case 'AudioBufferSource':
-      return '#009688';
     case 'AudioDestination':
       // The destination nodes of OfflineAudioContexts are brown. Those of
       // "non-offline" AudioContexts are a dark grey.
       return isOffline ? '#5D4037' : '#37474F';
-    case 'BiquadFilter':
-      return '#2196F3';
-    case 'ChannelMerger':
-      return '#3F51B5';
-    case 'ChannelSplitter':
-      return '#3F51B5';
-    case 'Convolver':
-      return '#2196F3';
-    case 'Delay':
-      return '#2196F3';
-    case 'DynamicsCompressor':
-      return '#2196F3';
-    case 'Gain':
-      return '#3F51B5';
-    case 'IIRFilter':
-      return '#2196F3';
-    case 'MediaElementAudioSource':
-      return '#9C27B0';
-    case 'MediaStreamAudioDestination':
-      return '#9C27B0';
-    case 'MediaStreamAudioSource':
-      return '#9C27B0';
+    case 'AudioBufferSource':
     case 'Oscillator':
       return '#009688';
+    case 'BiquadFilter':
+    case 'Convolver':
+    case 'Delay':
+    case 'DynamicsCompressor':
+    case 'IIRFilter':
     case 'Panner':
-      return '#2196F3';
-    case 'ScriptProcessor':
-      return '#C62828';
     case 'StereoPanner':
-      return '#2196F3';
     case 'WaveShaper':
       return '#2196F3';
+    case 'Analyser':
+      return '#00BCD4';
+    case 'Gain':
+    case 'ChannelMerger':
+    case 'ChannelSplitter':
+      return '#3F51B5';
+    case 'MediaElementAudioSource':
+    case 'MediaStreamAudioDestination':
+    case 'MediaStreamAudioSource':
+      return '#9C27B0';
+    case 'ScriptProcessor':
+      return '#C62828';
   }
 
-  // Nothing matched. Odd. Just use black.
-  return '#000';
+  // Nothing matched. Odd. Highlight this node in dark red.
+  return '#C62828';
 };
 
 
@@ -602,7 +591,7 @@ audion.entryPoints.handleNodeCreated_ = function(message) {
   // Create a node.
   var nodeColor = audion.entryPoints.computeNodeColor_(
       nodeType, message.isOffline);
-      
+
   var textSpecifications = {
     'fill': '#fff',
     'text': nodeLabel
