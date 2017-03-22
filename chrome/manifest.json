@@ -1,6 +1,7 @@
 {
   "manifest_version": 2,
   "name": "Web Audio Inspector",
+  "author": "Google Web Audio API Tools",
   "description": "View web audio graphs. Inspect AudioNodes.",
   "version": "0.1.0",
   "background": {
@@ -24,6 +25,9 @@
     "images/*",
     "js/*"
   ],
-  "icons": {"48": "media/images/icon.png"},
+  "icons": {
+    "48": "media/images/icon.png",
+    "128": "media/images/icon.png"
+  },
   "devtools_page": "dev-tools.html"
 }
