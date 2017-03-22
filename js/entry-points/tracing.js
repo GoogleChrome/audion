@@ -233,7 +233,7 @@ audion.entryPoints.addBufferRelatedProperties_ = function(
     propertyValues.push(/** @type {!AudionPropertyValuePair} */ ({
       property: 'buffer',
       propertyType: audion.messaging.NodePropertyType.BUFFER_READ_ONLY,
-      value: null
+      value: 'N/A'
     }));
   }
 };
