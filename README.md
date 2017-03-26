@@ -28,4 +28,4 @@ npm install   # Install Node modules
 gulp          # Build the extension
 ```
 
-Then Load the `build` directory as an [unpacked Chrome extension](https://developer.chrome.com/extensions/getstarted#unpacked).
+Then load the `build` directory as an [unpacked Chrome extension](https://developer.chrome.com/extensions/getstarted#unpacked).
