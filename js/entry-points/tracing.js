@@ -865,11 +865,6 @@ audion.entryPoints.tracing = function() {
 
 
   /** @override */
-  BaseAudioContext.prototype.createSpatialPanner = wrapNativeFunction(
-      BaseAudioContext.prototype.createSpatialPanner, newNodeDecorator);
-
-
-  /** @override */
   BaseAudioContext.prototype.createStereoPanner = wrapNativeFunction(
       BaseAudioContext.prototype.createStereoPanner, newNodeDecorator);
 
@@ -1101,18 +1096,6 @@ audion.entryPoints.tracing = function() {
     };
     PannerNode['prototype'] = originalPannerNodeConstructor.prototype;
     PannerNode['prototype']['constructor'] = PannerNode;
-  }
-  if (typeof window['SpatialPannerNode'] == 'function') {
-    var constructorName = 'SpatialPannerNode';
-    var originalSpatialPannerNodeConstructor = SpatialPannerNode;
-    SpatialPannerNode = function() {
-      return createAudioNodeUsingConstructor(
-          originalSpatialPannerNodeConstructor,
-          Array.prototype.slice.call(arguments));
-    };
-    SpatialPannerNode['prototype'] =
-        originalSpatialPannerNodeConstructor.prototype;
-    SpatialPannerNode['prototype']['constructor'] = SpatialPannerNode;
   }
   if (typeof window['StereoPannerNode'] == 'function') {
     var constructorName = 'StereoPannerNode';
