@@ -11,7 +11,7 @@ The wiki details [how to use Web Audio Inspector](https://github.com/google/audi
 ## Dependency
 
 - [Node.js](https://nodejs.org/en/download/) version 6 or above.
-- [Java SE Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/index.html) verions 7 or above if necessary.
+- [Java SE Development Kit](http://www.oracle.com/technetwork/java/javase/downloads/index.html) version 7 or above if necessary.
 
 ## Contribution
 
