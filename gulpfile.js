@@ -11,18 +11,33 @@ var gulp = require('gulp');
 var change = require('gulp-change');
 var closureCompiler = require('gulp-closure-compiler');
 var closureCssRenamer = require('gulp-closure-css-renamer');
+var closureDeps = require('gulp-closure-deps');
 var concat = require('gulp-concat');
 var htmlmin = require('gulp-htmlmin');
 var less = require('gulp-less');
 var util = require('gulp-util');
 var watch = require('gulp-watch');
+var webserver = require('gulp-webserver');
 var mkdirp = require('mkdirp');
 var argv = require('yargs').argv;
 
-TEMPORARY_DIRECTORY = '/tmp/audion-build-temporary-files';
+// This directory will contain temporary artifacts generated during building.
+TEMPORARY_DIRECTORY = 'temporary_build_artifacts';
 
+// The sources of all raw JS. Passed to the JS compiler.
+SOURCES_OF_JAVASCRIPT = [
+    'js/**/*.js',
+    TEMPORARY_DIRECTORY + '/**/*.js',
+    'node_modules/google-closure-library/closure/goog/**/*.js',
+    'tests/**/*.js',
+  ];
 
+// Compile and build the extension. The outputted extension is placed within the
+// build/ directory.
 gulp.task('default', build);
+
+// Start a web server that hosts tests.
+gulp.task('test', serveTests);
 
 
 function build() {
@@ -234,12 +249,7 @@ function compileJs(
   }
 
   // Compile and minify JS.
-  var jsSrcs = [
-      'js/**/*.js',
-      TEMPORARY_DIRECTORY + '/**/*.js',
-      'node_modules/google-closure-library/closure/**/*.js'
-    ];
-  return gulp.src(jsSrcs)
+  return gulp.src(SOURCES_OF_JAVASCRIPT)
       .pipe(closureCompiler({
         compilerPath: 'node_modules/google-closure-compiler/compiler.jar',
         // The name of the compiled JS.
@@ -249,6 +259,7 @@ function compileJs(
       .on('error', logError)
       .pipe(gulp.dest(destDirectory));
 }
+
 
 /**
  * Compiles CSS.
@@ -283,6 +294,41 @@ function compileCss(callback) {
         while (!fs.existsSync(renameMappingLocation)) {}
         callback.apply(arguments);
       });
+  });
+}
+
+
+/**
+ * Generates a Closure deps.js file. Useful for instance for running tests.
+ * The generated file is placed in the temporary directory. It maps each
+ * namespace (foo.bar.Baz) to the file that provides it.
+ * @return {!Object} The gulp result from compilation.
+ */
+function generateDepsJs() {
+  return gulp.src(SOURCES_OF_JAVASCRIPT)
+    .pipe(closureDeps({
+      fileName: 'deps.js',
+      prefix: '../../../..' // The path from base.js to repo root.
+    }))
+    .pipe(gulp.dest(TEMPORARY_DIRECTORY));
+}
+
+
+/**
+ * Starts a static web server to run tests. To actually run the tests, the user
+ * visits HTML files in the browser. The pages with tests update automatically
+ * when files change.
+ */
+function serveTests() {
+  // Before starting the server to host tests, generate a deps file that maps
+  // each JS namespace to the file that provides it. The tests use uncompiled
+  // source JS.
+  generateDepsJs().on('end', function() {
+    gulp.src('.')
+      .pipe(webserver({
+        livereload: true,
+        directoryListing: true
+      }));
   });
 }
 
