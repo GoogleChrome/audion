@@ -42,35 +42,6 @@ audion.entryPoints.panelShown_ = false;
 
 
 /**
- * A mapping from AudioNode type to the color that we should use to visualize
- * it.
- * @private @const {!Object.<string, string>}
- */
-audion.entryPoints.nodeTypeToColorMapping_ = {
-  'Analyser': '#607D88',
-  'AudioBufferSource': '#4CAF50',
-  'AudioDestination': '#37474F',
-  'BiquadFilter': '#8BC34A',
-  'ChannelMerger': '#607D8B',
-  'ChannelSplitter': '#607D8B',
-  'Convolver': '#8BC34A',
-  'Delay': '#8BC34A',
-  'DynamicsCompressor': '#8BC34A',
-  'Gain': '#607D8B',
-  'IIRFilter': '#8BC34A',
-  'MediaElementAudioSource': '#4CAF50',
-  'MediaStreamAudioDestination': '#37474F',
-  'MediaStreamAudioSource': '#4CAF50',
-  'Oscillator': '#4CAF50',
-  'Panner': '#8BC34A',
-  'ScriptProcessor': '#607D88',
-  'SpatialPanner': '#8BC34A',
-  'StereoPanner': '#8BC34A',
-  'WaveShaper': '#8BC34A'
-};
-
-
-/**
  * Connects with the background page so that it can relay web audio updates to
  * this panel. Make sure to keep the keys strings to prevent obfuscation.
  * @private {!Port}
