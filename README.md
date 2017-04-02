@@ -48,6 +48,8 @@ The extension comprises of several scripts. Each script corresponds to a Closure
 Tests reside in the `tests` directory and use Closure's jsunit library. Tests run in a web browser. Each test has a `_test.html` file (which sets up DOM elements required by the test) and a `_test.js` file (which contains the bulk testing logic). To run all tests at once,
 
 1. Run `npm install` to update dependencies if you have not done so.
-2. Run `gulp test` to start a static server. This command also uses your default browser (preferably [Google Chrome](https://www.google.com/chrome/)) to open a web page for running all tests at once.
+2. Run `gulp test` to start a static server. This command also uses your default browser (preferably [Google Chrome](https://www.google.com/chrome/)) to open a web page (pictured below) for running all tests at once.
+
+![Web Audio Inspector](https://raw.githubusercontent.com/google/audion/master/wiki_content/closure%20test%20runner.png)
 
 To run tests individually, you can use that UI as well, or you could visit the path to that test's `_test.html` file.
