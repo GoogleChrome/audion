@@ -26,7 +26,7 @@
     "gulp-util": "^3.0.7",
     "gulp-watch": "^4.3.11",
     "harmonize": "^1.4.4",
-    "jointjs": "^1.0.3",
+    "jointjs": "^1.1.0",
     "jquery": "3.1.1",
     "lodash": "3.10.1",
     "yargs": "^4.7.1"

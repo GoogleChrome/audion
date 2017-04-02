@@ -32,6 +32,15 @@ audion.entryPoints.graphContainer_ = /** @type {!Element} */ (
 
 
 /**
+ * An element absolute positioned and used to detect the dimensions of the page.
+ * The graph div does not suffice because its dimensions may change.
+ * @private @const {!Element}
+ */
+audion.entryPoints.pageSizeDetector_ = /** @type {!Element} */ (
+    document.getElementById('page-size-detector'));
+
+
+/**
  * The current zoom relative to the entire graph fitting in the screen.
  * @private {!number}
  */
@@ -1080,8 +1089,8 @@ audion.entryPoints.requestRedraw_ = function() {
  */
 audion.entryPoints.handleResize_ = function() {
   audion.entryPoints.paper_.setDimensions(
-      audion.entryPoints.graphContainer_.offsetWidth,
-      audion.entryPoints.graphContainer_.offsetHeight);
+      audion.entryPoints.pageSizeDetector_.offsetWidth,
+      audion.entryPoints.pageSizeDetector_.offsetHeight);
   audion.entryPoints.panZoomObject_['resize']();
   audion.entryPoints.requestRedraw_();
 };
