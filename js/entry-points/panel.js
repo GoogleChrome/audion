@@ -372,13 +372,15 @@ audion.entryPoints.paper_ = audion.entryPoints.createPaper_(
 
 
 /**
- * An object that manages panning and zooming.
- * @private {!Object}
+ * Creates a pan zoom object (for panning and zooming).
+ * @return {!Object}
+ * @private
  */
-audion.entryPoints.panZoomObject_ = goog.global['svgPanZoom'](
-    audion.entryPoints.graphContainer_.firstChild, {
-    'viewportSelector':
-        audion.entryPoints.graphContainer_.firstChild.firstChild,
+audion.entryPoints.createPanZoomObject_ = function() {
+  var svgContainer = audion.entryPoints.graphContainer_.querySelector('svg');
+  return goog.global['svgPanZoom'](
+    svgContainer, {
+    'viewportSelector': svgContainer.firstChild,
     'zoomEnabled': true,
     'controlIconsEnabled': false,
     'minZoom': 0.1,
@@ -387,6 +389,14 @@ audion.entryPoints.panZoomObject_ = goog.global['svgPanZoom'](
     'fit': false,
     'center': false
   });
+};
+
+
+/**
+ * An object that manages panning and zooming.
+ * @private {!Object}
+ */
+audion.entryPoints.panZoomObject_ = audion.entryPoints.createPanZoomObject_();
 
 
 /**
