@@ -326,33 +326,21 @@ function generateDepsJs() {
  *     written to disk.
  */
 function generateListOfAllTests(callback) {
-  // gulp.src(TEST_DIRECTORY + '/**/*_test.html', {
-  //       read: false
-  //     })
-  //     .pipe(listfiles({
-  //       filename: 'all_tests.js'
-  //     }))
-  //     .pipe(change(function(test_files) {
-  //       // This is returned as a \n separated list of files without their base
-  //       // paths. We fix both of those things.
-  //       var listToSerialize = test_files.split('\n').map(function(file_name) {
-  //         return TEST_DIRECTORY + '/' + file_name;
-  //       });
+  // Make the temporary directory if it does not already exist.
+  mkdirp(TEMPORARY_DIRECTORY, function(err) {
+    if (err) {
+      // Failed to create the directory. It does not exist now.
+      logError(err);
+      return;
+    }
 
-  //       // Define a global variable that the test runner will use. This global
-  //       // variable lists all the tests.
-  //       var contents =
-  //           'var _allTests = ' + JSON.stringify(listToSerialize) + ';';
-  //       return contents;
-  //     }))
-  //     .pipe(gulp.dest(TEMPORARY_DIRECTORY));
-
-  glob(TEST_DIRECTORY + '/**/*_test.html', {}, function(er, file_names) {
-    fs.writeFile(
-        TEMPORARY_DIRECTORY + '/all_tests.js',
-        'var _allTests = ' + JSON.stringify(file_names) + ';',
-        callback);
-  })
+    glob(TEST_DIRECTORY + '/**/*_test.html', {}, function(er, file_names) {
+      fs.writeFile(
+          TEMPORARY_DIRECTORY + '/all_tests.js',
+          'var _allTests = ' + JSON.stringify(file_names) + ';',
+          callback);
+    });
+  });
 }
 
 
