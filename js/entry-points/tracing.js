@@ -174,6 +174,7 @@ audion.entryPoints.postMessageTarget_ =
  */
 audion.entryPoints.postToContentScript_ = function(messageToSend) {
   messageToSend.tag = audion.entryPoints.ExtensionTag.FromTracing;
+
   // Post the message to this window only. The content script will pick it up.
   window.postMessage(messageToSend, audion.entryPoints.postMessageTarget_);
 }
@@ -250,6 +251,35 @@ audion.entryPoints.assignIdProperty_ = function(resource, id) {
     value: id,
     writable: false
   });
+};
+
+
+/**
+ * Determines the channel to use in the graph visualization based on a user
+ * argument for either input or output channel. This function is necessary
+ * because the values passed into those arguments are sometimes not numbers, and
+ * in those cases, the Web Audio API behaves gracefully (defaults to 0), but the
+ * extension throws an exception.
+ * @param {*} channelValue Whatever the caller passed as the channel. This could
+ *     be anything. Ideally, it's either a number or undefined.
+ * @private
+ */
+audion.entryPoints.determineChannelValue_ = function(channelValue) {
+  if (!channelValue) {
+    // This value is 0, undefined, or some falsy value. Default to channel 0.
+    return 0;
+  }
+
+  if (goog.isNumber(channelValue)) {
+    // This looks like a valid channel value. Return it. The Web Audio API may
+    // still complain if it is out of range, but that is expected behavior.
+    return channelValue;
+  }
+
+  // Uh ... not sure what this value is. Try converting it into a number. If it
+  // is a string, this will convert as expected, ie "42" to 42. Otherwise, we
+  // default to 0 as the Web Audio API does.
+  return Number(channelValue) || 0;
 };
 
 
@@ -661,8 +691,10 @@ audion.entryPoints.tracing = function() {
     var otherThingId = otherThing[audion.entryPoints.resourceIdField_];
 
     // If no input / output is specified, default to 0.
-    var fromChannel = originalArguments[1] || 0;
-    var toChannel = originalArguments[2] || 0;
+    var fromChannel = audion.entryPoints.determineChannelValue_(
+        originalArguments[1]);
+    var toChannel = audion.entryPoints.determineChannelValue_(
+        originalArguments[2]);
     if (otherThingId) {
       // Warn if we cannot identify what we are connecting from.
       var sourceResourceId = this[audion.entryPoints.resourceIdField_];
@@ -727,8 +759,10 @@ audion.entryPoints.tracing = function() {
     var otherThing = originalArguments[0];
 
     // Default to input / output 0.
-    var fromChannel = originalArguments[1] || 0;
-    var toChannel = originalArguments[2] || 0;
+    var fromChannel = audion.entryPoints.determineChannelValue_(
+        originalArguments[1]);
+    var toChannel = audion.entryPoints.determineChannelValue_(
+        originalArguments[2]);
 
     var otherThingId = otherThing[audion.entryPoints.resourceIdField_];
     if (otherThingId) {
