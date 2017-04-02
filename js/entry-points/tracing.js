@@ -264,20 +264,10 @@ audion.entryPoints.assignIdProperty_ = function(resource, id) {
  * @private
  */
 audion.entryPoints.determineChannelValue_ = function(channelValue) {
-  if (!channelValue) {
-    // This value is 0, undefined, or some falsy value. Default to channel 0.
-    return 0;
-  }
-
-  if (goog.isNumber(channelValue)) {
-    // This looks like a valid channel value. Return it. The Web Audio API may
-    // still complain if it is out of range, but that is expected behavior.
-    return channelValue;
-  }
-
-  // Uh ... not sure what this value is. Try converting it into a number. If it
-  // is a string, this will convert as expected, ie "42" to 42. Otherwise, we
-  // default to 0 as the Web Audio API does.
+  // Try converting value into a number if it is not one already. If it is a
+  // string, this will convert as expected, ie "42" to 42. Otherwise, we default
+  // to 0 as the Web Audio API does. For instance, unexpected objects passed as
+  // a channel argument get converted to 0.
   return Number(channelValue) || 0;
 };
 
