@@ -37,8 +37,8 @@ This project uses the [Google Closure JavaScript library](https://developers.goo
 The extension comprises of several scripts. Each script corresponds to a Closure entry point (JS file) within `js/entry-points`.
 
 * **tracing.js**: The tracing code is run before any scripts of a web page run. It adds tracking code to functions of the Web Audio API.
-* **inject-tracing.js**: This script injects the tracing code (above) into the web page. It is a [content script](https://developer.chrome.com/extensions/content_scripts).
-* **background.js**: The background script routes messages to and from various scripts. Web audio updates from content scripts are routed to the corresponding dev tools script.
+* **inject-tracing.js**: This script injects the tracing code (above) into a web page. It is a [content script](https://developer.chrome.com/extensions/content_scripts).
+* **background.js**: The background script routes messages to and from various scripts. For instance, web audio updates from content scripts are routed to the corresponding dev tools scripts.
 * **dev-tools.js**: The [dev tools script](https://developer.chrome.com/extensions/devtools#devtools-page) is run when the user opens Chrome Developer Tools. The script adds a `Web Audio` panel to Developer Tools. It routes messages to logic within the panel.
 * **panel.js**: This script manages the UI for the panel within Developer Tools. It uses [JointJS](https://github.com/clientIO/joint) for rendering graphs and [dagre](https://github.com/cpettitt/dagre) for layout.
 * **tab-page-changed.js**: This simple script detects when the URL within a tab changes.
