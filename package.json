@@ -13,6 +13,7 @@
     "browser-sync": "^2.12.5",
     "dagre": "^0.7.4",
     "fs": "0.0.1-security",
+    "glob": "^7.1.1",
     "google-closure-compiler": "^20160517.1.0",
     "google-closure-library": "^20161201.0.0",
     "graphlib": "1.0.7",

@@ -13,6 +13,7 @@ var closureCompiler = require('gulp-closure-compiler');
 var closureCssRenamer = require('gulp-closure-css-renamer');
 var closureDeps = require('gulp-closure-deps');
 var concat = require('gulp-concat');
+var glob = require("glob")
 var htmlmin = require('gulp-htmlmin');
 var less = require('gulp-less');
 var util = require('gulp-util');
@@ -22,6 +23,7 @@ var mkdirp = require('mkdirp');
 var argv = require('yargs').argv;
 
 // This directory will contain temporary artifacts generated during building.
+// Some of those artifacts (like deps.js) are used by tests.
 TEMPORARY_DIRECTORY = 'temporary_build_artifacts';
 
 // The sources of all raw JS. Passed to the JS compiler.
@@ -31,6 +33,9 @@ SOURCES_OF_JAVASCRIPT = [
     'node_modules/google-closure-library/closure/goog/**/*.js',
     'tests/**/*.js',
   ];
+
+// The name of the directory within the repo directory that contains tests.
+TEST_DIRECTORY = 'tests';
 
 // Compile and build the extension. The outputted extension is placed within the
 // build/ directory.
@@ -315,20 +320,66 @@ function generateDepsJs() {
 
 
 /**
+ * Generates a list of all test HTML files. This allows us to run all tests at
+ * once in a single web page.
+ * @param {!Function} callback A callback that is run when the list has been
+ *     written to disk.
+ */
+function generateListOfAllTests(callback) {
+  // gulp.src(TEST_DIRECTORY + '/**/*_test.html', {
+  //       read: false
+  //     })
+  //     .pipe(listfiles({
+  //       filename: 'all_tests.js'
+  //     }))
+  //     .pipe(change(function(test_files) {
+  //       // This is returned as a \n separated list of files without their base
+  //       // paths. We fix both of those things.
+  //       var listToSerialize = test_files.split('\n').map(function(file_name) {
+  //         return TEST_DIRECTORY + '/' + file_name;
+  //       });
+
+  //       // Define a global variable that the test runner will use. This global
+  //       // variable lists all the tests.
+  //       var contents =
+  //           'var _allTests = ' + JSON.stringify(listToSerialize) + ';';
+  //       return contents;
+  //     }))
+  //     .pipe(gulp.dest(TEMPORARY_DIRECTORY));
+
+  glob(TEST_DIRECTORY + '/**/*_test.html', {}, function(er, file_names) {
+    fs.writeFile(
+        TEMPORARY_DIRECTORY + '/all_tests.js',
+        'var _allTests = ' + JSON.stringify(file_names) + ';',
+        callback);
+  })
+}
+
+
+/**
  * Starts a static web server to run tests. To actually run the tests, the user
  * visits HTML files in the browser. The pages with tests update automatically
  * when files change.
  */
 function serveTests() {
-  // Before starting the server to host tests, generate a deps file that maps
-  // each JS namespace to the file that provides it. The tests use uncompiled
-  // source JS.
-  generateDepsJs().on('end', function() {
-    gulp.src('.')
-      .pipe(webserver({
-        livereload: true,
-        directoryListing: true
-      }));
+  // Generate a list of all the tests (_test.html files) so that we can use the
+  // Closure test runner to run all tests at once.
+  generateListOfAllTests(function() {
+    // Before starting the server to host tests, generate a deps file that maps
+    // each JS namespace to the file that provides it. The tests use uncompiled
+    // source JS.
+    generateDepsJs().on('end', function() {
+      // Also copy any required JS.
+      copyThirdPartyJs().on('end', function() {
+        gulp.src('.')
+          .pipe(webserver({
+            directoryListing: true,
+            livereload: true,
+            // Open this page automatically.
+            open: "/tests/all_tests.html"
+          }));
+      });
+    });
   });
 }
 
