@@ -11,18 +11,38 @@ var gulp = require('gulp');
 var change = require('gulp-change');
 var closureCompiler = require('gulp-closure-compiler');
 var closureCssRenamer = require('gulp-closure-css-renamer');
+var closureDeps = require('gulp-closure-deps');
 var concat = require('gulp-concat');
+var glob = require("glob")
 var htmlmin = require('gulp-htmlmin');
 var less = require('gulp-less');
 var util = require('gulp-util');
 var watch = require('gulp-watch');
+var webserver = require('gulp-webserver');
 var mkdirp = require('mkdirp');
 var argv = require('yargs').argv;
 
-TEMPORARY_DIRECTORY = '/tmp/audion-build-temporary-files';
+// This directory will contain temporary artifacts generated during building.
+// Some of those artifacts (like deps.js) are used by tests.
+TEMPORARY_DIRECTORY = 'temporary_build_artifacts';
 
+// The sources of all raw JS. Passed to the JS compiler.
+SOURCES_OF_JAVASCRIPT = [
+    'js/**/*.js',
+    TEMPORARY_DIRECTORY + '/**/*.js',
+    'node_modules/google-closure-library/closure/goog/**/*.js',
+    'tests/**/*.js',
+  ];
 
+// The name of the directory within the repo directory that contains tests.
+TEST_DIRECTORY = 'tests';
+
+// Compile and build the extension. The outputted extension is placed within the
+// build/ directory.
 gulp.task('default', build);
+
+// Start a web server that hosts tests.
+gulp.task('test', serveTests);
 
 
 function build() {
@@ -234,12 +254,7 @@ function compileJs(
   }
 
   // Compile and minify JS.
-  var jsSrcs = [
-      'js/**/*.js',
-      TEMPORARY_DIRECTORY + '/**/*.js',
-      'node_modules/google-closure-library/closure/**/*.js'
-    ];
-  return gulp.src(jsSrcs)
+  return gulp.src(SOURCES_OF_JAVASCRIPT)
       .pipe(closureCompiler({
         compilerPath: 'node_modules/google-closure-compiler/compiler.jar',
         // The name of the compiled JS.
@@ -249,6 +264,7 @@ function compileJs(
       .on('error', logError)
       .pipe(gulp.dest(destDirectory));
 }
+
 
 /**
  * Compiles CSS.
@@ -283,6 +299,75 @@ function compileCss(callback) {
         while (!fs.existsSync(renameMappingLocation)) {}
         callback.apply(arguments);
       });
+  });
+}
+
+
+/**
+ * Generates a Closure deps.js file. Useful for instance for running tests.
+ * The generated file is placed in the temporary directory. It maps each
+ * namespace (foo.bar.Baz) to the file that provides it.
+ * @return {!Object} The gulp result from compilation.
+ */
+function generateDepsJs() {
+  return gulp.src(SOURCES_OF_JAVASCRIPT)
+    .pipe(closureDeps({
+      fileName: 'deps.js',
+      prefix: '../../../..' // The path from base.js to repo root.
+    }))
+    .pipe(gulp.dest(TEMPORARY_DIRECTORY));
+}
+
+
+/**
+ * Generates a list of all test HTML files. This allows us to run all tests at
+ * once in a single web page.
+ * @param {!Function} callback A callback that is run when the list has been
+ *     written to disk.
+ */
+function generateListOfAllTests(callback) {
+  // Make the temporary directory if it does not already exist.
+  mkdirp(TEMPORARY_DIRECTORY, function(err) {
+    if (err) {
+      // Failed to create the directory. It does not exist now.
+      logError(err);
+      return;
+    }
+
+    glob(TEST_DIRECTORY + '/**/*_test.html', {}, function(er, file_names) {
+      fs.writeFile(
+          TEMPORARY_DIRECTORY + '/all_tests.js',
+          'var _allTests = ' + JSON.stringify(file_names) + ';',
+          callback);
+    });
+  });
+}
+
+
+/**
+ * Starts a static web server to run tests. To actually run the tests, the user
+ * visits HTML files in the browser. The pages with tests update automatically
+ * when files change.
+ */
+function serveTests() {
+  // Generate a list of all the tests (_test.html files) so that we can use the
+  // Closure test runner to run all tests at once.
+  generateListOfAllTests(function() {
+    // Before starting the server to host tests, generate a deps file that maps
+    // each JS namespace to the file that provides it. The tests use uncompiled
+    // source JS.
+    generateDepsJs().on('end', function() {
+      // Also copy any required JS.
+      copyThirdPartyJs().on('end', function() {
+        gulp.src('.')
+          .pipe(webserver({
+            directoryListing: true,
+            livereload: true,
+            // Open this page automatically.
+            open: "/tests/all_tests.html"
+          }));
+      });
+    });
   });
 }
 
