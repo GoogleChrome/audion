@@ -16,6 +16,10 @@
 /**
  * @fileoverview This suite of tests verifies that the graph is correctly
  *     constructed and styled.
+ * TODO(chizeng): Make the test far less dependent on visual nuances like pixel
+ * dimensions. In general, the tests should be more concise by checking for
+ * the correctness of specific details like nodes and connections. Also, we must
+ * write more tests (We would be able to once each test is more concise.).
  */
 goog.provide('audion.entryPoints.PanelTest');
 
@@ -563,3 +567,6 @@ var testNewNodesAndEdges = function() {
 // TODO: Test disconnect.
 
 // TODO: Test that 2 calls to connect only make 1 edge.
+
+// TODO: Tests connect when the channel values are invalid (a real case that we
+// have encountered).
