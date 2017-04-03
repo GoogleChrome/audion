@@ -254,6 +254,25 @@ audion.entryPoints.assignIdProperty_ = function(resource, id) {
 
 
 /**
+ * Determines the channel to use in the graph visualization based on a user
+ * argument for either input or output channel. This function is necessary
+ * because the values passed into those arguments are sometimes not numbers, and
+ * in those cases, the Web Audio API behaves gracefully (defaults to 0), but the
+ * extension throws an exception.
+ * @param {*} channelValue Whatever the caller passed as the channel. This could
+ *     be anything. Ideally, it's either a number or undefined.
+ * @private
+ */
+audion.entryPoints.determineChannelValue_ = function(channelValue) {
+  // Try converting value into a number if it is not one already. If it is a
+  // string, this will convert as expected, ie "42" to 42. Otherwise, we default
+  // to 0 as the Web Audio API does. For instance, unexpected objects passed as
+  // a channel argument get converted to 0.
+  return Number(channelValue) || 0;
+};
+
+
+/**
  * Instruments a newly created node and its AudioParams.
  * @param {!AudioNode} node
  * @private
@@ -661,8 +680,10 @@ audion.entryPoints.tracing = function() {
     var otherThingId = otherThing[audion.entryPoints.resourceIdField_];
 
     // If no input / output is specified, default to 0.
-    var fromChannel = originalArguments[1] || 0;
-    var toChannel = originalArguments[2] || 0;
+    var fromChannel = audion.entryPoints.determineChannelValue_(
+        originalArguments[1]);
+    var toChannel = audion.entryPoints.determineChannelValue_(
+        originalArguments[2]);
     if (otherThingId) {
       // Warn if we cannot identify what we are connecting from.
       var sourceResourceId = this[audion.entryPoints.resourceIdField_];
@@ -727,8 +748,10 @@ audion.entryPoints.tracing = function() {
     var otherThing = originalArguments[0];
 
     // Default to input / output 0.
-    var fromChannel = originalArguments[1] || 0;
-    var toChannel = originalArguments[2] || 0;
+    var fromChannel = audion.entryPoints.determineChannelValue_(
+        originalArguments[1]);
+    var toChannel = audion.entryPoints.determineChannelValue_(
+        originalArguments[2]);
 
     var otherThingId = otherThing[audion.entryPoints.resourceIdField_];
     if (otherThingId) {

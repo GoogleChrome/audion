@@ -32,6 +32,15 @@ audion.entryPoints.graphContainer_ = /** @type {!Element} */ (
 
 
 /**
+ * An element absolute positioned and used to detect the dimensions of the page.
+ * The graph div does not suffice because its dimensions may change.
+ * @private @const {!Element}
+ */
+audion.entryPoints.pageSizeDetector_ = /** @type {!Element} */ (
+    document.getElementById('page-size-detector'));
+
+
+/**
  * The current zoom relative to the entire graph fitting in the screen.
  * @private {!number}
  */
@@ -372,13 +381,15 @@ audion.entryPoints.paper_ = audion.entryPoints.createPaper_(
 
 
 /**
- * An object that manages panning and zooming.
- * @private {!Object}
+ * Creates a pan zoom object (for panning and zooming).
+ * @return {!Object}
+ * @private
  */
-audion.entryPoints.panZoomObject_ = goog.global['svgPanZoom'](
-    audion.entryPoints.graphContainer_.firstChild, {
-    'viewportSelector':
-        audion.entryPoints.graphContainer_.firstChild.firstChild,
+audion.entryPoints.createPanZoomObject_ = function() {
+  var svgContainer = audion.entryPoints.graphContainer_.querySelector('svg');
+  return goog.global['svgPanZoom'](
+    svgContainer, {
+    'viewportSelector': svgContainer.firstChild,
     'zoomEnabled': true,
     'controlIconsEnabled': false,
     'minZoom': 0.1,
@@ -387,6 +398,14 @@ audion.entryPoints.panZoomObject_ = goog.global['svgPanZoom'](
     'fit': false,
     'center': false
   });
+};
+
+
+/**
+ * An object that manages panning and zooming.
+ * @private {!Object}
+ */
+audion.entryPoints.panZoomObject_ = audion.entryPoints.createPanZoomObject_();
 
 
 /**
@@ -1079,8 +1098,8 @@ audion.entryPoints.requestRedraw_ = function() {
  */
 audion.entryPoints.handleResize_ = function() {
   audion.entryPoints.paper_.setDimensions(
-      audion.entryPoints.graphContainer_.offsetWidth,
-      audion.entryPoints.graphContainer_.offsetHeight);
+      audion.entryPoints.pageSizeDetector_.offsetWidth,
+      audion.entryPoints.pageSizeDetector_.offsetHeight);
   audion.entryPoints.panZoomObject_['resize']();
   audion.entryPoints.requestRedraw_();
 };

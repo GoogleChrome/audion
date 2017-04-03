@@ -31,7 +31,7 @@ body {
   display: block;
 }
 
-#dev-tools-panel {
+#dev-tools-panel, #page-size-detector {
   overflow: hidden;
   position: absolute;
   bottom: 0;
