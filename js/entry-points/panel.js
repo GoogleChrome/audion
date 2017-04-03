@@ -817,10 +817,10 @@ audion.entryPoints.removeLoadingScreen_ = function() {
 
 
 /**
- * Handles the case in which the tab URL changes. We have to reset.
- * @private
+ * Resets the panel. As if the user just visited a new page. This is also used
+ * to set up tests.
  */
-audion.entryPoints.handlePageOfTabChanged_ = function() {
+audion.entryPoints.resetPanel = function() {
   // Unhighlight the current highlighted node if there is one.
   audion.entryPoints.pane_.setMode(null);
 
@@ -837,6 +837,15 @@ audion.entryPoints.handlePageOfTabChanged_ = function() {
 
   // Tell the panel to reset to this empty graph.
   audion.entryPoints.resetUi_();
+};
+
+
+/**
+ * Handles the case in which the tab URL changes. We have to reset.
+ * @private
+ */
+audion.entryPoints.handlePageOfTabChanged_ = function() {
+  audion.entryPoints.resetPanel();
 };
 
 
@@ -1217,6 +1226,14 @@ audion.entryPoints.patchSvgTransformList_ = function() {
 
 
 /**
+ * @return {!Object} A JSON representation of the JointJS graph.
+ */
+audion.entryPoints.getGraphJsonRepresentation = function() {
+  return /** @type {!Object} */ (audion.entryPoints.graph_.toJSON());
+};
+
+
+/**
  * The entry point for the script to run in our web audio Chrome dev panel -
  * the actual UI of the panel.
  */
@@ -1246,8 +1263,9 @@ audion.entryPoints.panel = function() {
   });
 
   // Add the pane and tooltip to the DOM. The tooltip can be atop the pane.
-  goog.global.document.body.appendChild(audion.entryPoints.pane_.getDom());
-  goog.global.document.body.appendChild(audion.entryPoints.tooltip_.getDom());
+  var panelDom = document.getElementById('dev-tools-panel');
+  panelDom.appendChild(audion.entryPoints.pane_.getDom());
+  panelDom.appendChild(audion.entryPoints.tooltip_.getDom());
 };
 
 

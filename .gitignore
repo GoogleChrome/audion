@@ -43,3 +43,5 @@ jspm_packages
 # Our built product.
 build
 
+# The directory with temporary build artifacts.
+temporary_build_artifacts
