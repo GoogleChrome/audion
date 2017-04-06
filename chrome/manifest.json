@@ -3,7 +3,7 @@
   "name": "Web Audio Inspector",
   "author": "Google Web Audio API Tools",
   "description": "View web audio graphs. Inspect AudioNodes.",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "background": {
     "scripts": ["js/background.js"]
   },
