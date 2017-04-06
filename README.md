@@ -6,6 +6,10 @@ Web Audio Inspector is a Chrome extension that adds a "Web Audio" panel to Devel
 
 The wiki details [how to use Web Audio Inspector](https://github.com/google/audion/wiki/How-to-Use).
 
+## No Support for ES6 Classes at the Moment
+
+This extension breaks ES6 classes that extend subclasses of `AudioNode`. See issue #73. Web Audio Inspector's logic for overriding `AudioNode` constructors disallows classes from `extend`ing those constructors. We are trying to resolve this issue.
+
 # Development
 
 ## Build Dependencies
