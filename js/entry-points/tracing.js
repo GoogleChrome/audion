@@ -140,6 +140,17 @@ audion.entryPoints.enumAudioBufferProperties_ =
 
 
 /**
+ * A reference to a native function that performs the logic of
+ * Function.prototype.bind([CONSTRUCTOR], arguments ...). We need this reference
+ * because we rely on using that logic to construct various objects, but some
+ * libraries such as prototype.js override the native bind and apply methods.
+ * @private {!Function}
+ */
+audion.entryPoints.nativeBindApplyMethod_ = Function.prototype.apply.bind(
+    Function.prototype.bind);
+
+
+/**
  * @return {string} The target that postMessage should use to issue messages to
  *     this page.
  * @private
@@ -332,8 +343,9 @@ audion.entryPoints.createBaseAudioContextSubclass_ = function(
   // Null is the context. We cannot append to Arguments because it's not a
   // list. We convert it to a list by slicing.
   var newContext = /** @type {!BaseAudioContext} */ (
-      new (Function.prototype.bind.apply(
+      new (audion.entryPoints.nativeBindApplyMethod_(
           nativeConstructor, [null].concat(argumentsList))));
+
   var audioContextId = audion.entryPoints.nextAvailableId_++;
   audion.entryPoints.assignIdProperty_(newContext, audioContextId);
   audion.entryPoints.idToResource_[audioContextId] =
@@ -903,7 +915,7 @@ audion.entryPoints.tracing = function() {
     // Null is the context. We cannot append to Arguments because it's not a
     // list. We convert it to a list by slicing.
     var audioNode = /** @type {!AudioNode} */ (
-        new (Function.prototype.bind.apply(
+        new (audion.entryPoints.nativeBindApplyMethod_(
             originalConstructor, [null].concat(argumentsList))));
     audion.entryPoints.instrumentNode_(audioNode)
     return audioNode;
