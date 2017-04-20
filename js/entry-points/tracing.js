@@ -140,6 +140,17 @@ audion.entryPoints.enumAudioBufferProperties_ =
 
 
 /**
+ * A reference to a native function that performs the logic of
+ * Function.prototype.bind([CONSTRUCTOR], arguments ...). We need this reference
+ * because we rely on using that logic to construct various objects, but some
+ * libraries such as prototype.js override the native bind and apply methods.
+ * @private {!Function}
+ */
+audion.entryPoints.nativeBindApplyMethod_ = Function.prototype.apply.bind(
+    Function.prototype.bind);
+
+
+/**
  * @return {string} The target that postMessage should use to issue messages to
  *     this page.
  * @private
@@ -332,8 +343,9 @@ audion.entryPoints.createBaseAudioContextSubclass_ = function(
   // Null is the context. We cannot append to Arguments because it's not a
   // list. We convert it to a list by slicing.
   var newContext = /** @type {!BaseAudioContext} */ (
-      new (Function.prototype.bind.apply(
+      new (audion.entryPoints.nativeBindApplyMethod_(
           nativeConstructor, [null].concat(argumentsList))));
+
   var audioContextId = audion.entryPoints.nextAvailableId_++;
   audion.entryPoints.assignIdProperty_(newContext, audioContextId);
   audion.entryPoints.idToResource_[audioContextId] =
@@ -661,14 +673,17 @@ audion.entryPoints.tracing = function() {
 
   /**
    * Wraps the web audio connect method.
-   * @param {function(...*):*} nativeConnect The native connect method.
+   * @param {function(...*):*} nativeBoundConnect The native connect method.
+   *     This is the apply method already bound to the connect method. We bind
+   *     the apply method because other libraries may actually override the
+   *     apply method.
    * @param {!Array.<*>} originalArguments The original arguments connect was
    *     called with.
    * @return {*} Whatever the connect method returns.
    * @this {!AudioNode}
    */
-  function connectDecorator(nativeConnect, originalArguments) {
-    var result = nativeConnect.apply(this, originalArguments);
+  function connectDecorator(nativeBoundConnect, originalArguments) {
+    var result = nativeBoundConnect(this, originalArguments);
 
     // TODO: Figure out what happens if we connect with something falsy (or
     // nothing at all). Do we disconnect?
@@ -721,19 +736,23 @@ audion.entryPoints.tracing = function() {
   }
   /** @override */
   AudioNode.prototype.connect = wrapNativeFunction(
-      AudioNode.prototype.connect, connectDecorator);
+      Function.prototype.apply.bind(AudioNode.prototype.connect),
+      connectDecorator);
 
 
   /**
    * Wraps the web audio disconnect method.
-   * @param {function(...*):*} nativeDisconnect The native disconnect method.
+   * @param {function(...*):*} nativeBoundDisconnect The native disconnect
+   *     method. This is the apply method already bound to the connect method.
+   *     We bind the apply method because other libraries may actually override
+   *     the apply method.
    * @param {!Array.<*>} originalArguments The original arguments disconnect was
    *     called with.
    * @return {*} Whatever the disconnect method returns.
    * @this {!AudioNode}
    */
-  function disconnectDecorator(nativeDisconnect, originalArguments) {
-    var result = nativeDisconnect.apply(this, originalArguments);
+  function disconnectDecorator(nativeBoundDisconnect, originalArguments) {
+    var result = nativeBoundDisconnect(this, originalArguments);
 
     if (originalArguments.length == 0 || !originalArguments[0]) {
       // All edges emanating from this node gad been removed.
@@ -783,20 +802,24 @@ audion.entryPoints.tracing = function() {
   }
   /** @override */
   AudioNode.prototype.disconnect = wrapNativeFunction(
-      AudioNode.prototype.disconnect, disconnectDecorator);
+      Function.prototype.apply.bind(AudioNode.prototype.disconnect),
+      disconnectDecorator);
 
 
   // We now trace when nodes are created.
 
   /**
    * Wraps the creation of new AudioNodes.
-   * @param {function(...*):*} nativeMethod
+   * @param {function(...*):*} nativeApplyBoundToMethod This is the native JS
+   *     apply method bound to the native create_ method. We bind the apply
+   *     method because other libraries might actually override the native apply
+   *     method.
    * @param {!Array.<*>} originalArguments
    * @return {!AudioNode}
    * @this {!AudioNode}
    */
-  function newNodeDecorator(nativeMethod, originalArguments) {
-    var result = nativeMethod.apply(this, originalArguments);
+  function newNodeDecorator(nativeApplyBoundToMethod, originalArguments) {
+    var result = nativeApplyBoundToMethod(this, originalArguments);
     audion.entryPoints.instrumentNode_(result);
     return result;
   };
@@ -804,92 +827,122 @@ audion.entryPoints.tracing = function() {
 
   /** @override */
   BaseAudioContext.prototype.createAnalyser = wrapNativeFunction(
-      BaseAudioContext.prototype.createAnalyser, newNodeDecorator);
+      Function.prototype.apply.bind(BaseAudioContext.prototype.createAnalyser),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createBiquadFilter = wrapNativeFunction(
-      BaseAudioContext.prototype.createBiquadFilter, newNodeDecorator);
+      Function.prototype.apply.bind(
+          BaseAudioContext.prototype.createBiquadFilter),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createBufferSource = wrapNativeFunction(
-      BaseAudioContext.prototype.createBufferSource, newNodeDecorator);
+      Function.prototype.apply.bind(
+          BaseAudioContext.prototype.createBufferSource),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createScriptProcessor = wrapNativeFunction(
-      BaseAudioContext.prototype.createScriptProcessor, newNodeDecorator);
+      Function.prototype.apply.bind(
+          BaseAudioContext.prototype.createScriptProcessor),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createChannelMerger = wrapNativeFunction(
-      BaseAudioContext.prototype.createChannelMerger, newNodeDecorator);
+      Function.prototype.apply.bind(
+          BaseAudioContext.prototype.createChannelMerger),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createChannelSplitter = wrapNativeFunction(
-      BaseAudioContext.prototype.createChannelSplitter, newNodeDecorator);
+      Function.prototype.apply.bind(
+          BaseAudioContext.prototype.createChannelSplitter),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createConvolver = wrapNativeFunction(
-      BaseAudioContext.prototype.createConvolver, newNodeDecorator);
+      Function.prototype.apply.bind(BaseAudioContext.prototype.createConvolver),
+  newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createDelay = wrapNativeFunction(
-      BaseAudioContext.prototype.createDelay, newNodeDecorator);
+      Function.prototype.apply.bind(BaseAudioContext.prototype.createDelay),
+  newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createDynamicsCompressor = wrapNativeFunction(
-      BaseAudioContext.prototype.createDynamicsCompressor, newNodeDecorator);
+      Function.prototype.apply.bind(
+          BaseAudioContext.prototype.createDynamicsCompressor),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createGain = wrapNativeFunction(
-      BaseAudioContext.prototype.createGain, newNodeDecorator);
+      Function.prototype.apply.bind(BaseAudioContext.prototype.createGain),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createIIRFilter = wrapNativeFunction(
-      BaseAudioContext.prototype.createIIRFilter, newNodeDecorator);
+      Function.prototype.apply.bind(BaseAudioContext.prototype.createIIRFilter),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createWaveShaper = wrapNativeFunction(
-      BaseAudioContext.prototype.createWaveShaper, newNodeDecorator);
+      Function.prototype.apply.bind(
+          BaseAudioContext.prototype.createWaveShaper),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createMediaElementSource = wrapNativeFunction(
-      BaseAudioContext.prototype.createMediaElementSource, newNodeDecorator);
+      Function.prototype.apply.bind(
+          BaseAudioContext.prototype.createMediaElementSource),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createMediaStreamDestination = wrapNativeFunction(
-      BaseAudioContext.prototype.createMediaStreamDestination, newNodeDecorator);
+      Function.prototype.apply.bind(
+          BaseAudioContext.prototype.createMediaStreamDestination),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createMediaStreamSource = wrapNativeFunction(
-      BaseAudioContext.prototype.createMediaStreamSource, newNodeDecorator);
+      Function.prototype.apply.bind(
+          BaseAudioContext.prototype.createMediaStreamSource),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createOscillator = wrapNativeFunction(
-      BaseAudioContext.prototype.createOscillator, newNodeDecorator);
+      Function.prototype.apply.bind(
+          BaseAudioContext.prototype.createOscillator),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createPanner = wrapNativeFunction(
-      BaseAudioContext.prototype.createPanner, newNodeDecorator);
+      Function.prototype.apply.bind(BaseAudioContext.prototype.createPanner),
+      newNodeDecorator);
 
 
   /** @override */
   BaseAudioContext.prototype.createStereoPanner = wrapNativeFunction(
-      BaseAudioContext.prototype.createStereoPanner, newNodeDecorator);
+      Function.prototype.apply.bind(
+          BaseAudioContext.prototype.createStereoPanner),
+      newNodeDecorator);
 
   // Instrument the AudioNode constructors. AudioNodes could be created from
   // either "create methods" or constructors.
@@ -903,7 +956,7 @@ audion.entryPoints.tracing = function() {
     // Null is the context. We cannot append to Arguments because it's not a
     // list. We convert it to a list by slicing.
     var audioNode = /** @type {!AudioNode} */ (
-        new (Function.prototype.bind.apply(
+        new (audion.entryPoints.nativeBindApplyMethod_(
             originalConstructor, [null].concat(argumentsList))));
     audion.entryPoints.instrumentNode_(audioNode)
     return audioNode;
