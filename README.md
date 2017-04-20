@@ -8,7 +8,7 @@ The wiki details [how to use Web Audio Inspector](https://github.com/google/audi
 
 ## No Support for ES6 Classes at the Moment
 
-This extension breaks ES6 classes that extend subclasses of `AudioNode`. See issue #73. Web Audio Inspector's logic for overriding `AudioNode` constructors disallows classes from `extend`ing those constructors. We are trying to resolve this issue.
+This extension breaks ES6 classes that extend subclasses of `AudioNode`. See issue [#73](https://github.com/google/audion/issues/73). Web Audio Inspector's logic for overriding `AudioNode` constructors disallows classes from `extend`ing those constructors. We are trying to resolve this issue.
 
 # Development
 
