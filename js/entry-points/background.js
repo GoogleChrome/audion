@@ -125,6 +125,14 @@ audion.entryPoints.handleAudioUpdate_ = function(port, message) {
     // port had been marked as ready to listen a while back.
     message.frameId = /** @type {number} */ (port.frameId);
     devToolsPort.postMessage(message);
+  } else {
+    // Web audio updates occurred before dev tools opened. The user will have to
+    // refresh to use Web Audio Inspector anyway, so we tell the frame to stop
+    // tracking web audio calls. That way, AudioNodes can be GC-ed when the user
+    // is not using developer tools.
+    port.postMessage(/** @type {!AudionMessage} */ ({
+      type: audion.messaging.MessageType.MISSING_AUDIO_UPDATES
+    }));
   }
 };
 
@@ -178,7 +186,7 @@ audion.entryPoints.handleNewDevToolsListenersReady_ = function(port, message) {
   var tabIdString = '' + tabId;
 
   // Store a reference to the dev tools script connection so that we can relay
-  // messages to it from the frame later. 
+  // messages to it from the frame later.
   audion.entryPoints.devToolsScriptConnections_[tabIdString] = port;
   port.onDisconnect.addListener(function() {
     // Remove the connection once the page is closed.

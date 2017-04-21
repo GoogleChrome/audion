@@ -140,6 +140,13 @@ audion.entryPoints.enumAudioBufferProperties_ =
 
 
 /**
+ * If set to true, Web Audio Inspector no longer tracks web audio calls so that
+ * AudioNodes can be GC-ed. This is desired when the user is not using developer
+ * tools.
+ */
+audion.entryPoints.audioUpdatesAreMissing_ = false;
+
+
  * A reference to a native function that performs the logic of
  * Function.prototype.bind([CONSTRUCTOR], arguments ...). We need this reference
  * because we rely on using that logic to construct various objects, but some
@@ -289,6 +296,12 @@ audion.entryPoints.determineChannelValue_ = function(channelValue) {
  * @private
  */
 audion.entryPoints.instrumentNode_ = function(node) {
+  if (audion.entryPoints.audioUpdatesAreMissing_) {
+    // The user would have to refresh to use Web Audio Inspector anyway. Let
+    // resources such as AudioNodes be GC-ed.
+    return;
+  }
+
   var nodeId = audion.entryPoints.nextAvailableId_++;
   audion.entryPoints.assignIdProperty_(node, nodeId);
   audion.entryPoints.idToResource_[nodeId] =
@@ -345,6 +358,12 @@ audion.entryPoints.createBaseAudioContextSubclass_ = function(
   var newContext = /** @type {!BaseAudioContext} */ (
       new (audion.entryPoints.nativeBindApplyMethod_(
           nativeConstructor, [null].concat(argumentsList))));
+
+  if (audion.entryPoints.audioUpdatesAreMissing_) {
+    // The user would have to refresh to use Web Audio Inspector anyway. Let
+    // resources such as AudioNodes be GC-ed.
+    return newContext;
+  }
 
   var audioContextId = audion.entryPoints.nextAvailableId_++;
   audion.entryPoints.assignIdProperty_(newContext, audioContextId);
@@ -629,6 +648,21 @@ audion.entryPoints.handleAudioNodeUnhighlighted_ = function(message) {
 
 
 /**
+ * Handles what happens when the background script realizes that this page would
+ * need to be refreshed for the user to use Web Audio Inspector. Stops tracking
+ * web audio updates so that nodes can be garbage collected.
+ * @private
+ */
+audion.entryPoints.handleMissingAudioUpdates_ = function() {
+  audion.entryPoints.audioUpdatesAreMissing_ = true;
+
+  // Remove references to resources so they can be GC-ed.
+  audion.entryPoints.idToResource_ = {};
+  audion.entryPoints.highlightedAudioNodeIds_ = {};
+};
+
+
+/**
  * The entry point for tracing (ie detecting) web audio API calls. Suppress
  * type-checking for this function - it does crazy stuff with prototype
  * overrides that makes the compiler go AHHH!. Keep all logic within the scope
@@ -684,6 +718,12 @@ audion.entryPoints.tracing = function() {
    */
   function connectDecorator(nativeBoundConnect, originalArguments) {
     var result = nativeBoundConnect(this, originalArguments);
+
+    if (audion.entryPoints.audioUpdatesAreMissing_) {
+      // The user would have to refresh to use Web Audio Inspector anyway. Let
+      // resources such as AudioNodes be GC-ed.
+      return result;
+    }
 
     // TODO: Figure out what happens if we connect with something falsy (or
     // nothing at all). Do we disconnect?
@@ -753,6 +793,12 @@ audion.entryPoints.tracing = function() {
    */
   function disconnectDecorator(nativeBoundDisconnect, originalArguments) {
     var result = nativeBoundDisconnect(this, originalArguments);
+
+    if (audion.entryPoints.audioUpdatesAreMissing_) {
+      // The user would have to refresh to use Web Audio Inspector anyway. Let
+      // resources such as AudioNodes be GC-ed.
+      return result;
+    }
 
     if (originalArguments.length == 0 || !originalArguments[0]) {
       // All edges emanating from this node gad been removed.
@@ -1244,6 +1290,11 @@ audion.entryPoints.tracing = function() {
         // User is no longer interested in inspecting a certain node.
         audion.entryPoints.handleAudioNodeUnhighlighted_(
             /** @type {!AudionNodeUnhighlightedMessage} */ (message));
+        break;
+      case audion.messaging.MessageType.MISSING_AUDIO_UPDATES:
+        // The user will require a refresh from now on to use Web Audio
+        // Inspector. Stop tracking web audio calls.
+        audion.entryPoints.handleMissingAudioUpdates_();
         break;
     }
   });
