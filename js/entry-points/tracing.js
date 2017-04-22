@@ -147,6 +147,7 @@ audion.entryPoints.enumAudioBufferProperties_ =
 audion.entryPoints.audioUpdatesAreMissing_ = false;
 
 
+/**
  * A reference to a native function that performs the logic of
  * Function.prototype.bind([CONSTRUCTOR], arguments ...). We need this reference
  * because we rely on using that logic to construct various objects, but some
