@@ -19,6 +19,8 @@ This extension breaks ES6 classes that extend subclasses of `AudioNode`. See iss
 
 ## Contribution
 
+We definitely welcome contributions. See the issues list, or suggest ideas. For starters, we currently have some usability and visualization issues that need owners.
+
 1. Review CONTRIBUTING.md. Note that Google requires contributors to sign a [Contributors License Agreement](https://cla.developers.google.com/about/google-individual).
 2. Set up [2-factor authentication for Github](https://github.com/blog/1614-two-factor-authentication) (as Google requires).
 3. Clone the repository with the `git@` address. The `https` address does not work with 2-factor authentication.
