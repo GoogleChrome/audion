@@ -952,27 +952,6 @@ audion.entryPoints.tracing = function() {
 
 
   /** @override */
-  BaseAudioContext.prototype.createMediaElementSource = wrapNativeFunction(
-      Function.prototype.apply.bind(
-          BaseAudioContext.prototype.createMediaElementSource),
-      newNodeDecorator);
-
-
-  /** @override */
-  BaseAudioContext.prototype.createMediaStreamDestination = wrapNativeFunction(
-      Function.prototype.apply.bind(
-          BaseAudioContext.prototype.createMediaStreamDestination),
-      newNodeDecorator);
-
-
-  /** @override */
-  BaseAudioContext.prototype.createMediaStreamSource = wrapNativeFunction(
-      Function.prototype.apply.bind(
-          BaseAudioContext.prototype.createMediaStreamSource),
-      newNodeDecorator);
-
-
-  /** @override */
   BaseAudioContext.prototype.createOscillator = wrapNativeFunction(
       Function.prototype.apply.bind(
           BaseAudioContext.prototype.createOscillator),
@@ -989,6 +968,27 @@ audion.entryPoints.tracing = function() {
   BaseAudioContext.prototype.createStereoPanner = wrapNativeFunction(
       Function.prototype.apply.bind(
           BaseAudioContext.prototype.createStereoPanner),
+      newNodeDecorator);
+
+
+  /** @override */
+  AudioContext.prototype.createMediaElementSource = wrapNativeFunction(
+      Function.prototype.apply.bind(
+          AudioContext.prototype.createMediaElementSource),
+      newNodeDecorator);
+
+
+  /** @override */
+  AudioContext.prototype.createMediaStreamDestination = wrapNativeFunction(
+      Function.prototype.apply.bind(
+          AudioContext.prototype.createMediaStreamDestination),
+      newNodeDecorator);
+
+
+  /** @override */
+  AudioContext.prototype.createMediaStreamSource = wrapNativeFunction(
+      Function.prototype.apply.bind(
+          AudioContext.prototype.createMediaStreamSource),
       newNodeDecorator);
 
   // Instrument the AudioNode constructors. AudioNodes could be created from
