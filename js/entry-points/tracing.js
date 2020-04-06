@@ -1008,17 +1008,6 @@ audion.entryPoints.tracing = function() {
     audion.entryPoints.instrumentNode_(audioNode)
     return audioNode;
   }
-  if (typeof window['AudioWorkerNode'] == 'function') {
-    var constructorName = 'AudioWorkerNode';
-    var originalAudioWorkerNodeConstructor = AudioWorkerNode;
-    AudioWorkerNode = function() {
-      return createAudioNodeUsingConstructor(
-          originalAudioWorkerNodeConstructor,
-          Array.prototype.slice.call(arguments));
-    };
-    AudioWorkerNode['prototype'] = originalAudioWorkerNodeConstructor.prototype;
-    AudioWorkerNode['prototype']['constructor'] = AudioWorkerNode;
-  }
   if (typeof window['AnalyserNode'] == 'function') {
     var constructorName = 'AnalyserNode';
     var originalAnalyserNodeConstructor = AnalyserNode;
@@ -1256,15 +1245,6 @@ audion.entryPoints.tracing = function() {
   OfflineAudioContext.prototype =
       nativeOfflineAudioContextConstructor.prototype;
   OfflineAudioContext.prototype.constructor = OfflineAudioContext;
-
-  if (window['AudioWorker']) {
-    /**
-     * Instrument AudioWorker.
-     * @override
-     */
-    AudioWorker.prototype.createNode = wrapNativeFunction(
-        AudioWorker.prototype.createNode, newNodeDecorator);
-  }
 
   // Listen to messages on the window that are related to the extension.
   // Listen to messages from the page. Relay them to the background script.

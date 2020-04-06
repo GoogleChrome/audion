@@ -34,29 +34,6 @@ function AnalyserNode() {}
  * @constructor
  * @extends {AudioNode}
  */
-function AudioWorkerNode() {}
-
-
-
-/**
- * @constructor
- */
-function AudioWorker() {}
-
-
-/**
- * @param {number} numberOfInputs
- * @param {number} numberOfOutputs
- * @return {!AudioWorkerNode}
- */
-AudioWorker.prototype.createNode = function(numberOfInputs, numberOfOutputs) {};
-
-
-
-/**
- * @constructor
- * @extends {AudioNode}
- */
 function ChannelMergerNode() {}
 
 
