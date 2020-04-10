@@ -73,21 +73,6 @@ function ChannelSplitterNode() {}
  * @constructor
  * @extends {AudioNode}
  */
-function SpatialPannerNode() {}
-
-
-
-/**
- * @return {!SpatialPannerNode}
- */
-AudioContext.prototype.createSpatialPanner = function() {};
-
-
-
-/**
- * @constructor
- * @extends {AudioNode}
- */
 function IIRFilterNode() {}
 
 
