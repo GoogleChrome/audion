@@ -1,0 +1,51 @@
+{
+  "name": "audion",
+  "version": "1.0.0",
+  "description": "Traces web audio API calls.",
+  "main": "index.js",
+  "devDependencies": {
+    "@babel/core": "^7.14.6",
+    "@babel/plugin-transform-modules-commonjs": "^7.14.5",
+    "@pixi/jsdoc-template": "^2.6.0",
+    "babel-jest": "^27.0.6",
+    "eslint": "^7.30.0",
+    "eslint-config-google": "^0.14.0",
+    "husky": ">=6",
+    "jest": "^27.0.6",
+    "jest-puppeteer": "^5.0.4",
+    "jsdoc": "^3.6.7",
+    "lint-staged": ">=10",
+    "mustache": "^4.2.0",
+    "pinst": ">=2",
+    "prettier": "^2.3.2",
+    "puppeteer": "^9.1.1",
+    "webpack": "^5.44.0",
+    "yazl": "^2.5.1"
+  },
+  "scripts": {
+    "postinstall": "husky install",
+    "postpublish": "pinst --enable",
+    "prepublishOnly": "pinst --disable",
+    "test:jsdoc": "jsdoc -c .jsdoc.json",
+    "test:lint:eslint": "eslint src/**/*.js",
+    "test:lint:prettier": "prettier --check src/**/*.js",
+    "test:lint": "npm run test:lint:eslint && npm run test:lint:prettier",
+    "test:unit": "jest --config .jest.json",
+    "test": "npm run test:lint && npm run test:jsdoc && npm run test:unit"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GoogleChrome/audion.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/GoogleChrome/audion/issues"
+  },
+  "homepage": "https://github.com/GoogleChrome/audion#readme",
+  "lint-staged": {
+    "*.js": "eslint --cache --fix",
+    "*.{js,json,css,md}": "prettier --write"
+  }
+}

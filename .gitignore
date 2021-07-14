@@ -1,1 +1,8 @@
 .DS_Store
+# dependencies
+node_modules
+# build/test
+.eslintcache
+docs
+coverage
+build
