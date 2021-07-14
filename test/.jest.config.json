@@ -1,0 +1,8 @@
+{
+  "preset": "jest-puppeteer",
+  "injectGlobals": false,
+  "transform": {
+    "\\.[jt]sx?$": "babel-jest"
+  },
+  "testMatch": ["!**/.*", "**/*.js"]
+}

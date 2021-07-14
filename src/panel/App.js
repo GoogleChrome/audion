@@ -1,2 +1,6 @@
-/** Main application. */
-export default class App {}
+/**
+ * Main application.
+ * @alias App
+ * @memberof module:panel/App
+ */
+export class App {}

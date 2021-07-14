@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Traces web audio API calls.",
   "main": "index.js",
+  "engines": {
+    "node": "14"
+  },
   "devDependencies": {
     "@babel/core": "^7.14.6",
     "@babel/plugin-transform-modules-commonjs": "^7.14.5",
@@ -20,18 +23,24 @@
     "prettier": "^2.3.2",
     "puppeteer": "^9.1.1",
     "webpack": "^5.44.0",
+    "webpack-cli": "^4.7.2",
     "yazl": "^2.5.1"
   },
   "scripts": {
+    "build:chrome-extension": "node src/build/make-chrome-extension.js",
+    "build:webpack": "webpack --mode production --config src/webpack.config.js",
+    "build": "npm run build:webpack && npm run build:chrome-extension",
     "postinstall": "husky install",
     "postpublish": "pinst --enable",
     "prepublishOnly": "pinst --disable",
+    "test:integration:run": "JEST_PUPPETEER_CONFIG=test/.jest-puppeteer.config.json jest --config test/.jest.config.json",
+    "test:integration": "npm run build && npm run test:integration:run",
     "test:jsdoc": "jsdoc -c .jsdoc.json",
     "test:lint:eslint": "eslint src/**/*.js",
     "test:lint:prettier": "prettier --check src/**/*.js",
     "test:lint": "npm run test:lint:eslint && npm run test:lint:prettier",
-    "test:unit": "jest --config .jest.json",
-    "test": "npm run test:lint && npm run test:jsdoc && npm run test:unit"
+    "test:unit": "jest --config src/.jest.config.json",
+    "test": "npm run test:lint && npm run test:jsdoc && npm run test:unit && npm run test:integration"
   },
   "repository": {
     "type": "git",

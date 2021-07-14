@@ -5,4 +5,5 @@ node_modules
 .eslintcache
 docs
 coverage
-build
+/build
+!src/build

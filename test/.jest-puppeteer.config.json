@@ -1,0 +1,10 @@
+{
+  "launch": {
+    "headless": false,
+    "devtools": true,
+    "args": [
+      "--disable-extensions-except=build/audion",
+      "--load-extension=build/audion"
+    ]
+  }
+}
