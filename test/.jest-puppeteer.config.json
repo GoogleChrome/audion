@@ -3,6 +3,7 @@
     "headless": false,
     "devtools": true,
     "args": [
+      "--no-sandbox",
       "--disable-extensions-except=build/audion",
       "--load-extension=build/audion"
     ]
