@@ -11,6 +11,8 @@
   },
   "rules": {
     // Indent files with prettier
-    "indent": ["off"]
+    "indent": ["off"],
+    // Allow triple slash comments
+    "spaced-comment": ["error", "always", {"markers": ["/"]}]
   }
 }

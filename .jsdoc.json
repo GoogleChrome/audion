@@ -2,7 +2,7 @@
   "source": {
     "include": ["./src/"],
     "includePattern": ".+\\.js(doc)?$",
-    "excludePattern": "(^|\\/|\\\\)_"
+    "excludePattern": "(^|\\/|\\\\)_|\\.test\\.js$"
   },
   "opts": {
     "encoding": "utf8",
