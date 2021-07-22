@@ -1,9 +1,9 @@
-/// <reference path="chrome/DebuggerWebAudio.js" />
+/// <reference path="../chrome/DebuggerWebAudio.js" />
 /// <reference path="Types.js" />
 
-import {chrome} from './chrome';
-import {ChromeDebuggerWebAudio} from './chrome/DebuggerWebAudio';
-import {Observer} from './utils/Observer';
+import {chrome} from '../chrome';
+import {ChromeDebuggerWebAudio} from '../chrome/DebuggerWebAudio';
+import {Observer} from '../utils/Observer';
 
 const debuggerVersion = '1.3';
 const {tabId} = chrome.devtools.inspectedWindow;
@@ -28,17 +28,20 @@ export class WebAudioEventObserver extends Observer {
         onNext({method, params});
       };
 
-      chrome.debugger.attach(tabId, debuggerVersion, () => {});
-      chrome.debugger.sendCommand(tabId, ChromeDebuggerWebAudio.Methods.enable);
+      chrome.debugger.attach({tabId}, debuggerVersion, () => {});
+      chrome.debugger.sendCommand(
+        {tabId},
+        ChromeDebuggerWebAudio.Methods.enable,
+      );
       chrome.debugger.onEvent.addListener(onEvent);
 
       return () => {
         chrome.debugger.onEvent.removeListener(onEvent);
         chrome.debugger.sendCommand(
-          tabId,
+          {tabId},
           ChromeDebuggerWebAudio.Methods.disable,
         );
-        chrome.debugger.detach(tabId, () => {});
+        chrome.debugger.detach({tabId}, () => {});
       };
     });
   }

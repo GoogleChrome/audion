@@ -1,4 +1,4 @@
-/// <reference path="chrome/DebuggerWebAudio.js" />
+/// <reference path="../chrome/DebuggerWebAudio.js" />
 
 /** @namespace Audion */
 

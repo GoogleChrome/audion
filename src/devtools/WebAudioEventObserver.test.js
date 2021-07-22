@@ -1,9 +1,10 @@
-/// <reference path="chrome/DebuggerWebAudio.js" />
+/// <reference path="../chrome/DebuggerWebAudio.js" />
 
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
-import {chrome} from './chrome';
-import {ChromeDebuggerWebAudio} from './chrome/DebuggerWebAudio';
+import {chrome} from '../chrome';
+import {ChromeDebuggerWebAudio} from '../chrome/DebuggerWebAudio';
+
 import {WebAudioEventObserver} from './WebAudioEventObserver';
 
 jest.mock('./chrome');

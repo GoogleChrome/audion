@@ -1,5 +1,5 @@
-/// <reference path="chrome/DebuggerWebAudio.js" />
-/// <reference path="utils/Types.js" />
+/// <reference path="../chrome/DebuggerWebAudio.js" />
+/// <reference path="../utils/Types.js" />
 /// <reference path="WebAudioEventObserver.js" />
 
 import {ChromeDebuggerWebAudio} from './chrome/DebuggerWebAudio';

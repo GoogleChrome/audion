@@ -2,94 +2,94 @@
 
 export const ChromeDebuggerWebAudio = {
   Methods: {
-    /** @type {"disable"} */
-    disable: 'disable',
-    /** @type {"enable"} */
-    enable: 'enable',
-    /** @type {"getRealtimeData"} */
-    getRealtimeData: 'getRealtimeData',
+    /** @type {"WebAudio.disable"} */
+    disable: 'WebAudio.disable',
+    /** @type {"WebAudio.enable"} */
+    enable: 'WebAudio.enable',
+    /** @type {"WebAudio.getRealtimeData"} */
+    getRealtimeData: 'WebAudio.getRealtimeData',
   },
 
   Events: {
     /** @type {ChromeDebuggerWebAudio.audioListenerCreated} */
-    audioListenerCreated: 'audioListenerCreated',
+    audioListenerCreated: 'WebAudio.audioListenerCreated',
     /** @type {ChromeDebuggerWebAudio.audioListenerWillBeDestroyed} */
-    audioListenerWillBeDestroyed: 'audioListenerWillBeDestroyed',
+    audioListenerWillBeDestroyed: 'WebAudio.audioListenerWillBeDestroyed',
     /** @type {ChromeDebuggerWebAudio.audioNodeCreated} */
-    audioNodeCreated: 'audioNodeCreated',
+    audioNodeCreated: 'WebAudio.audioNodeCreated',
     /** @type {ChromeDebuggerWebAudio.audioNodeWillBeDestroyed} */
-    audioNodeWillBeDestroyed: 'audioNodeWillBeDestroyed',
+    audioNodeWillBeDestroyed: 'WebAudio.audioNodeWillBeDestroyed',
     /** @type {ChromeDebuggerWebAudio.audioParamCreated} */
-    audioParamCreated: 'audioParamCreated',
+    audioParamCreated: 'WebAudio.audioParamCreated',
     /** @type {ChromeDebuggerWebAudio.audioParamWillBeDestroyed} */
-    audioParamWillBeDestroyed: 'audioParamWillBeDestroyed',
+    audioParamWillBeDestroyed: 'WebAudio.audioParamWillBeDestroyed',
     /** @type {ChromeDebuggerWebAudio.contextChanged} */
-    contextChanged: 'contextChanged',
+    contextChanged: 'WebAudio.contextChanged',
     /** @type {ChromeDebuggerWebAudio.contextCreated} */
-    contextCreated: 'contextCreated',
+    contextCreated: 'WebAudio.contextCreated',
     /** @type {ChromeDebuggerWebAudio.contextWillBeDestroyed} */
-    contextWillBeDestroyed: 'contextWillBeDestroyed',
+    contextWillBeDestroyed: 'WebAudio.contextWillBeDestroyed',
     /** @type {ChromeDebuggerWebAudio.nodeParamConnected} */
-    nodeParamConnected: 'nodeParamConnected',
+    nodeParamConnected: 'WebAudio.nodeParamConnected',
     /** @type {ChromeDebuggerWebAudio.nodeParamDisconnected} */
-    nodeParamDisconnected: 'nodeParamDisconnected',
+    nodeParamDisconnected: 'WebAudio.nodeParamDisconnected',
     /** @type {ChromeDebuggerWebAudio.nodesConnected} */
-    nodesConnected: 'nodesConnected',
+    nodesConnected: 'WebAudio.nodesConnected',
     /** @type {ChromeDebuggerWebAudio.nodesDisconnected} */
-    nodesDisconnected: 'nodesDisconnected',
+    nodesDisconnected: 'WebAudio.nodesDisconnected',
   },
 };
 
 /**
- * @typedef {"audioListenerCreated"}
+ * @typedef {"WebAudio.audioListenerCreated"}
  *   ChromeDebuggerWebAudio.audioListenerCreated
  */
 /**
- * @typedef {"audioListenerWillBeDestroyed"}
+ * @typedef {"WebAudio.audioListenerWillBeDestroyed"}
  *   ChromeDebuggerWebAudio.audioListenerWillBeDestroyed
  */
 /**
- * @typedef {"audioNodeCreated"}
+ * @typedef {"WebAudio.audioNodeCreated"}
  *   ChromeDebuggerWebAudio.audioNodeCreated
  */
 /**
- * @typedef {"audioNodeWillBeDestroyed"}
+ * @typedef {"WebAudio.audioNodeWillBeDestroyed"}
  *   ChromeDebuggerWebAudio.audioNodeWillBeDestroyed
  */
 /**
- * @typedef {"audioParamCreated"}
+ * @typedef {"WebAudio.audioParamCreated"}
  *   ChromeDebuggerWebAudio.audioParamCreated
  */
 /**
- * @typedef {"audioParamWillBeDestroyed"}
+ * @typedef {"WebAudio.audioParamWillBeDestroyed"}
  *   ChromeDebuggerWebAudio.audioParamWillBeDestroyed
  */
 /**
- * @typedef {"contextChanged"}
+ * @typedef {"WebAudio.contextChanged"}
  *   ChromeDebuggerWebAudio.contextChanged
  */
 /**
- * @typedef {"contextCreated"}
+ * @typedef {"WebAudio.contextCreated"}
  *   ChromeDebuggerWebAudio.contextCreated
  */
 /**
- * @typedef {"contextWillBeDestroyed"}
+ * @typedef {"WebAudio.contextWillBeDestroyed"}
  *   ChromeDebuggerWebAudio.contextWillBeDestroyed
  */
 /**
- * @typedef {"nodeParamConnected"}
+ * @typedef {"WebAudio.nodeParamConnected"}
  *   ChromeDebuggerWebAudio.nodeParamConnected
  */
 /**
- * @typedef {"nodeParamDisconnected"}
+ * @typedef {"WebAudio.nodeParamDisconnected"}
  *   ChromeDebuggerWebAudio.nodeParamDisconnected
  */
 /**
- * @typedef {"nodesConnected"}
+ * @typedef {"WebAudio.nodesConnected"}
  *   ChromeDebuggerWebAudio.nodesConnected
  */
 /**
- * @typedef {"nodesDisconnected"}
+ * @typedef {"WebAudio.nodesDisconnected"}
  *   ChromeDebuggerWebAudio.nodesDisconnected
  */
 /**

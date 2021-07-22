@@ -30,7 +30,7 @@ function noopChrome() {
     },
     devtools: {inspectedWindow: {tabId: 'tab'}, panels: {create() {}}},
     runtime: {
-      getUrl(url) {
+      getURL(url) {
         return url;
       },
       onConnect: noopEvent(),

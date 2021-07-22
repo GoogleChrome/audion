@@ -1,15 +1,15 @@
-/// <reference path="chrome/Types.js" />
-/// <reference path="chrome/DebuggerWebAudio.js" />
-/// <reference path="chrome/Devtools.js" />
-/// <reference path="utils/Types.js" />
+/// <reference path="../chrome/Types.js" />
+/// <reference path="../chrome/DebuggerWebAudio.js" />
+/// <reference path="../chrome/Devtools.js" />
+/// <reference path="../utils/Types.js" />
 /// <reference path="Types.js" />
 
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
-import {Observer} from './utils/Observer';
+import {chrome} from '../chrome';
+import {Observer} from '../utils/Observer';
 
 import {DevtoolsGraphPanel} from './DevtoolsGraphPanel';
-import {chrome} from './chrome';
 
 jest.mock('./chrome');
 

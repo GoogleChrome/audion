@@ -1,8 +1,8 @@
-/// <reference path="chrome/DebuggerWebAudio.js" />
+/// <reference path="../chrome/DebuggerWebAudio.js" />
 
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
-import {ChromeDebuggerWebAudio} from './chrome/DebuggerWebAudio';
+import {ChromeDebuggerWebAudio} from '../chrome/DebuggerWebAudio';
 import {Observer} from './utils/Observer';
 import {WebAudioGraphIntegrator} from './WebAudioGraphIntegrator';
 
