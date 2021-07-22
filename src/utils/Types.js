@@ -58,8 +58,10 @@
 
 /**
  * @typedef Utils.ThrottleObserverOptions
+ * @property {function(T): *} [key]
  * @property {function(): Promise<void>} [timeout]
  * @alias ThrottleObserverOptions
+ * @template T
  */
 
 /**

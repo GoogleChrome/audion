@@ -5,6 +5,7 @@
 /// <reference path="Types.js" />
 
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
+import dagre from 'dagre';
 
 import {chrome} from '../chrome';
 import {Observer} from '../utils/Observer';
@@ -28,6 +29,7 @@ const mockGraphs = {
       maxOutputChannelCount: 2,
       callbackBufferSize: 1000,
     },
+    graph: new dagre.graphlib.Graph(),
     nodes: {},
   },
   1: {
@@ -41,7 +43,14 @@ const mockGraphs = {
       maxOutputChannelCount: 2,
       callbackBufferSize: 1000,
     },
+    graph: new dagre.graphlib.Graph(),
     nodes: {},
+  },
+  2: {
+    id: 'context0000',
+    context: null,
+    graph: null,
+    nodes: null,
   },
 };
 describe('DevtoolsGraphPanel', () => {
@@ -81,8 +90,102 @@ describe('DevtoolsGraphPanel', () => {
     nextGraph(mockGraphs[0]);
     nextGraph(mockGraphs[1]);
     expect(port.postMessage).toBeCalledTimes(2);
-    expect(port.postMessage).toBeCalledWith(mockGraphs[0]);
-    expect(port.postMessage).toBeCalledWith(mockGraphs[1]);
+    expect(port.postMessage.mock.calls[0]).toMatchInlineSnapshot(`
+Array [
+  Object {
+    "context": Object {
+      "callbackBufferSize": 1000,
+      "contextId": "context0000",
+      "contextState": "running",
+      "contextType": "realtime",
+      "maxOutputChannelCount": 2,
+      "sampleRate": 48000,
+    },
+    "graph": Object {
+      "edges": Array [],
+      "nodes": Array [],
+      "options": Object {
+        "compound": false,
+        "directed": true,
+        "multigraph": false,
+      },
+    },
+    "id": "context0000",
+    "nodes": Object {},
+  },
+]
+`);
+    expect(port.postMessage.mock.calls[1]).toMatchInlineSnapshot(`
+Array [
+  Object {
+    "context": Object {
+      "callbackBufferSize": 1000,
+      "contextId": "context0000",
+      "contextState": "suspended",
+      "contextType": "realtime",
+      "maxOutputChannelCount": 2,
+      "sampleRate": 48000,
+    },
+    "graph": Object {
+      "edges": Array [],
+      "nodes": Array [],
+      "options": Object {
+        "compound": false,
+        "directed": true,
+        "multigraph": false,
+      },
+    },
+    "id": "context0000",
+    "nodes": Object {},
+  },
+]
+`);
+  });
+
+  it('posts null graph when context is destroyed', () => {
+    if (jest.isMockFunction(chrome.runtime.onConnect.addListener)) {
+      /** @type {function} */ (
+        chrome.runtime.onConnect.addListener.mock.calls[0][0]
+      )(port);
+    }
+    nextGraph(mockGraphs[0]);
+    nextGraph(mockGraphs[2]);
+    expect(port.postMessage).toBeCalledTimes(2);
+    expect(port.postMessage.mock.calls[0]).toMatchInlineSnapshot(`
+Array [
+  Object {
+    "context": Object {
+      "callbackBufferSize": 1000,
+      "contextId": "context0000",
+      "contextState": "running",
+      "contextType": "realtime",
+      "maxOutputChannelCount": 2,
+      "sampleRate": 48000,
+    },
+    "graph": Object {
+      "edges": Array [],
+      "nodes": Array [],
+      "options": Object {
+        "compound": false,
+        "directed": true,
+        "multigraph": false,
+      },
+    },
+    "id": "context0000",
+    "nodes": Object {},
+  },
+]
+`);
+    expect(port.postMessage.mock.calls[1]).toMatchInlineSnapshot(`
+Array [
+  Object {
+    "context": null,
+    "graph": null,
+    "id": "context0000",
+    "nodes": null,
+  },
+]
+`);
   });
 
   it('stops posting graphs once disconnected', () => {
@@ -99,7 +202,31 @@ describe('DevtoolsGraphPanel', () => {
     }
     nextGraph(mockGraphs[1]);
     expect(port.postMessage).toBeCalledTimes(1);
-    expect(port.postMessage).toBeCalledWith(mockGraphs[0]);
+    expect(port.postMessage.mock.calls[0]).toMatchInlineSnapshot(`
+Array [
+  Object {
+    "context": Object {
+      "callbackBufferSize": 1000,
+      "contextId": "context0000",
+      "contextState": "running",
+      "contextType": "realtime",
+      "maxOutputChannelCount": 2,
+      "sampleRate": 48000,
+    },
+    "graph": Object {
+      "edges": Array [],
+      "nodes": Array [],
+      "options": Object {
+        "compound": false,
+        "directed": true,
+        "multigraph": false,
+      },
+    },
+    "id": "context0000",
+    "nodes": Object {},
+  },
+]
+`);
   });
 });
 /** @return {Chrome.Event<*>} */

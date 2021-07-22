@@ -35,7 +35,11 @@ function noopChrome() {
       onEvent: noopEvent(),
       sendCommand() {},
     },
-    devtools: {inspectedWindow: {tabId: 'tab'}, panels: {create() {}}},
+    devtools: {
+      inspectedWindow: {tabId: 'tab'},
+      network: {onNavigated: noopEvent()},
+      panels: {create() {}},
+    },
     runtime: {
       connect() {
         return {
@@ -48,6 +52,7 @@ function noopChrome() {
       getURL(url) {
         return url;
       },
+      lastError: {message: ''},
       onConnect: noopEvent(),
     },
   };

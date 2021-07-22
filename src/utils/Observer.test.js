@@ -97,6 +97,19 @@ describe('Observer.throttle', () => {
     expect(nextMock).toBeCalledWith(value);
   });
 
+  it('calls key option', async () => {
+    const subscribeMock = jest.fn();
+    const keyMock = jest.fn(({key}) => key);
+    const o = Observer.throttle(new Observer(subscribeMock), {
+      key: keyMock,
+    });
+    o.observe(() => {});
+    const value = {key: 'key'};
+    /** @type {function} */ (subscribeMock.mock.calls[0][0])(value);
+    expect(keyMock).toBeCalledWith(value);
+    expect(keyMock).toReturnWith(value.key);
+  });
+
   it('calls timeout option', async () => {
     const subscribeMock = jest.fn();
     const timeoutMock = jest.fn().mockImplementation(() => Promise.resolve());

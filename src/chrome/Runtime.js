@@ -9,7 +9,14 @@
  * @typedef Chrome.Runtime
  * @property {function(): Chrome.RuntimePort} connect
  * @property {function(string): string} getURL
+ * @property {Chrome.RuntimeError} lastError
  * @property {Chrome.Event<Chrome.RuntimeOnConnectCallback>} onConnect
+ */
+
+/**
+ * @typedef Chrome.RuntimeError
+ * @property {string} [message]
+ * @see https://developer.chrome.com/docs/extensions/reference/runtime/#property-lastError
  */
 
 /**

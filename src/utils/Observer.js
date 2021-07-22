@@ -69,7 +69,7 @@ export class Observer {
 
   /**
    * @param {Observer<T>} target
-   * @param {Utils.ThrottleObserverOptions} [options]
+   * @param {Utils.ThrottleObserverOptions<T>} [options]
    * @return {Observer<T>}
    * @template T
    */
@@ -156,16 +156,19 @@ export class ThrottleObserver extends Observer {
   /**
    * Create a ThrottleObserver.
    * @param {Observer<T>} target
-   * @param {Utils.ThrottleObserverOptions} [options]
+   * @param {Utils.ThrottleObserverOptions<T>} [options]
    */
   constructor(
     target,
-    {timeout = () => new Promise((resolve) => setTimeout(resolve, 16))} = {},
+    {
+      key = (obj) => obj,
+      timeout = () => new Promise((resolve) => setTimeout(resolve, 16)),
+    } = {},
   ) {
     /**
      * @type {Map<*, {cancel: function(): void,
      *   active: boolean,
-     *   value: *}>}
+     *   value: T}>}
      */
     const timerMap = new Map();
     super((onNext, onComplete, onError) => {
@@ -176,21 +179,22 @@ export class ThrottleObserver extends Observer {
             'Observer.throttle must observe non-null objects. Received: %0',
             message === null ? 'null' : typeof message,
           );
-          if (timerMap.has(message)) {
-            const timer = timerMap.get(message);
+          const timerKey = key(message);
+          if (timerMap.has(timerKey)) {
+            const timer = timerMap.get(timerKey);
             timer.active = true;
             timer.value = message;
           } else {
             const timer = {cancel: noop, active: false, value: null};
             (async () => {
-              timerMap.set(message, timer);
+              timerMap.set(timerKey, timer);
 
               const {promise, cancel} = makeCancelable(timeout());
               timer.cancel = cancel;
 
               const {canceled} = await promise;
 
-              timerMap.delete(message);
+              timerMap.delete(timerKey);
               if (!canceled && timer.active) {
                 onNext(timer.value);
               }

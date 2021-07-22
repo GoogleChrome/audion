@@ -27,16 +27,35 @@ export class WebAudioEventObserver extends Observer {
       const onEvent = (debuggeeId, method, params) => {
         onNext({method, params});
       };
+      const onDetach = () => {
+        chrome.debugger.attach({tabId}, debuggerVersion, () => {
+          chrome.debugger.sendCommand(
+            {tabId},
+            ChromeDebuggerWebAudioDomain.Methods.enable,
+          );
+        });
+      };
+      const onNavigated = () => {
+        chrome.debugger.sendCommand(
+          {tabId},
+          ChromeDebuggerWebAudioDomain.Methods.enable,
+        );
+      };
 
-      chrome.debugger.attach({tabId}, debuggerVersion, () => {});
-      chrome.debugger.sendCommand(
-        {tabId},
-        ChromeDebuggerWebAudioDomain.Methods.enable,
-      );
+      chrome.debugger.attach({tabId}, debuggerVersion, () => {
+        chrome.debugger.sendCommand(
+          {tabId},
+          ChromeDebuggerWebAudioDomain.Methods.enable,
+        );
+      });
+      chrome.debugger.onDetach.addListener(onDetach);
       chrome.debugger.onEvent.addListener(onEvent);
+      chrome.devtools.network.onNavigated.addListener(onNavigated);
 
       return () => {
+        chrome.debugger.onDetach.removeListener(onDetach);
         chrome.debugger.onEvent.removeListener(onEvent);
+        chrome.devtools.network.onNavigated.removeListener(onNavigated);
         chrome.debugger.sendCommand(
           {tabId},
           ChromeDebuggerWebAudioDomain.Methods.disable,

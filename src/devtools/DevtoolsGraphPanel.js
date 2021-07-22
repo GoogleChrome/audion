@@ -1,6 +1,8 @@
 /// <reference path="../utils/Types.js" />
 /// <reference path="Types.js" />
 
+import dagre from 'dagre';
+
 import {chrome} from '../chrome';
 
 /**
@@ -19,7 +21,14 @@ export class DevtoolsGraphPanel {
 
     chrome.runtime.onConnect.addListener((port) => {
       const unsubscribe = graphObserver.observe((graph) => {
-        port.postMessage(graph);
+        if (graph.graph) {
+          port.postMessage({
+            ...graph,
+            graph: dagre.graphlib.json.write(graph.graph),
+          });
+        } else {
+          port.postMessage(graph);
+        }
       });
 
       port.onDisconnect.addListener(() => {
