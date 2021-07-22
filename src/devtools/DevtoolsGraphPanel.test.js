@@ -11,7 +11,7 @@ import {Observer} from '../utils/Observer';
 
 import {DevtoolsGraphPanel} from './DevtoolsGraphPanel';
 
-jest.mock('./chrome');
+jest.mock('../chrome');
 
 /**
  * @type {Object<*, Audion.GraphContext>}

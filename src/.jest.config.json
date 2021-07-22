@@ -4,5 +4,5 @@
   "transform": {
     "\\.[jt]sx?$": "babel-jest"
   },
-  "coveragePathIgnorePatterns": ["<rootDir>/devtools/chrome/"]
+  "coveragePathIgnorePatterns": ["<rootDir>/chrome/"]
 }

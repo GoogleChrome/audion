@@ -3,7 +3,7 @@
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
 import {ChromeDebuggerWebAudio} from '../chrome/DebuggerWebAudio';
-import {Observer} from './utils/Observer';
+import {Observer} from '../utils/Observer';
 import {WebAudioGraphIntegrator} from './WebAudioGraphIntegrator';
 
 describe('WebAudioGraphIntegrator', () => {

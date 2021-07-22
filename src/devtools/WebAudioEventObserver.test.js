@@ -7,7 +7,7 @@ import {ChromeDebuggerWebAudio} from '../chrome/DebuggerWebAudio';
 
 import {WebAudioEventObserver} from './WebAudioEventObserver';
 
-jest.mock('./chrome');
+jest.mock('../chrome');
 
 describe('WebAudioEventObserver', () => {
   beforeEach(() => {
