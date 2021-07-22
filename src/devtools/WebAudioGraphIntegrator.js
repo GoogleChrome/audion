@@ -2,8 +2,8 @@
 /// <reference path="../utils/Types.js" />
 /// <reference path="WebAudioEventObserver.js" />
 
-import {ChromeDebuggerWebAudio} from './chrome/DebuggerWebAudio';
-import {Observer} from './utils/Observer';
+import {ChromeDebuggerWebAudio} from '../chrome/DebuggerWebAudio';
+import {Observer} from '../utils/Observer';
 
 /**
  * Collect WebAudio debugger events into per context graphs.
@@ -30,10 +30,12 @@ export class WebAudioGraphIntegrator extends Observer {
                 /** @type {ChromeDebuggerWebAudio.AudioNodeCreatedEvent} */ (
                   message.params
                 );
-              contexts[audioNodeCreated.node.contextId].nodes[
-                audioNodeCreated.node.nodeId
-              ] = {node: audioNodeCreated.node, edges: []};
-              onNext(contexts[audioNodeCreated.node.contextId]);
+              const context = contexts[audioNodeCreated.node.contextId];
+              context.nodes[audioNodeCreated.node.nodeId] = {
+                node: audioNodeCreated.node,
+                edges: [],
+              };
+              onNext(context);
             }
             break;
           case ChromeDebuggerWebAudio.Events.audioNodeWillBeDestroyed:
@@ -41,10 +43,9 @@ export class WebAudioGraphIntegrator extends Observer {
               const audioNodeDestroyed = /**
                * @type {ChromeDebuggerWebAudio.AudioNodeWillBeDestroyedEvent}
                */ (message.params);
-              delete contexts[audioNodeDestroyed.contextId].nodes[
-                audioNodeDestroyed.nodeId
-              ];
-              onNext(contexts[audioNodeDestroyed.contextId]);
+              const context = contexts[audioNodeDestroyed.contextId];
+              delete context.nodes[audioNodeDestroyed.nodeId];
+              onNext(context);
             }
             break;
           case ChromeDebuggerWebAudio.Events.contextChanged:
@@ -91,10 +92,9 @@ export class WebAudioGraphIntegrator extends Observer {
                 /** @type {ChromeDebuggerWebAudio.NodesConnectedEvent} */ (
                   message.params
                 );
-              contexts[nodesConnected.contextId].nodes[
-                nodesConnected.sourceId
-              ].edges.push(nodesConnected);
-              onNext(contexts[nodesConnected.contextId]);
+              const context = contexts[nodesConnected.contextId];
+              context.nodes[nodesConnected.sourceId].edges.push(nodesConnected);
+              onNext(context);
             }
             break;
           case ChromeDebuggerWebAudio.Events.nodesDisconnected:
@@ -103,10 +103,8 @@ export class WebAudioGraphIntegrator extends Observer {
                 /** @type {ChromeDebuggerWebAudio.NodesDisconnectedEvent} */ (
                   message.params
                 );
-              const {edges} =
-                contexts[nodesDisconnected.contextId].nodes[
-                  nodesDisconnected.sourceId
-                ];
+              const context = contexts[nodesDisconnected.contextId];
+              const {edges} = context.nodes[nodesDisconnected.sourceId];
               edges.splice(
                 edges.findIndex(
                   (edge) =>
@@ -117,7 +115,7 @@ export class WebAudioGraphIntegrator extends Observer {
                       nodesDisconnected.destinationInputIndex,
                 ),
               );
-              onNext(contexts[nodesDisconnected.contextId]);
+              onNext(context);
             }
             break;
         }
