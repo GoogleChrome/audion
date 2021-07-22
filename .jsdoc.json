@@ -1,0 +1,15 @@
+{
+  "source": {
+    "include": ["./src/"],
+    "includePattern": ".+\\.js(doc)?$",
+    "excludePattern": "(^|\\/|\\\\)_"
+  },
+  "opts": {
+    "encoding": "utf8",
+    "recurse": true,
+    "private": false,
+    "lenient": true,
+    "destination": "./docs",
+    "template": "./node_modules/@pixi/jsdoc-template"
+  }
+}

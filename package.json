@@ -1,0 +1,61 @@
+{
+  "name": "audion",
+  "private": true,
+  "version": "3.0.0",
+  "description": "A Chrome DevTools extension traces Web Audio API calls and visualizes in the DevTools.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GoogleChrome/audion.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/GoogleChrome/audion/issues"
+  },
+  "homepage": "https://github.com/GoogleChrome/audion#readme",
+  "main": "index.js",
+  "engines": {
+    "node": "14"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.14.6",
+    "@babel/plugin-transform-modules-commonjs": "^7.14.5",
+    "@pixi/jsdoc-template": "^2.6.0",
+    "babel-jest": "^27.0.6",
+    "eslint": "^7.30.0",
+    "eslint-config-google": "^0.14.0",
+    "husky": ">=6",
+    "jest": "^27.0.6",
+    "jest-puppeteer": "^5.0.4",
+    "jsdoc": "^3.6.7",
+    "lint-staged": ">=10",
+    "mustache": "^4.2.0",
+    "pinst": ">=2",
+    "prettier": "^2.3.2",
+    "puppeteer": "^9.1.1",
+    "webpack": "^5.44.0",
+    "webpack-cli": "^4.7.2",
+    "yazl": "^2.5.1"
+  },
+  "scripts": {
+    "build:chrome-extension": "node src/build/make-chrome-extension.js",
+    "build:webpack": "webpack --mode production --config src/webpack.config.js",
+    "build": "npm run build:webpack && npm run build:chrome-extension",
+    "postinstall": "husky install",
+    "postpublish": "pinst --enable",
+    "prepublishOnly": "pinst --disable",
+    "test:integration:run": "JEST_PUPPETEER_CONFIG=test/.jest-puppeteer.config.json jest --config test/.jest.config.json",
+    "test:integration": "npm run build && npm run test:integration:run",
+    "test:jsdoc": "jsdoc -c .jsdoc.json",
+    "test:lint:eslint": "eslint src/**/*.js",
+    "test:lint:prettier": "prettier --check src/**/*.js",
+    "test:lint": "npm run test:lint:eslint && npm run test:lint:prettier",
+    "test:unit": "jest --config src/.jest.config.json",
+    "test": "npm run test:lint && npm run test:jsdoc && npm run test:unit && npm run test:integration"
+  },
+  "lint-staged": {
+    "*.js": "eslint --cache --fix",
+    "*.{js,json,css,md}": "prettier --write"
+  }
+}

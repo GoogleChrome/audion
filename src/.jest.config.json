@@ -1,0 +1,7 @@
+{
+  "collectCoverage": true,
+  "injectGlobals": false,
+  "transform": {
+    "\\.[jt]sx?$": "babel-jest"
+  }
+}
