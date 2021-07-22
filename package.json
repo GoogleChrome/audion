@@ -1,7 +1,19 @@
 {
   "name": "audion",
-  "version": "1.0.0",
-  "description": "Traces web audio API calls.",
+  "private": true,
+  "version": "3.0.0",
+  "description": "A Chrome DevTools extension traces Web Audio API calls and visualizes in the DevTools.",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/GoogleChrome/audion.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/GoogleChrome/audion/issues"
+  },
+  "homepage": "https://github.com/GoogleChrome/audion#readme",
   "main": "index.js",
   "engines": {
     "node": "14"
@@ -42,17 +54,6 @@
     "test:unit": "jest --config src/.jest.config.json",
     "test": "npm run test:lint && npm run test:jsdoc && npm run test:unit && npm run test:integration"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/GoogleChrome/audion.git"
-  },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/GoogleChrome/audion/issues"
-  },
-  "homepage": "https://github.com/GoogleChrome/audion#readme",
   "lint-staged": {
     "*.js": "eslint --cache --fix",
     "*.{js,json,css,md}": "prettier --write"
