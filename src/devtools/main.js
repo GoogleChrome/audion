@@ -1,4 +1,4 @@
-import {Observer} from './utils/Observer';
+import {Observer} from '../utils/Observer';
 
 import {DevtoolsGraphPanel} from './DevtoolsGraphPanel';
 import {WebAudioEventObserver} from './WebAudioEventObserver';
