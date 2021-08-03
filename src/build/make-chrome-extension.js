@@ -113,7 +113,8 @@ async function zipChromeExtension({
 /**
  * Read entry names in a directory recursively.
  * @param {string} dir directory to recursively read
- * @return {Array<string>} array of paths relative to `dir`
+ * @return {Promise<Array<string>>} array of paths relative to `dir`
+ * @memberof makeChromeExtension
  */
 async function readdirRecursive(dir) {
   return (

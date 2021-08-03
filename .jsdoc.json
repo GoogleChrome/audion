@@ -10,7 +10,8 @@
     "private": false,
     "lenient": true,
     "destination": "./docs",
-    "template": "./node_modules/@pixi/jsdoc-template"
+    "template": "./node_modules/@pixi/jsdoc-template",
+    "readme": "README.md"
   },
   "plugins": ["plugins/markdown"]
 }
