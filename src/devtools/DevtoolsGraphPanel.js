@@ -5,6 +5,7 @@ import {chrome} from '../chrome';
 
 /**
  * Manage a devtools panel rendering a graph of a web audio context.
+ *
  * @memberof Audion
  * @alias DevtoolsGraphPanel
  */

@@ -2,6 +2,12 @@
 /// <reference path="Types.js" />
 
 /**
+ * Global chrome extension api instance.
+ *
+ * Normally available on the global context `chrome` identifier. Use this export
+ * to assist in testing use of the chrome extension api from inside this
+ * extension.
+ *
  * @type {Chrome.API}
  * @memberof Chrome
  * @alias chrome
@@ -9,7 +15,8 @@
 export const chrome = getChrome();
 
 /**
- * Return a no-operation implementation of Chrome.API.
+ * Return a no-operation implementation of Chrome.API. Used in testing.
+ *
  * @return {Chrome.API}
  * @memberof Chrome
  */
@@ -30,6 +37,14 @@ function noopChrome() {
     },
     devtools: {inspectedWindow: {tabId: 'tab'}, panels: {create() {}}},
     runtime: {
+      connect() {
+        return {
+          onDisconnect: noopEvent(),
+          onMessage: noopEvent(),
+          disconnect() {},
+          postMessage(message) {},
+        };
+      },
       getURL(url) {
         return url;
       },
@@ -40,6 +55,7 @@ function noopChrome() {
 
 /**
  * Return the global scope.
+ *
  * @return {*}
  * @memberof Chrome
  */
@@ -53,6 +69,9 @@ function getGlobal() {
 }
 
 /**
+ * Return a {@link Chrome.API} instance. Return a copy from
+ * {@link Chrome.noopChrome} if running under a unit test environment.
+ *
  * @return {Chrome.API}
  * @memberof Chrome
  */

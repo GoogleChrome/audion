@@ -1,24 +1,24 @@
-/// <reference path="../chrome/DebuggerWebAudio.js" />
+/// <reference path="../chrome/DebuggerWebAudioDomain.js" />
 
 /** @namespace Audion */
 
 /**
  * @typedef Audion.WebAudioEvent
- * @property {ChromeDebuggerWebAudio.EventName} method
- * @property {ChromeDebuggerWebAudio.Event} params
+ * @property {ChromeDebuggerWebAudioDomain.EventName} method
+ * @property {ChromeDebuggerWebAudioDomain.Event} params
  */
 
 /**
  * @typedef Audion.GraphContext
- * @property {ChromeDebuggerWebAudio.GraphObjectId} id
- * @property {ChromeDebuggerWebAudio.BaseAudioContext} context
+ * @property {ChromeDebuggerWebAudioDomain.GraphObjectId} id
+ * @property {ChromeDebuggerWebAudioDomain.BaseAudioContext} context
  * @property {Object<string, Audion.GraphNode>} nodes
  */
 
 /**
  * @typedef Audion.GraphNode
- * @property {ChromeDebuggerWebAudio.AudioNode} node
- * @property {Array<ChromeDebuggerWebAudio.NodesConnectedEvent>} edges
+ * @property {ChromeDebuggerWebAudioDomain.AudioNode} node
+ * @property {Array<ChromeDebuggerWebAudioDomain.NodesConnectedEvent>} edges
  */
 
 /**

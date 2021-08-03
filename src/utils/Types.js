@@ -1,17 +1,24 @@
 /** @namespace Utils */
 
 /**
+ * An abstraction of the observer idiom.
+ *
  * @typedef Utils.Observer
  * @property {Utils.ObserverObserveMethod<T>} observe
  * @template T
  */
 
 /**
+ * Install callbacks for each value observed, when the observer completes, if it
+ * does, or if the observer errors.
+ *
  * @callback Utils.ObserverObserveMethod
- * @param {Utils.SubscribeOnNext<T>} onNext
- * @param {function(): void} [onComplete]
- * @param {function(*): void} [onError]
- * @return {function(): void}
+ * @param {Utils.SubscribeOnNext<T>} onNext called with each observed value
+ * @param {function(): void} [onComplete] called when the observer completes, if
+ *   it does
+ * @param {function(*): void} [onError] called when the observer produces an
+ *   error, if it does
+ * @return {function(): void} function to unsubscribe from this installation
  * @template T
  */
 

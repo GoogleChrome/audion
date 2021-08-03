@@ -1,7 +1,8 @@
 /**
  * A nodejs script that copies files, writes a extension manifest, and zips it
  * all up.
- * @module makeChromeExtension
+ *
+ * @namespace makeChromeExtension
  */
 
 const fs = require('fs').promises;
@@ -17,6 +18,8 @@ main();
  * Copy files, generate extension manifest, and zip the unpacked extension.
  *
  * Calls other methods in this script.
+ *
+ * @memberof makeChromeExtension
  */
 async function main() {
   await Promise.all([
@@ -38,7 +41,9 @@ async function main() {
 
 /**
  * Copy file paths from a src directory to a dest directory.
+ *
  * @param {object} options
+ * @memberof makeChromeExtension
  */
 async function copyFiles({src, dest, files, cwd = __dirname}) {
   await Promise.all(
@@ -54,7 +59,9 @@ async function copyFiles({src, dest, files, cwd = __dirname}) {
 
 /**
  * Generate a extension manifest from a template file.
+ *
  * @param {object} options
+ * @memberof makeChromeExtension
  */
 async function generateManifest({
   view,
@@ -77,7 +84,9 @@ async function generateManifest({
 
 /**
  * Zip the unpacked chrome extension.
+ *
  * @param {object} options
+ * @memberof makeChromeExtension
  */
 async function zipChromeExtension({
   src,
@@ -129,7 +138,9 @@ async function readdirRecursive(dir) {
 
 /**
  * Create a directory if it does not already exist.
+ *
  * @param {string} dirpath directory to create
+ * @memberof makeChromeExtension
  */
 async function mkdir(dirpath) {
   try {
@@ -144,7 +155,9 @@ async function mkdir(dirpath) {
 
 /**
  * Unlink a file from the filesystem if it exists.
+ *
  * @param {string} filepath file to unlink
+ * @memberof makeChromeExtension
  */
 async function unlink(filepath) {
   try {

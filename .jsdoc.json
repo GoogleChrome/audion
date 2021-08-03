@@ -11,5 +11,6 @@
     "lenient": true,
     "destination": "./docs",
     "template": "./node_modules/@pixi/jsdoc-template"
-  }
+  },
+  "plugins": ["plugins/markdown"]
 }

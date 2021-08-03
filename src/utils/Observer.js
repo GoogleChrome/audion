@@ -30,7 +30,8 @@ function makeCancelable(promise) {
 }
 
 /**
- * Implementation of observer idiom.
+ * Implementation of the observer idiom.
+ *
  * @implements {Utils.Observer<T>}
  * @template T
  * @memberof Utils
