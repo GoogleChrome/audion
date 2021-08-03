@@ -1,9 +1,9 @@
-/// <reference path="../chrome/DebuggerWebAudio.js" />
+/// <reference path="../chrome/DebuggerWebAudioDomain.js" />
 
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
 import {chrome} from '../chrome';
-import {ChromeDebuggerWebAudio} from '../chrome/DebuggerWebAudio';
+import {ChromeDebuggerWebAudioDomain} from '../chrome/DebuggerWebAudioDomain';
 
 import {WebAudioEventObserver} from './WebAudioEventObserver';
 
@@ -41,7 +41,7 @@ describe('WebAudioEventObserver', () => {
     const nextMock = jest.fn();
     const o = new WebAudioEventObserver();
     o.observe(nextMock);
-    /** @type {ChromeDebuggerWebAudio.ContextCreatedEvent} */
+    /** @type {ChromeDebuggerWebAudioDomain.ContextCreatedEvent} */
     const contextCreated = {
       context: {
         contextId: '0',
@@ -55,10 +55,14 @@ describe('WebAudioEventObserver', () => {
     if (jest.isMockFunction(chrome.debugger.onEvent.addListener)) {
       /** @type {function} */ (
         chrome.debugger.onEvent.addListener.mock.calls[0][0]
-      )('tab', ChromeDebuggerWebAudio.Events.contextCreated, contextCreated);
+      )(
+        'tab',
+        ChromeDebuggerWebAudioDomain.Events.contextCreated,
+        contextCreated,
+      );
     }
     expect(nextMock).toBeCalledWith({
-      method: ChromeDebuggerWebAudio.Events.contextCreated,
+      method: ChromeDebuggerWebAudioDomain.Events.contextCreated,
       params: contextCreated,
     });
   });
