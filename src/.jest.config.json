@@ -3,5 +3,6 @@
   "injectGlobals": false,
   "transform": {
     "\\.[jt]sx?$": "babel-jest"
-  }
+  },
+  "coveragePathIgnorePatterns": ["<rootDir>/chrome/"]
 }
