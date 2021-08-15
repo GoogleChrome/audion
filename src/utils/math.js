@@ -1,4 +1,4 @@
-import {invariant} from '../utils/error';
+import {invariant} from './error';
 
 /**
  * Clamp a value between two extremes.

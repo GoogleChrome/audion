@@ -11,6 +11,7 @@ import {chrome} from '../chrome';
 import {Observer} from '../utils/Observer';
 
 import {DevtoolsGraphPanel} from './DevtoolsGraphPanel';
+import {serializeGraphContext} from './serializeGraphContext';
 
 jest.mock('../chrome');
 
@@ -61,10 +62,16 @@ describe('DevtoolsGraphPanel', () => {
   beforeEach(() => {
     jest.resetAllMocks();
     new DevtoolsGraphPanel(
-      new Observer((onNext) => {
-        nextGraph = onNext;
-        return () => {};
-      }),
+      Observer.transform(
+        Observer.transform(
+          new Observer((onNext) => {
+            nextGraph = onNext;
+            return () => {};
+          }),
+          serializeGraphContext,
+        ),
+        (graphContext) => ({graphContext}),
+      ),
     );
     port = mockPort();
   });
@@ -93,50 +100,54 @@ describe('DevtoolsGraphPanel', () => {
     expect(port.postMessage.mock.calls[0]).toMatchInlineSnapshot(`
 Array [
   Object {
-    "context": Object {
-      "callbackBufferSize": 1000,
-      "contextId": "context0000",
-      "contextState": "running",
-      "contextType": "realtime",
-      "maxOutputChannelCount": 2,
-      "sampleRate": 48000,
-    },
-    "graph": Object {
-      "edges": Array [],
-      "nodes": Array [],
-      "options": Object {
-        "compound": false,
-        "directed": true,
-        "multigraph": false,
+    "graphContext": Object {
+      "context": Object {
+        "callbackBufferSize": 1000,
+        "contextId": "context0000",
+        "contextState": "running",
+        "contextType": "realtime",
+        "maxOutputChannelCount": 2,
+        "sampleRate": 48000,
       },
+      "graph": Object {
+        "edges": Array [],
+        "nodes": Array [],
+        "options": Object {
+          "compound": false,
+          "directed": true,
+          "multigraph": false,
+        },
+      },
+      "id": "context0000",
+      "nodes": Object {},
     },
-    "id": "context0000",
-    "nodes": Object {},
   },
 ]
 `);
     expect(port.postMessage.mock.calls[1]).toMatchInlineSnapshot(`
 Array [
   Object {
-    "context": Object {
-      "callbackBufferSize": 1000,
-      "contextId": "context0000",
-      "contextState": "suspended",
-      "contextType": "realtime",
-      "maxOutputChannelCount": 2,
-      "sampleRate": 48000,
-    },
-    "graph": Object {
-      "edges": Array [],
-      "nodes": Array [],
-      "options": Object {
-        "compound": false,
-        "directed": true,
-        "multigraph": false,
+    "graphContext": Object {
+      "context": Object {
+        "callbackBufferSize": 1000,
+        "contextId": "context0000",
+        "contextState": "suspended",
+        "contextType": "realtime",
+        "maxOutputChannelCount": 2,
+        "sampleRate": 48000,
       },
+      "graph": Object {
+        "edges": Array [],
+        "nodes": Array [],
+        "options": Object {
+          "compound": false,
+          "directed": true,
+          "multigraph": false,
+        },
+      },
+      "id": "context0000",
+      "nodes": Object {},
     },
-    "id": "context0000",
-    "nodes": Object {},
   },
 ]
 `);
@@ -154,35 +165,39 @@ Array [
     expect(port.postMessage.mock.calls[0]).toMatchInlineSnapshot(`
 Array [
   Object {
-    "context": Object {
-      "callbackBufferSize": 1000,
-      "contextId": "context0000",
-      "contextState": "running",
-      "contextType": "realtime",
-      "maxOutputChannelCount": 2,
-      "sampleRate": 48000,
-    },
-    "graph": Object {
-      "edges": Array [],
-      "nodes": Array [],
-      "options": Object {
-        "compound": false,
-        "directed": true,
-        "multigraph": false,
+    "graphContext": Object {
+      "context": Object {
+        "callbackBufferSize": 1000,
+        "contextId": "context0000",
+        "contextState": "running",
+        "contextType": "realtime",
+        "maxOutputChannelCount": 2,
+        "sampleRate": 48000,
       },
+      "graph": Object {
+        "edges": Array [],
+        "nodes": Array [],
+        "options": Object {
+          "compound": false,
+          "directed": true,
+          "multigraph": false,
+        },
+      },
+      "id": "context0000",
+      "nodes": Object {},
     },
-    "id": "context0000",
-    "nodes": Object {},
   },
 ]
 `);
     expect(port.postMessage.mock.calls[1]).toMatchInlineSnapshot(`
 Array [
   Object {
-    "context": null,
-    "graph": null,
-    "id": "context0000",
-    "nodes": null,
+    "graphContext": Object {
+      "context": null,
+      "graph": null,
+      "id": "context0000",
+      "nodes": null,
+    },
   },
 ]
 `);
@@ -205,25 +220,27 @@ Array [
     expect(port.postMessage.mock.calls[0]).toMatchInlineSnapshot(`
 Array [
   Object {
-    "context": Object {
-      "callbackBufferSize": 1000,
-      "contextId": "context0000",
-      "contextState": "running",
-      "contextType": "realtime",
-      "maxOutputChannelCount": 2,
-      "sampleRate": 48000,
-    },
-    "graph": Object {
-      "edges": Array [],
-      "nodes": Array [],
-      "options": Object {
-        "compound": false,
-        "directed": true,
-        "multigraph": false,
+    "graphContext": Object {
+      "context": Object {
+        "callbackBufferSize": 1000,
+        "contextId": "context0000",
+        "contextState": "running",
+        "contextType": "realtime",
+        "maxOutputChannelCount": 2,
+        "sampleRate": 48000,
       },
+      "graph": Object {
+        "edges": Array [],
+        "nodes": Array [],
+        "options": Object {
+          "compound": false,
+          "directed": true,
+          "multigraph": false,
+        },
+      },
+      "id": "context0000",
+      "nodes": Object {},
     },
-    "id": "context0000",
-    "nodes": Object {},
   },
 ]
 `);

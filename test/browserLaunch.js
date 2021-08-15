@@ -2,10 +2,10 @@
 
 import {it} from '@jest/globals';
 
-it('adds a background worker', async () => {
+it('browser launches with extension', async () => {
   const browserTargets = await browser.targets();
   const devtoolsTarget = browserTargets.find(
-    (target) => target.type() === 'service_worker',
+    (target) => target.type() === 'browser',
   );
-  await devtoolsTarget.worker();
+  await devtoolsTarget.browser();
 });

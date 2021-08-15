@@ -2,15 +2,73 @@
   <head>
     <style>
       body {
+        position: relative;
+        margin: 0;
+        width: 100%;
+        height: 100%;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .full-box {
+        display: flex;
+        flex-direction: column;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
         background: white;
+      }
+      .full-box div {
+        display: flex;
+        flex: auto;
+      }
+      .full-box div div {
+        display: flex;
+        flex: auto;
+        justify-content: center;
+        align-items: center;
+      }
+      .web-audio-container {
+        display: flex;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: white;
+      }
+      .web-audio-debug {
+        flex: 0 0 200px;
+        width: 200px;
+      }
+      .web-audio-graph {
+        position: relative;
+        flex: 1 1;
+        overflow: hidden;
       }
     </style>
   </head>
   <body>
-    <div id="info">
-      <div>version: 3</div>
-      <div id="status">...</div>
-      <div id="graph">...</div>
+    <div class="web-audio-container">
+      <div class="web-audio-panel"></div>
+      <div class="web-audio-graph"></div>
+    </div>
+    <div class="web-audio-open-page-instruction full-box hidden">
+      <div>
+        <p>Open a page that uses Web Audio API to start monitoring.</p>
+      </div>
+    </div>
+    <div class="web-audio-reload-instruction full-box hidden">
+      <div>
+        <p>Web Audio API is already in use. Reload to begin monitoring.</p>
+      </div>
+    </div>
+    <div class="web-audio-loading full-box">
+      <div>
+        <div><p>Loading ...</p></div>
+      </div>
     </div>
     <script src="panel.js"></script>
   </body>

@@ -13,6 +13,7 @@
     // Indent files with prettier
     "indent": ["off"],
     // Allow triple slash comments
-    "spaced-comment": ["error", "always", {"markers": ["/"]}]
+    "spaced-comment": ["error", "always", {"markers": ["/"]}],
+    "operator-linebreak": ["off"]
   }
 }

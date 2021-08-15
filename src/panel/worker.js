@@ -1,11 +1,52 @@
 /// <reference path="../devtools/Types.js" />
+/// <reference path="../utils/Types.js" />
 
 import dagre from 'dagre';
 
 import {Observer} from '../utils/Observer';
-import {colorFromNodeType} from './graphStyle';
+import {
+  postObservations,
+  observeMessageEvents,
+} from '../utils/Observer.emitter';
+
+import {serializeGraphContext} from '../devtools/serializeGraphContext';
+import {deserializeGraphContext} from '../devtools/deserializeGraphContext';
 
 let layoutOptions = {rankdir: 'LR'};
+
+/** @type {Utils.Observer<PanelMessage>} */
+const receiver = observeMessageEvents(self);
+
+const graphContextMessageFilterObserver = new Observer((onNext, ...args) => {
+  return receiver.observe((data) => {
+    if ('layoutOptions' in data) {
+      layoutOptions = data.layoutOptions;
+    } else {
+      onNext(data.graphContext);
+    }
+  }, ...args);
+});
+
+const deserializedObserver = Observer.transform(
+  graphContextMessageFilterObserver,
+  deserializeGraphContext,
+);
+
+const receiverThrottle = Observer.throttle(deserializedObserver, {
+  key: (message) => message.id,
+});
+
+const updateGraph = Observer.transform(receiverThrottle, (context) => {
+  if (context.context && context.graph) {
+    context.graph.setGraph(layoutOptions);
+    dagre.layout(context.graph);
+  }
+  return context;
+});
+
+const serializedGraph = Observer.transform(updateGraph, serializeGraphContext);
+
+postObservations(serializedGraph, self);
 
 /**
  * @typedef LayoutOptionsMessage
@@ -21,86 +62,3 @@ let layoutOptions = {rankdir: 'LR'};
  * @typedef {LayoutOptionsMessage
  *   | GraphContextMessage} PanelMessage
  */
-
-/** @type {Observer<PanelMessage>} */
-const receiver = new Observer((onNext) => {
-  const onmessage = ({data}) => {
-    onNext(data);
-  };
-  self.addEventListener('message', onmessage);
-  return () => {
-    self.removeEventListener('message', onmessage);
-  };
-});
-
-const deserializerObserver = new Observer((onNext, ...args) => {
-  return receiver.observe((data) => {
-    if (data.layoutOptions) {
-      layoutOptions = data.layoutOptions;
-    } else {
-      const {graphContext} = data;
-      if (graphContext.graph) {
-        // console.log(`${Date.now()} panelWorker: received ${receiveIndex++}`);
-        for (let i = 0; i < graphContext.graph.nodes.length; i++) {
-          const node = graphContext.graph.nodes[i].value;
-          if (node && node.type && !node.color) {
-            node.color = colorFromNodeType(node.type);
-          }
-        }
-        const deserialized = {
-          ...graphContext,
-          graph: dagre.graphlib.json.read(graphContext.graph),
-        };
-        deserialized.graph.setGraph(layoutOptions);
-        onNext(deserialized);
-      } else {
-        onNext(graphContext);
-      }
-    }
-  }, ...args);
-});
-
-const resolveThrottle = (value) => {};
-const receiverThrottle = Observer.throttle(deserializerObserver, {
-  key: (message) => message.id,
-  // timeout: () =>
-  //   new Promise((resolve) => {
-  //     resolveThrottle = resolve;
-  //   }).then(() => new Promise((resolve) => setTimeout(resolve, 500))),
-});
-
-const updateGraph = Observer.transform(receiverThrottle, (context) => {
-  // console.log(`${Date.now()} panelWorker: transform ${transformIndex++}`);
-  if (context.context) {
-    // const graph = new dagre.graphlib.Graph();
-
-    // graph.setGraph({});
-    // graph.setDefaultEdgeLabel(() => {
-    //   return {};
-    // });
-    // for (const node of Object.values(context.nodes)) {
-    //   graph.setNode(node.node.nodeId, {label: '', width: 200, height: 50});
-    //   for (const edge of node.edges) {
-    //     graph.setEdge(edge.sourceId, edge.destinationId);
-    //   }
-    // }
-    if (context.graph) {
-      dagre.layout(context.graph);
-    }
-    // context.graph = graph;
-  }
-  return context;
-});
-
-updateGraph.observe((context) => {
-  // console.log(`${Date.now()} panelWorker: send ${sendIndex++}`);
-  resolveThrottle();
-  if (context.graph) {
-    self.postMessage({
-      ...context,
-      graph: dagre.graphlib.json.write(context.graph),
-    });
-  } else {
-    self.postMessage(context);
-  }
-});

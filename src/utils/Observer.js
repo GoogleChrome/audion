@@ -53,7 +53,7 @@ export class Observer {
   }
 
   /**
-   * @param {Observer<T1>} target
+   * @param {Utils.Observer<T1>} target
    * @param {function(T1): T2} onTransform
    * @return {Observer<T2>}
    * @template T1
@@ -68,13 +68,88 @@ export class Observer {
   }
 
   /**
-   * @param {Observer<T>} target
+   * @param {Utils.Observer<T>} target
+   * @param {function(T): boolean} testFunc
+   * @return {Observer<T>}
+   * @template T
+   */
+  static filter(target, testFunc) {
+    return new Observer((onNext, ...args) => {
+      return target.observe((value) => {
+        if (testFunc(value)) {
+          onNext(value);
+        }
+      });
+    });
+  }
+
+  /**
+   * @param {Utils.Observer<T>} target
+   * @param {function(R, T): R} reducer
+   * @param {R} initial
+   * @return {Utils.Observer<R>}
+   * @template T
+   * @template R
+   */
+  static reduce(target, reducer, initial) {
+    let latest = initial;
+    return new Observer((onNext, ...args) => {
+      return target.observe((value) => {
+        latest = reducer(latest, value);
+        onNext(latest);
+      }, ...args);
+    });
+  }
+
+  /**
+   * @param {Utils.Observer<T>} target
    * @param {Utils.ThrottleObserverOptions<T>} [options]
    * @return {Observer<T>}
    * @template T
    */
   static throttle(target, options) {
     return new ThrottleObserver(target, options);
+  }
+
+  /**
+   * Immediately observe a value to any new subscribe.
+   * @param {Observer<T1>} target
+   * @param {function(): T2} onSubscribe
+   * @return {Observer<T1 | T2>}
+   * @template T1
+   * @template T2
+   */
+  static onSubscribe(target, onSubscribe) {
+    return new SubscribeImmediateObserver(target, onSubscribe);
+  }
+
+  /**
+   * @param {Object<string, Utils.Observer<*>>} props
+   * @param {T} latest
+   * @return {Utils.Observer<T>}
+   * @template T
+   */
+  static props(props, latest) {
+    return new Observer((onNext, onComplete, onError) => {
+      const unsubscribes = [];
+      for (const [key, prop] of Object.entries(props)) {
+        unsubscribes.push(
+          prop.observe(
+            (value) => {
+              latest = {...latest, [key]: value};
+              onNext(latest);
+            },
+            onComplete,
+            onError,
+          ),
+        );
+      }
+      return () => {
+        for (const unsubscribe of unsubscribes) {
+          unsubscribe();
+        }
+      };
+    });
   }
 
   /**
@@ -155,7 +230,7 @@ export class Observer {
 export class ThrottleObserver extends Observer {
   /**
    * Create a ThrottleObserver.
-   * @param {Observer<T>} target
+   * @param {Utils.Observer<T>} target
    * @param {Utils.ThrottleObserverOptions<T>} [options]
    */
   constructor(
@@ -172,37 +247,41 @@ export class ThrottleObserver extends Observer {
      */
     const timerMap = new Map();
     super((onNext, onComplete, onError) => {
+      /**
+       * @param {T} message
+       */
+      const onThrottleNext = (message) => {
+        invariant(
+          typeof message === 'object' && message !== null,
+          'Observer.throttle must observe non-null objects. Received: %0',
+          message === null ? 'null' : typeof message,
+        );
+        const timerKey = key(message);
+        if (timerMap.has(timerKey)) {
+          const timer = timerMap.get(timerKey);
+          timer.active = true;
+          timer.value = message;
+        } else {
+          const timer = {cancel: noop, active: false, value: null};
+          (async () => {
+            timerMap.set(timerKey, timer);
+
+            const {promise, cancel} = makeCancelable(timeout());
+            timer.cancel = cancel;
+
+            const {canceled} = await promise;
+
+            timerMap.delete(timerKey);
+            if (!canceled && timer.active) {
+              onThrottleNext(timer.value);
+            }
+          })();
+
+          onNext(message);
+        }
+      };
       return target.observe(
-        (message) => {
-          invariant(
-            typeof message === 'object' && message !== null,
-            'Observer.throttle must observe non-null objects. Received: %0',
-            message === null ? 'null' : typeof message,
-          );
-          const timerKey = key(message);
-          if (timerMap.has(timerKey)) {
-            const timer = timerMap.get(timerKey);
-            timer.active = true;
-            timer.value = message;
-          } else {
-            const timer = {cancel: noop, active: false, value: null};
-            (async () => {
-              timerMap.set(timerKey, timer);
-
-              const {promise, cancel} = makeCancelable(timeout());
-              timer.cancel = cancel;
-
-              const {canceled} = await promise;
-
-              timerMap.delete(timerKey);
-              if (!canceled && timer.active) {
-                onNext(timer.value);
-              }
-            })();
-
-            onNext(message);
-          }
-        },
+        onThrottleNext,
         () => {
           this._flush();
           onComplete();
@@ -234,5 +313,36 @@ export class ThrottleObserver extends Observer {
       timer.cancel();
     }
     this._timerMap.clear();
+  }
+}
+
+/**
+ * Immediately observe a value to any new subscriber.
+ * @template T1
+ * @template T2
+ * @extends {Observer<T1 | T2>}
+ */
+export class SubscribeImmediateObserver extends Observer {
+  /**
+   * Create an SubscribeImmediateObserver.
+   * @param {Observer<T1>} target
+   * @param {function(): T2} onSubscribe
+   */
+  constructor(target, onSubscribe) {
+    super((onNext, onComplete, onError) =>
+      target.observe(onNext, onComplete, onError),
+    );
+
+    this.onSubscribe = onSubscribe;
+  }
+  /**
+   * @param {Utils.SubscribeOnNext<T1 | T2>} onNext
+   * @param {function(): void} [onComplete]
+   * @param {function(*): void} [onError]
+   * @return {function(): void} unsubscribe
+   */
+  observe(onNext, onComplete, onError) {
+    onNext(this.onSubscribe());
+    return super.observe(onNext, onComplete, onError);
   }
 }
