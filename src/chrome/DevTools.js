@@ -8,6 +8,7 @@
  *
  * @typedef Chrome.DevTools
  * @property {Chrome.DevToolsInspectedWindow} inspectedWindow
+ * @property {Chrome.DevtoolsNetwork} network
  * @property {Chrome.DevToolsPanels} panels
  */
 
@@ -18,6 +19,11 @@
  *
  * @typedef Chrome.DevToolsInspectedWindow
  * @property {string} tabId
+ */
+
+/**
+ * @typedef Chrome.DevtoolsNetwork
+ * @property {Chrome.Event<function(string): void>} onNavigated
  */
 
 /**

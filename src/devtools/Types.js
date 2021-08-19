@@ -13,6 +13,7 @@
  * @property {ChromeDebuggerWebAudioDomain.GraphObjectId} id
  * @property {ChromeDebuggerWebAudioDomain.BaseAudioContext} context
  * @property {Object<string, Audion.GraphNode>} nodes
+ * @property {object} graph
  */
 
 /**
