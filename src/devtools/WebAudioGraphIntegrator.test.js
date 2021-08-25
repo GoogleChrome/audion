@@ -44,7 +44,7 @@ Array [
       "_in": Object {},
       "_isCompound": false,
       "_isDirected": true,
-      "_isMultigraph": false,
+      "_isMultigraph": true,
       "_label": Object {},
       "_nodes": Object {},
       "_out": Object {},
@@ -53,6 +53,7 @@ Array [
     },
     "id": "context0000",
     "nodes": Object {},
+    "params": Object {},
   },
 ]
 `);
@@ -87,7 +88,7 @@ Array [
       "_in": Object {},
       "_isCompound": false,
       "_isDirected": true,
-      "_isMultigraph": false,
+      "_isMultigraph": true,
       "_label": Object {},
       "_nodes": Object {},
       "_out": Object {},
@@ -96,6 +97,7 @@ Array [
     },
     "id": "context0000",
     "nodes": Object {},
+    "params": Object {},
   },
 ]
 `);
@@ -118,6 +120,7 @@ Array [
     "graph": null,
     "id": "context0000",
     "nodes": null,
+    "params": null,
   },
 ]
 `);
@@ -154,7 +157,7 @@ Array [
       },
       "_isCompound": false,
       "_isDirected": true,
-      "_isMultigraph": false,
+      "_isMultigraph": true,
       "_label": Object {},
       "_nodeCount": 1,
       "_nodes": Object {
@@ -190,8 +193,10 @@ Array [
           "numberOfInputs": 1,
           "numberOfOutputs": 1,
         },
+        "params": Array [],
       },
     },
+    "params": Object {},
   },
 ]
 `);
@@ -231,7 +236,7 @@ Array [
       "_in": Object {},
       "_isCompound": false,
       "_isDirected": true,
-      "_isMultigraph": false,
+      "_isMultigraph": true,
       "_label": Object {},
       "_nodeCount": 0,
       "_nodes": Object {},
@@ -241,6 +246,7 @@ Array [
     },
     "id": "context0000",
     "nodes": Object {},
+    "params": Object {},
   },
 ]
 `);
@@ -282,17 +288,24 @@ Array [
       "_defaultNodeLabelFn": [Function],
       "_edgeCount": 1,
       "_edgeLabels": Object {
-        "node0001node0000 ": Object {},
+        "node0001node00000,0": Object {
+          "destinationInputIndex": 0,
+          "destinationParamId": "",
+          "sourceOutputIndex": 0,
+          "type": "node",
+        },
       },
       "_edgeObjs": Object {
-        "node0001node0000 ": Object {
+        "node0001node00000,0": Object {
+          "name": "0,0",
           "v": "node0001",
           "w": "node0000",
         },
       },
       "_in": Object {
         "node0000": Object {
-          "node0001node0000 ": Object {
+          "node0001node00000,0": Object {
+            "name": "0,0",
             "v": "node0001",
             "w": "node0000",
           },
@@ -301,7 +314,7 @@ Array [
       },
       "_isCompound": false,
       "_isDirected": true,
-      "_isMultigraph": false,
+      "_isMultigraph": true,
       "_label": Object {},
       "_nodeCount": 2,
       "_nodes": Object {
@@ -325,7 +338,8 @@ Array [
       "_out": Object {
         "node0000": Object {},
         "node0001": Object {
-          "node0001node0000 ": Object {
+          "node0001node00000,0": Object {
+            "name": "0,0",
             "v": "node0001",
             "w": "node0000",
           },
@@ -357,6 +371,7 @@ Array [
           "numberOfInputs": 1,
           "numberOfOutputs": 1,
         },
+        "params": Array [],
       },
       "node0001": Object {
         "edges": Array [
@@ -375,8 +390,10 @@ Array [
           "numberOfInputs": 0,
           "numberOfOutputs": 1,
         },
+        "params": Array [],
       },
     },
+    "params": Object {},
   },
 ]
 `);
@@ -430,7 +447,7 @@ Array [
       },
       "_isCompound": false,
       "_isDirected": true,
-      "_isMultigraph": false,
+      "_isMultigraph": true,
       "_label": Object {},
       "_nodeCount": 2,
       "_nodes": Object {
@@ -477,6 +494,7 @@ Array [
           "numberOfInputs": 1,
           "numberOfOutputs": 1,
         },
+        "params": Array [],
       },
       "node0001": Object {
         "edges": Array [],
@@ -489,8 +507,10 @@ Array [
           "numberOfInputs": 0,
           "numberOfOutputs": 1,
         },
+        "params": Array [],
       },
     },
+    "params": Object {},
   },
 ]
 `);

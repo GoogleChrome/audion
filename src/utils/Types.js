@@ -69,3 +69,31 @@
  * @property {function(): Promise<void>} [timeout]
  * @property {number} [times=10]
  */
+
+/**
+ * @callback Utils.DataEventListener
+ * @param {{data: T}} event
+ * @return {void}
+ * @template T
+ */
+
+/**
+ * @callback Utils.ModifyDataEventListeners
+ * @param {string} eventName
+ * @param {Utils.DataEventListener<T>} listener
+ * @return {void}
+ * @template T
+ */
+
+/**
+ * @typedef Utils.DataEmitter
+ * @property {Utils.ModifyDataEventListeners<T>} addEventListener
+ * @property {Utils.ModifyDataEventListeners<T>} removeEventListener
+ * @template T
+ */
+
+/**
+ * @typedef Utils.Poster
+ * @property {function(T): void} postMessage
+ * @template T
+ */

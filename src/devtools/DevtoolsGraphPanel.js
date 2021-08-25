@@ -1,8 +1,6 @@
 /// <reference path="../utils/Types.js" />
 /// <reference path="Types.js" />
 
-import dagre from 'dagre';
-
 import {chrome} from '../chrome';
 
 /**
@@ -14,21 +12,14 @@ import {chrome} from '../chrome';
 export class DevtoolsGraphPanel {
   /**
    * Create a DevtoolsGraphPanel.
-   * @param {Utils.Observer<Audion.GraphContext>} graphObserver
+   * @param {Audion.DevtoolsObserver} devtoolsObserver
    */
-  constructor(graphObserver) {
+  constructor(devtoolsObserver) {
     chrome.devtools.panels.create('Web Audio', '', 'panel.html', () => {});
 
     chrome.runtime.onConnect.addListener((port) => {
-      const unsubscribe = graphObserver.observe((graph) => {
-        if (graph.graph) {
-          port.postMessage({
-            ...graph,
-            graph: dagre.graphlib.json.write(graph.graph),
-          });
-        } else {
-          port.postMessage(graph);
-        }
+      const unsubscribe = devtoolsObserver.observe((graph) => {
+        port.postMessage(graph);
       });
 
       port.onDisconnect.addListener(() => {
