@@ -4,7 +4,7 @@ Audion is a Chrome extension that adds a panel to DevTools. This panel
 visualizes the audio graph (programmed with Web Audio API) in real-time.
 Soon you will be able to install the extension from Chrome Web Store page.
 
-![Google Doodle Hiphop](https://raw.githubusercontent.com/GoogleChrome/omnitone/main/images/doodle-hiphop.png)
+![Google Doodle Hiphop](https://raw.githubusercontent.com/GoogleChrome/audion/main/images/doodle-hiphop.png)
 
 ## Usage
 
