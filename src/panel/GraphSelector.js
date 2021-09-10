@@ -3,6 +3,9 @@
 
 import {Observer} from '../utils/Observer';
 
+const EMPTY_GRAPH = {
+  graph: {value: {width: 0, height: 0}, nodes: [], edges: []},
+};
 /**
  * Control which graph is observed.
  */
@@ -40,18 +43,15 @@ export class GraphSelector {
       () => this.graphId,
     );
     /** @type {Utils.Observer<Audion.GraphContext>} */
-    this.graphObserver = Observer.filter(
-      Observer.transform(
-        Observer.props(
-          {id: this.graphIdObserver, allGraphs: allGraphsObserver},
-          {
-            id: '',
-            allGraphs: /** @type {Object<string, Audion.GraphContext>} */ ({}),
-          },
-        ),
-        (value) => value.allGraphs[value.id],
+    this.graphObserver = Observer.transform(
+      Observer.props(
+        {id: this.graphIdObserver, allGraphs: allGraphsObserver},
+        {
+          id: '',
+          allGraphs: /** @type {Object<string, Audion.GraphContext>} */ ({}),
+        },
       ),
-      (value) => Boolean(value),
+      (value) => value.allGraphs[value.id] || EMPTY_GRAPH,
     );
   }
 
