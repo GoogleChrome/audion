@@ -38,6 +38,8 @@ export class AudioGraphRender {
       backgroundColor: 0xffffff,
       resizeTo: this.elementContainer,
       antialias: true,
+      autoDensity: true,
+      resolution: window.devicePixelRatio,
     }));
     this.pixiView = app.view;
     // window.$app = app;
