@@ -1,5 +1,7 @@
 # Audion: Web Audio Graph Visualizer
 
+[![Node.js CI](https://github.com/GoogleChrome/audion/actions/workflows/nodejs-ci.yml/badge.svg)](https://github.com/GoogleChrome/audion/actions/workflows/nodejs-ci.yml)
+
 Audion is a Chrome extension that adds a panel to DevTools. This panel
 visualizes the audio graph (programmed with Web Audio API) in real-time.
 Soon you will be able to install the extension from Chrome Web Store page.
