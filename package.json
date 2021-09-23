@@ -18,15 +18,18 @@
   "engines": {
     "node": "14"
   },
+  "dependencies": {
+    "@pixi/events": "^6.1.0-rc",
+    "@pixi/unsafe-eval": "^6.0.4",
+    "dagre": "^0.8.5",
+    "pixi.js": "^6.0.4"
+  },
   "devDependencies": {
     "@babel/core": "^7.14.6",
     "@babel/plugin-transform-modules-commonjs": "^7.14.5",
-    "@pixi/events": "^6.1.0-rc",
     "@pixi/jsdoc-template": "^2.6.0",
-    "@pixi/unsafe-eval": "^6.0.4",
     "babel-jest": "^27.0.6",
     "css-loader": "^6.2.0",
-    "dagre": "^0.8.5",
     "eslint": "^7.30.0",
     "eslint-config-google": "^0.14.0",
     "file-loader": "^6.2.0",
@@ -37,7 +40,6 @@
     "lint-staged": ">=10",
     "mustache": "^4.2.0",
     "pinst": ">=2",
-    "pixi.js": "^6.0.4",
     "prettier": "^2.3.2",
     "puppeteer": "^9.1.1",
     "rimraf": "^3.0.2",
