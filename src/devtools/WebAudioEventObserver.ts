@@ -1,8 +1,5 @@
-/// <reference path="../chrome/DebuggerWebAudioDomain.js" />
-/// <reference path="Types.js" />
-
 import {chrome} from '../chrome';
-import {ChromeDebuggerWebAudioDomain} from '../chrome/DebuggerWebAudioDomain';
+import {Methods} from '../chrome/DebuggerWebAudioDomain';
 import {Observer} from '../utils/Observer';
 
 const debuggerVersion = '1.3';
@@ -10,10 +7,9 @@ const {tabId} = chrome.devtools.inspectedWindow;
 
 /**
  * @memberof Audion
- * @extends {Observer<Audion.WebAudioEvent>}
  * @alias WebAudioEventObserver
  */
-export class WebAudioEventObserver extends Observer {
+export class WebAudioEventObserver extends Observer<Audion.WebAudioEvent> {
   /**
    * Observe WebAudio events from chrome.debugger.
    */
@@ -27,7 +23,7 @@ export class WebAudioEventObserver extends Observer {
       const onEvent = (debuggeeId, method, params) => {
         onNext({method, params});
       };
-      const onDetach = ({tabId}, detachReason) => {
+      const onDetach = () => {
         // TODO: Show a warning if the DevTools are still open and allow the
         // user to re-attach manually, e.g. by pressing a button.
         // See: https://developer.chrome.com/docs/extensions/reference/debugger/#type-DetachReason
@@ -39,10 +35,7 @@ export class WebAudioEventObserver extends Observer {
       return () => {
         chrome.debugger.onDetach.removeListener(onDetach);
         chrome.debugger.onEvent.removeListener(onEvent);
-        chrome.debugger.sendCommand(
-          {tabId},
-          ChromeDebuggerWebAudioDomain.Methods.disable,
-        );
+        chrome.debugger.sendCommand({tabId}, Methods.disable);
         chrome.debugger.detach({tabId}, () => {});
       };
     });
@@ -51,10 +44,7 @@ export class WebAudioEventObserver extends Observer {
   /** Attaches the chrome.debugger to start observing events. */
   attach() {
     chrome.debugger.attach({tabId}, debuggerVersion, () => {
-      chrome.debugger.sendCommand(
-        {tabId},
-        ChromeDebuggerWebAudioDomain.Methods.enable,
-      );
+      chrome.debugger.sendCommand({tabId}, Methods.enable);
     });
   }
 }

@@ -1,9 +1,9 @@
-/// <reference path="../chrome/DebuggerWebAudioDomain.js" />
+/// <reference path="../chrome/DebuggerWebAudioDomain.ts" />
 
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
 import {chrome} from '../chrome';
-import {ChromeDebuggerWebAudioDomain} from '../chrome/DebuggerWebAudioDomain';
+import {Events} from '../chrome/DebuggerWebAudioDomain';
 
 import {WebAudioEventObserver} from './WebAudioEventObserver';
 
@@ -85,14 +85,10 @@ describe('WebAudioEventObserver', () => {
     if (jest.isMockFunction(chrome.debugger.onEvent.addListener)) {
       /** @type {function} */ (
         chrome.debugger.onEvent.addListener.mock.calls[0][0]
-      )(
-        'tab',
-        ChromeDebuggerWebAudioDomain.Events.contextCreated,
-        contextCreated,
-      );
+      )('tab', Events.contextCreated, contextCreated);
     }
     expect(nextMock).toBeCalledWith({
-      method: ChromeDebuggerWebAudioDomain.Events.contextCreated,
+      method: Events.contextCreated,
       params: contextCreated,
     });
   });

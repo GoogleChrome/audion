@@ -10,6 +10,11 @@ module.exports = {
   output: {
     path: resolve(__dirname, '../build/audion'),
   },
+  devtool: 'source-map',
+  resolve: {
+    // Add '.ts' and '.tsx' as resolvable extensions.
+    extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
+  },
   module: {
     rules: [
       {
@@ -20,6 +25,8 @@ module.exports = {
         test: /\.css$/,
         use: ['style-loader', {loader: 'css-loader', options: {modules: true}}],
       },
+      {test: /\.tsx?$/, loader: 'ts-loader'},
+      {test: /\.js$/, loader: 'source-map-loader'},
     ],
   },
 };

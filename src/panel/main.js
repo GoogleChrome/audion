@@ -1,4 +1,4 @@
-/// <reference path="../chrome/DebuggerWebAudioDomain.js" />
+/// <reference path="../chrome/DebuggerWebAudioDomain.ts" />
 /// <reference path="../devtools/Types.js" />
 /// <reference path="../utils/Types.js" />
 
