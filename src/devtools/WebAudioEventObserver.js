@@ -27,13 +27,10 @@ export class WebAudioEventObserver extends Observer {
       const onEvent = (debuggeeId, method, params) => {
         onNext({method, params});
       };
-      const onDetach = () => {
-        chrome.debugger.attach({tabId}, debuggerVersion, () => {
-          chrome.debugger.sendCommand(
-            {tabId},
-            ChromeDebuggerWebAudioDomain.Methods.enable,
-          );
-        });
+      const onDetach = ({tabId}, detachReason) => {
+        // TODO: Show a warning if the DevTools are still open and allow the
+        // user to re-attach manually, e.g. by pressing a button.
+        // See: https://developer.chrome.com/docs/extensions/reference/debugger/#type-DetachReason
       };
       const onNavigated = () => {
         chrome.debugger.sendCommand(
