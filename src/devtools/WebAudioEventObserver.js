@@ -35,33 +35,29 @@ export class WebAudioEventObserver extends Observer {
           );
         });
       };
-      const onNavigated = () => {
-        chrome.debugger.sendCommand(
-          {tabId},
-          ChromeDebuggerWebAudioDomain.Methods.enable,
-        );
-      };
 
-      chrome.debugger.attach({tabId}, debuggerVersion, () => {
-        chrome.debugger.sendCommand(
-          {tabId},
-          ChromeDebuggerWebAudioDomain.Methods.enable,
-        );
-      });
       chrome.debugger.onDetach.addListener(onDetach);
       chrome.debugger.onEvent.addListener(onEvent);
-      chrome.devtools.network.onNavigated.addListener(onNavigated);
 
       return () => {
         chrome.debugger.onDetach.removeListener(onDetach);
         chrome.debugger.onEvent.removeListener(onEvent);
-        chrome.devtools.network.onNavigated.removeListener(onNavigated);
         chrome.debugger.sendCommand(
           {tabId},
           ChromeDebuggerWebAudioDomain.Methods.disable,
         );
         chrome.debugger.detach({tabId}, () => {});
       };
+    });
+  }
+
+  /** Attaches the chrome.debugger to start observing events. */
+  attach() {
+    chrome.debugger.attach({tabId}, debuggerVersion, () => {
+      chrome.debugger.sendCommand(
+        {tabId},
+        ChromeDebuggerWebAudioDomain.Methods.enable,
+      );
     });
   }
 }

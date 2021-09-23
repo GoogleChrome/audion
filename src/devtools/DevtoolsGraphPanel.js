@@ -12,8 +12,9 @@ import {chrome} from '../chrome';
 export class DevtoolsGraphPanel {
   /**
    * Create a DevtoolsGraphPanel.
+   * @param {Audion.DevtoolsObserver} devtoolsObserver
    */
-  constructor() {
+  constructor(devtoolsObserver) {
     this.onShow = null;
 
     chrome.devtools.panels.create('Web Audio', '', 'panel.html', (panel) => {
@@ -23,13 +24,7 @@ export class DevtoolsGraphPanel {
         }
       });
     });
-  }
 
-  /**
-   * Connects the DevtoolsObserver to the Chrome Runtime.
-   * @param {Audion.DevtoolsObserver} devtoolsObserver
-   */
-  connect(devtoolsObserver) {
     chrome.runtime.onConnect.addListener((port) => {
       const unsubscribe = devtoolsObserver.observe((graph) => {
         port.postMessage(graph);
