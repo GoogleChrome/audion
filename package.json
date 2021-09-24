@@ -22,7 +22,8 @@
     "@pixi/events": "^6.1.0-rc",
     "@pixi/unsafe-eval": "^6.0.4",
     "dagre": "^0.8.5",
-    "pixi.js": "^6.0.4"
+    "pixi.js": "^6.0.4",
+    "rxjs": "^7.3.0"
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",
