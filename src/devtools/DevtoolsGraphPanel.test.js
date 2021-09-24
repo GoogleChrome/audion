@@ -1,6 +1,5 @@
 /// <reference path="../chrome/Types.js" />
 /// <reference path="../chrome/DebuggerWebAudioDomain.ts" />
-/// <reference path="../chrome/Devtools.js" />
 /// <reference path="../utils/Types.js" />
 /// <reference path="Types.js" />
 

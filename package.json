@@ -55,9 +55,10 @@
   },
   "scripts": {
     "build:chrome-extension": "node src/build/make-chrome-extension.js",
-    "build:rimraf": "rimraf build",
     "build:webpack": "webpack --mode production --config src/webpack.config.js",
-    "build": "npm run build:rimraf && npm run build:webpack && npm run build:chrome-extension",
+    "build:clean": "rimraf build",
+    "build": "npm run build:clean && npm run build:webpack && npm run build:chrome-extension",
+    "clean": "rimraf build docs src/coverage",
     "dev": "webpack --mode development --config src/webpack.config.js && npm run build:chrome-extension",
     "postinstall": "husky install",
     "postpublish": "pinst --enable",
@@ -72,7 +73,7 @@
     "test": "npm run test:lint && npm run test:jsdoc && npm run test:unit && npm run test:integration"
   },
   "lint-staged": {
-    "*.js": "eslint --cache --fix",
-    "*.{js,json,css,md}": "prettier --write"
+    "*.{js,ts}": "eslint --cache --fix",
+    "*.{js,ts,json,css,md}": "prettier --write"
   }
 }
