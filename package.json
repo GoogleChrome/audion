@@ -76,7 +76,7 @@
     "test": "npm run test:lint && npm run test:jsdoc && npm run test:unit && npm run test:integration"
   },
   "lint-staged": {
-    "*.{js,ts}": "eslint --cache --fix",
+    "*.{js}": "eslint --cache --fix",
     "*.{js,ts,json,css,md}": "prettier --write"
   }
 }
