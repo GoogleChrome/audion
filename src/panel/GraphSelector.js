@@ -1,4 +1,4 @@
-/// <reference path="../devtools/Types.js" />
+/// <reference path="../devtools/Types.ts" />
 /// <reference path="../utils/Types.js" />
 
 import {Observer} from '../utils/Observer';

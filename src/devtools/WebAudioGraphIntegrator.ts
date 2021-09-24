@@ -1,8 +1,13 @@
-import dagre from 'dagre';
+/// <reference path="Types.ts" />
+
+import * as dagre from 'dagre';
+import * as graphlib from 'graphlib';
 
 import {Events} from '../chrome/DebuggerWebAudioDomain';
 import {Observer} from '../utils/Observer';
 import {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping';
+import {Audion} from './Types';
+import {WebAudioEventObserver} from './WebAudioEventObserver';
 
 type WebAudioEventName = keyof ProtocolMapping.Events & `WebAudio.${string}`;
 
@@ -24,7 +29,7 @@ export class WebAudioGraphIntegrator extends Observer<Audion.GraphContext> {
   /**
    * Create a WebAudioGraphIntegrator.
    */
-  constructor(webAudioEvents: Audion.WebAudioEventObserver) {
+  constructor(webAudioEvents: WebAudioEventObserver) {
     super((onNext, ...args) => {
       return webAudioEvents.observe((event) => {
         this.eventHandlers[event.method]?.(onNext, event.params);
@@ -99,7 +104,10 @@ export class WebAudioGraphIntegrator extends Observer<Audion.GraphContext> {
         context: contextCreated.context,
         nodes: {},
         params: {},
-        graph,
+        // TODO: dagre's graphlib typings are inacurate, which is why we use
+        // graphlib's types. Revert to dagre's types once the issue is fixed:
+        // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/47439
+        graph: graph as unknown as graphlib.Graph,
       };
       onNext(this.contexts[contextCreated.context.contextId]);
     },

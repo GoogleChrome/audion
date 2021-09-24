@@ -1,5 +1,5 @@
 /// <reference path="../chrome/DebuggerWebAudioDomain.ts" />
-/// <reference path="../devtools/Types.js" />
+/// <reference path="../devtools/Types.ts" />
 /// <reference path="../utils/Types.js" />
 
 import * as PIXI from 'pixi.js';

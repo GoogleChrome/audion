@@ -1,5 +1,5 @@
 /// <reference path="../../chrome/Types.js" />
-/// <reference path="../../devtools/Types.js" />
+/// <reference path="../../devtools/Types.ts" />
 
 import * as PIXI from 'pixi.js';
 import {AudioEdgeRender} from './AudioEdgeRender';

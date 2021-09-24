@@ -1,6 +1,7 @@
 import {chrome} from '../chrome';
 import {Methods} from '../chrome/DebuggerWebAudioDomain';
 import {Observer} from '../utils/Observer';
+import {Audion} from './Types';
 
 const debuggerVersion = '1.3';
 const {tabId} = chrome.devtools.inspectedWindow;
