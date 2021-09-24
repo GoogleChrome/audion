@@ -10,7 +10,7 @@ module.exports = (env, argv) => ({
   output: {
     path: resolve(__dirname, '../build/audion'),
   },
-  devtool: argv.mode === 'development' ? 'eval' : false,
+  devtool: argv.mode === 'development' ? 'source-map' : false,
   resolve: {
     extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
   },
