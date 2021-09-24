@@ -30,6 +30,8 @@
     "@babel/plugin-transform-modules-commonjs": "^7.14.5",
     "@babel/preset-typescript": "^7.15.0",
     "@pixi/jsdoc-template": "^2.6.0",
+    "@types/dagre": "^0.7.46",
+    "@types/graphlib": "^2.1.8",
     "babel-jest": "^27.0.6",
     "css-loader": "^6.2.0",
     "devtools-protocol": "^0.0.924232",
