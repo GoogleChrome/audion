@@ -12,7 +12,6 @@ module.exports = (env, argv) => ({
   },
   devtool: argv.mode === 'development' ? 'eval' : false,
   resolve: {
-    // Add '.ts' and '.tsx' as resolvable extensions.
     extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
   },
   module: {
