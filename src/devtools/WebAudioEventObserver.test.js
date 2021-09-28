@@ -27,23 +27,23 @@ describe('WebAudioEventObserver', () => {
     expect(chrome.debugger.onEvent.addListener).toBeCalled();
   });
 
-  it('reattach on unexpected detach', () => {
+  it('does not reattach when user triggers detach', () => {
     const o = new WebAudioEventObserver();
     o.observe(() => {});
     o.attach();
     if (jest.isMockFunction(chrome.debugger.attach)) {
       /** @type {function} */ (chrome.debugger.attach.mock.calls[0][2])();
     }
-    if (jest.isMockFunction(chrome.debugger.onDetach.addListener)) {
+    expect(chrome.debugger.attach).toBeCalledTimes(1);
+    if (
+      jest.isMockFunction(chrome.debugger.onDetach.addListener) &&
+      chrome.debugger.onDetach.addListener.mock.calls.length > 0
+    ) {
       /** @type {function} */ (
         chrome.debugger.onDetach.addListener.mock.calls[0][0]
-      )();
+      )({tabId: 'tab'}, 'canceled_by_user');
     }
-    expect(chrome.debugger.attach).toBeCalledTimes(2);
-    if (jest.isMockFunction(chrome.debugger.attach)) {
-      /** @type {function} */ (chrome.debugger.attach.mock.calls[1][2])();
-    }
-    expect(chrome.debugger.sendCommand).toBeCalledTimes(2);
+    expect(chrome.debugger.attach).toBeCalledTimes(1);
   });
 
   it('detachs from chrome.debugger on unsubscribe', () => {
