@@ -17,6 +17,7 @@ describe('WebAudioEventObserver', () => {
   it('attachs to chrome.debugger', () => {
     const o = new WebAudioEventObserver();
     o.observe(() => {});
+    o.attach();
     expect(chrome.debugger.attach).toBeCalled();
     if (jest.isMockFunction(chrome.debugger.attach)) {
       /** @type {function} */ (chrome.debugger.attach.mock.calls[0][2])();
@@ -24,12 +25,12 @@ describe('WebAudioEventObserver', () => {
     expect(chrome.debugger.sendCommand).toBeCalled();
     expect(chrome.debugger.onDetach.addListener).toBeCalled();
     expect(chrome.debugger.onEvent.addListener).toBeCalled();
-    expect(chrome.devtools.network.onNavigated.addListener).toBeCalled();
   });
 
   it('reattach on unexpected detach', () => {
     const o = new WebAudioEventObserver();
     o.observe(() => {});
+    o.attach();
     if (jest.isMockFunction(chrome.debugger.attach)) {
       /** @type {function} */ (chrome.debugger.attach.mock.calls[0][2])();
     }
@@ -45,22 +46,9 @@ describe('WebAudioEventObserver', () => {
     expect(chrome.debugger.sendCommand).toBeCalledTimes(2);
   });
 
-  it('enables WebAudio debugger after navigation events', () => {
-    const o = new WebAudioEventObserver();
-    o.observe(() => {});
-    if (jest.isMockFunction(chrome.debugger.attach)) {
-      /** @type {function} */ (chrome.debugger.attach.mock.calls[0][2])();
-    }
-    if (jest.isMockFunction(chrome.devtools.network.onNavigated.addListener)) {
-      /** @type {function} */ (
-        chrome.devtools.network.onNavigated.addListener.mock.calls[0][0]
-      )();
-    }
-    expect(chrome.debugger.sendCommand).toBeCalledTimes(2);
-  });
-
   it('detachs from chrome.debugger on unsubscribe', () => {
     const o = new WebAudioEventObserver();
+    o.attach();
     const unsubscribe = o.observe(() => {});
     if (jest.isMockFunction(chrome.debugger.attach)) {
       /** @type {function} */ (chrome.debugger.attach.mock.calls[0][2])();
@@ -73,13 +61,13 @@ describe('WebAudioEventObserver', () => {
     expect(chrome.debugger.sendCommand).toBeCalledTimes(2);
     expect(chrome.debugger.onDetach.removeListener).toBeCalled();
     expect(chrome.debugger.onEvent.removeListener).toBeCalled();
-    expect(chrome.devtools.network.onNavigated.removeListener).toBeCalled();
   });
 
   it('forwards to WebAudio debugger protocol events', () => {
     const nextMock = jest.fn();
     const o = new WebAudioEventObserver();
     o.observe(nextMock);
+    o.attach();
     if (jest.isMockFunction(chrome.debugger.attach)) {
       /** @type {function} */ (chrome.debugger.attach.mock.calls[0][2])();
     }

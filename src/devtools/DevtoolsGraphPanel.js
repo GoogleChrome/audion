@@ -15,7 +15,15 @@ export class DevtoolsGraphPanel {
    * @param {Audion.DevtoolsObserver} devtoolsObserver
    */
   constructor(devtoolsObserver) {
-    chrome.devtools.panels.create('Web Audio', '', 'panel.html', () => {});
+    this.onShow = null;
+
+    chrome.devtools.panels.create('Web Audio', '', 'panel.html', (panel) => {
+      panel.onShown.addListener(() => {
+        if (this.onShow) {
+          this.onShow();
+        }
+      });
+    });
 
     chrome.runtime.onConnect.addListener((port) => {
       const unsubscribe = devtoolsObserver.observe((graph) => {

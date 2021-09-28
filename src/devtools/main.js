@@ -35,4 +35,10 @@ const allGraphsOnSubscribe = Observer.onSubscribe(
   () => allGraphs,
 );
 
-new DevtoolsGraphPanel(allGraphsOnSubscribe);
+const panel = new DevtoolsGraphPanel(allGraphsOnSubscribe);
+panel.onShow = () => {
+  // Only trigger this initialization code on the first time the panel is
+  // opened.
+  panel.onShow = null;
+  webAudioEvents.attach();
+};
