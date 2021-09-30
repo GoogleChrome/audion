@@ -1,6 +1,6 @@
 const {resolve} = require('path');
 
-module.exports = {
+module.exports = (env, argv) => ({
   context: __dirname,
   entry: {
     devtools: './devtools/main',
@@ -9,6 +9,10 @@ module.exports = {
   },
   output: {
     path: resolve(__dirname, '../build/audion'),
+  },
+  devtool: argv.mode === 'development' ? 'eval' : false,
+  resolve: {
+    extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
   },
   module: {
     rules: [
@@ -20,6 +24,8 @@ module.exports = {
         test: /\.css$/,
         use: ['style-loader', {loader: 'css-loader', options: {modules: true}}],
       },
+      {test: /\.tsx?$/, loader: 'ts-loader'},
+      {test: /\.js$/, loader: 'source-map-loader'},
     ],
   },
-};
+});
