@@ -11,7 +11,7 @@ export function deserializeGraphContext(
   if (graphContext.graph) {
     return {
       ...graphContext,
-      // TODO: dagre's graphlib typings are inacurate, which is why we use
+      // TODO: dagre's graphlib typings are inaccurate, which is why we use
       // graphlib directly here. Revert to dagre's types once the issue is fixed:
       // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/47439
       graph: graphlib.json.read(graphContext.graph),

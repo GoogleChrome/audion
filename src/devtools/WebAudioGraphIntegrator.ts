@@ -104,7 +104,7 @@ export class WebAudioGraphIntegrator extends Observer<Audion.GraphContext> {
         context: contextCreated.context,
         nodes: {},
         params: {},
-        // TODO: dagre's graphlib typings are inacurate, which is why we use
+        // TODO: dagre's graphlib typings are inaccurate, which is why we use
         // graphlib's types. Revert to dagre's types once the issue is fixed:
         // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/47439
         graph: graph as unknown as graphlib.Graph,
