@@ -1,7 +1,7 @@
 /// <reference path="../chrome/Types.js" />
 /// <reference path="../chrome/DebuggerWebAudioDomain.ts" />
 /// <reference path="../utils/Types.js" />
-/// <reference path="Types.js" />
+/// <reference path="Types.ts" />
 
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 import dagre from 'dagre';

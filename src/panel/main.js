@@ -1,5 +1,5 @@
 /// <reference path="../chrome/DebuggerWebAudioDomain.ts" />
-/// <reference path="../devtools/Types.js" />
+/// <reference path="../devtools/Types.ts" />
 /// <reference path="../utils/Types.js" />
 
 import * as PIXI from 'pixi.js';
@@ -82,16 +82,14 @@ postObservations(
 const layoutObserver = observeMessageEvents(layoutWorker);
 
 const wholeGraphButton = new WholeGraphButton();
-wholeGraphButton.observe((value) => {
-  if (value.event === 'resizeView') {
-    graphRender.camera.fitToScreen();
-  }
+wholeGraphButton.click$.subscribe(() => {
+  graphRender.camera.fitToScreen();
 });
 
 layoutObserver.observe((message) => graphRender.update(message));
 
 graphContainer.appendChild(graphRender.pixiView);
-graphContainer.appendChild(wholeGraphButton.render().view);
+graphContainer.appendChild(wholeGraphButton.render());
 
 graphRender.start();
 

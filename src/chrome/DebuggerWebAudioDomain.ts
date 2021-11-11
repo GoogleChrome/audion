@@ -1,12 +1,16 @@
 import {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping';
 
-export const Methods: {[K in string]: keyof ProtocolMapping.Commands & `WebAudio.${K}`} = {
+export const Methods: {
+  [K in string]: keyof ProtocolMapping.Commands & `WebAudio.${K}`;
+} = {
   disable: 'WebAudio.disable',
   enable: 'WebAudio.enable',
   getRealtimeData: 'WebAudio.getRealtimeData',
 };
 
-export const Events: {[K in string]: keyof ProtocolMapping.Events & `WebAudio.${K}`} = {
+export const Events: {
+  [K in string]: keyof ProtocolMapping.Events & `WebAudio.${K}`;
+} = {
   audioListenerCreated: 'WebAudio.audioListenerCreated',
   audioListenerWillBeDestroyed: 'WebAudio.audioListenerWillBeDestroyed',
   audioNodeCreated: 'WebAudio.audioNodeCreated',
