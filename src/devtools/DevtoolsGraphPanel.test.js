@@ -7,10 +7,12 @@ import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 import dagre from 'dagre';
 
 import {chrome} from '../chrome';
-import {Observer} from '../utils/Observer';
 
 import {DevtoolsGraphPanel} from './DevtoolsGraphPanel';
 import {serializeGraphContext} from './serializeGraphContext';
+
+import {Subject} from 'rxjs';
+import {map} from 'rxjs/operators';
 
 jest.mock('../chrome');
 
@@ -54,22 +56,21 @@ const mockGraphs = {
   },
 };
 describe('DevtoolsGraphPanel', () => {
-  /** @type {Utils.SubscribeOnNext<Audion.GraphContext>} */
-  let nextGraph;
+  let nextGraph = (graph) => {};
+  let subject = new Subject();
+
   /** @type {Chrome.RuntimePort} */
   let port;
   beforeEach(() => {
     jest.resetAllMocks();
+    subject = new Subject();
+
+    nextGraph = (value) => subject.next(value);
+
     new DevtoolsGraphPanel(
-      Observer.transform(
-        Observer.transform(
-          new Observer((onNext) => {
-            nextGraph = onNext;
-            return () => {};
-          }),
-          serializeGraphContext,
-        ),
-        (graphContext) => ({graphContext}),
+      subject.pipe(
+        map(serializeGraphContext),
+        map((graphContext) => ({graphContext})),
       ),
     );
     port = mockPort();
@@ -87,12 +88,34 @@ describe('DevtoolsGraphPanel', () => {
     }
   });
 
+  it('subscribes to debugger events only after panel is shown', () => {
+    expect(subject.observed).toBe(false);
+
+    chrome.runtime.onConnect.addListener.mock.calls[0][0](port);
+
+    const panel = {onHidden: mockEvent(), onShown: mockEvent()};
+    const panelCreateCallback = chrome.devtools.panels.create.mock.calls[0][3];
+    panelCreateCallback(panel);
+
+    expect(subject.observed).toBe(false);
+
+    // Send onShown event to panel creation callback.
+    const panelOnShownCallback = panel.onShown.addListener.mock.calls[0][0];
+    panelOnShownCallback();
+
+    expect(subject.observed).toBe(true);
+  });
+
   it('posts graphs when connected', () => {
-    if (jest.isMockFunction(chrome.runtime.onConnect.addListener)) {
-      /** @type {function} */ (
-        chrome.runtime.onConnect.addListener.mock.calls[0][0]
-      )(port);
-    }
+    // Send onShown event to panel creation callback.
+    const panel = {onHidden: mockEvent(), onShown: mockEvent()};
+    const panelCreateCallback = chrome.devtools.panels.create.mock.calls[0][3];
+    panelCreateCallback(panel);
+    const panelOnShownCallback = panel.onShown.addListener.mock.calls[0][0];
+    panelOnShownCallback();
+
+    chrome.runtime.onConnect.addListener.mock.calls[0][0](port);
+
     nextGraph(mockGraphs[0]);
     nextGraph(mockGraphs[1]);
     expect(port.postMessage).toBeCalledTimes(2);
@@ -153,6 +176,13 @@ Array [
   });
 
   it('posts null graph when context is destroyed', () => {
+    // Send onShown event to panel creation callback.
+    const panel = {onHidden: mockEvent(), onShown: mockEvent()};
+    const panelCreateCallback = chrome.devtools.panels.create.mock.calls[0][3];
+    panelCreateCallback(panel);
+    const panelOnShownCallback = panel.onShown.addListener.mock.calls[0][0];
+    panelOnShownCallback();
+
     if (jest.isMockFunction(chrome.runtime.onConnect.addListener)) {
       /** @type {function} */ (
         chrome.runtime.onConnect.addListener.mock.calls[0][0]
@@ -203,6 +233,13 @@ Array [
   });
 
   it('stops posting graphs once disconnected', () => {
+    // Send onShown event to panel creation callback.
+    const panel = {onHidden: mockEvent(), onShown: mockEvent()};
+    const panelCreateCallback = chrome.devtools.panels.create.mock.calls[0][3];
+    panelCreateCallback(panel);
+    const panelOnShownCallback = panel.onShown.addListener.mock.calls[0][0];
+    panelOnShownCallback();
+
     if (jest.isMockFunction(chrome.runtime.onConnect.addListener)) {
       /** @type {function} */ (
         chrome.runtime.onConnect.addListener.mock.calls[0][0]
