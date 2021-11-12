@@ -3,20 +3,17 @@
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
 import {Events} from '../chrome/DebuggerWebAudioDomain';
-import {Observer} from '../utils/Observer';
-import {WebAudioGraphIntegrator} from './WebAudioGraphIntegrator';
+import {integrateWebAudioGraph} from './WebAudioGraphIntegrator';
+import {Subject} from 'rxjs';
 
 describe('WebAudioGraphIntegrator', () => {
   let nextWebAudioEvent = (value) => {};
-  const nextGraphContext = jest.fn();
+  let nextGraphContext = jest.fn();
   beforeEach(() => {
-    nextGraphContext.mockReset();
-    const webAudioEvents = new Observer((onNext) => {
-      nextWebAudioEvent = onNext;
-      return () => {};
-    });
-    const graphIntegrator = new WebAudioGraphIntegrator(webAudioEvents);
-    graphIntegrator.observe(nextGraphContext);
+    const subject = new Subject();
+    nextGraphContext = jest.fn();
+    nextWebAudioEvent = (value) => subject.next(value);
+    subject.pipe(integrateWebAudioGraph()).subscribe(nextGraphContext);
   });
 
   it('adds new context', () => {
