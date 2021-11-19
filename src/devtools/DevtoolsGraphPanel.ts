@@ -1,3 +1,5 @@
+/** DevTools panel that renders the Web Audio graph and more debugging information. */
+
 import {chrome} from '../chrome';
 import {Audion} from './Types';
 import {fromEventPattern, Observable, Subject} from 'rxjs';
