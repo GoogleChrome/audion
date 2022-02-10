@@ -15,7 +15,7 @@ import {
 } from 'rxjs';
 
 import {chrome} from '../chrome';
-import {Method} from '../chrome/DebuggerWebAudioDomain';
+import {Methods} from '../chrome/DebuggerWebAudioDomain';
 import {Observer} from '../utils/Observer';
 import {Audion} from './Types';
 
@@ -185,13 +185,15 @@ function fromChromeEvent<A extends any[]>(
 const attach = bindChromeCallback(chrome.debugger.attach, chrome.debugger);
 const detach = bindChromeCallback(chrome.debugger.detach, chrome.debugger);
 const sendCommand = bindChromeCallback(
-  chrome.debugger.sendCommand,
+  chrome.debugger.sendCommand as (
+    target: Chrome.DebuggerDebuggee,
+    method: typeof Methods[string],
+    params?,
+    callback?,
+  ) => void,
   chrome.debugger,
 );
 
-const onDebuggerEvent = fromChromeEvent<
-  [target: Chrome.DebuggerDebuggee, method: Method, params: any]
->(chrome.debugger.onEvent);
 const onDebuggerDetach = fromChromeEvent<
   [target: Chrome.DebuggerDebuggee, reason: string]
 >(chrome.debugger.onDetach);
@@ -292,7 +294,7 @@ class EventStateSubject extends TransitionSubject<EventState> {
     expectState: EventState.DISABLED,
     transitionState: EventState.ENABLING,
     finalState: EventState.ENABLED,
-    transit: () => sendCommand({tabId}, Method.enable),
+    transit: () => sendCommand({tabId}, Methods.enable),
   };
 
   private readonly disableTransition = {
@@ -300,7 +302,7 @@ class EventStateSubject extends TransitionSubject<EventState> {
     transitionState: EventState.DISABLING,
     finalState: EventState.DISABLED,
     errorState: EventState.DISABLED,
-    transit: () => sendCommand({tabId}, Method.disable),
+    transit: () => sendCommand({tabId}, Methods.disable),
   };
 
   constructor() {
