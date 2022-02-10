@@ -1,12 +1,12 @@
 import {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping';
 
-export enum Method {
+export enum WebAudioDebuggerMethod {
   disable = 'WebAudio.disable',
   enable = 'WebAudio.enable',
   getRealtimeData = 'WebAudio.getRealtimeData',
 }
 
-export enum Event {
+export enum WebAudioDebuggerEvent {
   audioListenerCreated = 'WebAudio.audioListenerCreated',
   audioListenerWillBeDestroyed = 'WebAudio.audioListenerWillBeDestroyed',
   audioNodeCreated = 'WebAudio.audioNodeCreated',
@@ -22,4 +22,5 @@ export enum Event {
   nodesDisconnected = 'WebAudio.nodesDisconnected',
 }
 
-export type EventName = keyof ProtocolMapping.Events & `WebAudio.${string}`;
+export type WebAudioDebuggerEventParams<Name extends WebAudioDebuggerEvent> =
+  ProtocolMapping.Events[Name];

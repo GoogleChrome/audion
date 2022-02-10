@@ -2,36 +2,29 @@
 
 import * as dagre from 'dagre';
 import * as graphlib from 'graphlib';
+import {Subscription} from 'rxjs';
 
-import {Event, Method} from '../chrome/DebuggerWebAudioDomain';
 import {Utils} from '../utils/Types';
 import {Observer} from '../utils/Observer';
-import {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping';
+import {invariant} from '../utils/error';
+import {
+  WebAudioDebuggerEvent,
+  WebAudioDebuggerEventParams,
+} from '../chrome/DebuggerWebAudioDomain';
+
 import {Audion} from './Types';
 import {WebAudioEventObserver} from './WebAudioEventObserver';
-import {invariant} from '../utils/error';
-import {chrome} from '../chrome';
-import {WebAudioRealtimeData} from './WebAudioRealtimeData';
-import Protocol from 'devtools-protocol';
-import {Observable, Subscription} from 'rxjs';
-
-type WebAudioEventName = keyof ProtocolMapping.Events & `WebAudio.${string}`;
+import {
+  INITIAL_CONTEXT_REALTIME_DATA,
+  WebAudioRealtimeData,
+} from './WebAudioRealtimeData';
 
 type EventHandlers = {
-  readonly [K in WebAudioEventName]: (
+  readonly [K in WebAudioDebuggerEvent]: (
     onNext: Utils.SubscribeOnNext<Audion.GraphContext>,
-    event: ProtocolMapping.Events[K][0],
+    event: WebAudioDebuggerEventParams<K>[0],
   ) => void;
 };
-
-const CONTEXT_REALTIME_DATA_ZEROED = {
-  callbackIntervalMean: 0,
-  callbackIntervalVariance: 0,
-  currentTime: 0,
-  renderCapacity: 0,
-};
-
-const {tabId} = chrome.devtools.inspectedWindow;
 
 /**
  * Collect WebAudio debugger events into per context graphs.
@@ -57,7 +50,7 @@ export class WebAudioGraphIntegrator extends Observer<Audion.GraphContext> {
   }
 
   private readonly eventHandlers: Partial<EventHandlers> = {
-    [Event.audioNodeCreated]: (onNext, audioNodeCreated) => {
+    [WebAudioDebuggerEvent.audioNodeCreated]: (onNext, audioNodeCreated) => {
       const context = this.contexts[audioNodeCreated.node.contextId];
       invariant(
         context && context !== null,
@@ -81,14 +74,17 @@ export class WebAudioGraphIntegrator extends Observer<Audion.GraphContext> {
       onNext(context);
     },
 
-    [Event.audioNodeWillBeDestroyed]: (onNext, audioNodeDestroyed) => {
+    [WebAudioDebuggerEvent.audioNodeWillBeDestroyed]: (
+      onNext,
+      audioNodeDestroyed,
+    ) => {
       const context = this.contexts[audioNodeDestroyed.contextId];
       context.graph.removeNode(audioNodeDestroyed.nodeId);
       delete context.nodes[audioNodeDestroyed.nodeId];
       onNext(context);
     },
 
-    [Event.audioParamCreated]: (onNext, audioParamCreated) => {
+    [WebAudioDebuggerEvent.audioParamCreated]: (onNext, audioParamCreated) => {
       const context = this.contexts[audioParamCreated.param.contextId];
       const node = context.nodes[audioParamCreated.param.nodeId];
       if (!node) {
@@ -98,7 +94,10 @@ export class WebAudioGraphIntegrator extends Observer<Audion.GraphContext> {
       context.params[audioParamCreated.param.paramId] = audioParamCreated.param;
     },
 
-    [Event.audioParamWillBeDestroyed]: (onNext, audioParamWillBeDestroyed) => {
+    [WebAudioDebuggerEvent.audioParamWillBeDestroyed]: (
+      onNext,
+      audioParamWillBeDestroyed,
+    ) => {
       const context = this.contexts[audioParamWillBeDestroyed.contextId];
       const node = context.nodes[audioParamWillBeDestroyed.nodeId];
       if (node) {
@@ -111,13 +110,13 @@ export class WebAudioGraphIntegrator extends Observer<Audion.GraphContext> {
       }
     },
 
-    [Event.contextChanged]: (onNext, contextChanged) => {
+    [WebAudioDebuggerEvent.contextChanged]: (onNext, contextChanged) => {
       this.contexts[contextChanged.context.contextId].context =
         contextChanged.context;
       onNext(this.contexts[contextChanged.context.contextId]);
     },
 
-    [Event.contextCreated]: (onNext, contextCreated) => {
+    [WebAudioDebuggerEvent.contextCreated]: (onNext, contextCreated) => {
       const contextId = contextCreated.context.contextId;
 
       const graph = new dagre.graphlib.Graph({multigraph: true});
@@ -128,7 +127,7 @@ export class WebAudioGraphIntegrator extends Observer<Audion.GraphContext> {
       this.contexts[contextId] = {
         id: contextId,
         context: contextCreated.context,
-        realtimeData: CONTEXT_REALTIME_DATA_ZEROED,
+        realtimeData: INITIAL_CONTEXT_REALTIME_DATA,
         nodes: {},
         params: {},
         // TODO: dagre's graphlib typings are inaccurate, which is why we use
@@ -160,7 +159,10 @@ export class WebAudioGraphIntegrator extends Observer<Audion.GraphContext> {
         });
     },
 
-    [Event.contextWillBeDestroyed]: (onNext, contextDestroyed) => {
+    [WebAudioDebuggerEvent.contextWillBeDestroyed]: (
+      onNext,
+      contextDestroyed,
+    ) => {
       const contextId = contextDestroyed.contextId;
 
       delete this.contexts[contextId];
@@ -177,7 +179,10 @@ export class WebAudioGraphIntegrator extends Observer<Audion.GraphContext> {
       this.realtimeDataPoll[contextId].unsubscribe();
     },
 
-    [Event.nodeParamConnected]: (onNext, nodeParamConnected) => {
+    [WebAudioDebuggerEvent.nodeParamConnected]: (
+      onNext,
+      nodeParamConnected,
+    ) => {
       const context = this.contexts[nodeParamConnected.contextId];
       context.nodes[nodeParamConnected.sourceId].edges.push(nodeParamConnected);
       const {
@@ -200,7 +205,10 @@ export class WebAudioGraphIntegrator extends Observer<Audion.GraphContext> {
       onNext(context);
     },
 
-    [Event.nodeParamDisconnected]: (onNext, nodesDisconnected) => {
+    [WebAudioDebuggerEvent.nodeParamDisconnected]: (
+      onNext,
+      nodesDisconnected,
+    ) => {
       const context = this.contexts[nodesDisconnected.contextId];
       const {edges} = context.nodes[nodesDisconnected.sourceId];
       const {
@@ -223,7 +231,7 @@ export class WebAudioGraphIntegrator extends Observer<Audion.GraphContext> {
       onNext(context);
     },
 
-    [Event.nodesConnected]: (onNext, nodesConnected) => {
+    [WebAudioDebuggerEvent.nodesConnected]: (onNext, nodesConnected) => {
       const context = this.contexts[nodesConnected.contextId];
       context.nodes[nodesConnected.sourceId].edges.push(nodesConnected);
       const {
@@ -246,7 +254,7 @@ export class WebAudioGraphIntegrator extends Observer<Audion.GraphContext> {
       onNext(context);
     },
 
-    [Event.nodesDisconnected]: (onNext, nodesDisconnected) => {
+    [WebAudioDebuggerEvent.nodesDisconnected]: (onNext, nodesDisconnected) => {
       const context = this.contexts[nodesDisconnected.contextId];
       const {edges} = context.nodes[nodesDisconnected.sourceId];
       const {

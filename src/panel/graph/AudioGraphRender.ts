@@ -61,10 +61,6 @@ export class AudioGraphRender {
     this.pixiView = app.view;
     // window.$app = app;
 
-    setInterval(() => {
-      app.resize();
-    }, 1000);
-
     const nodeContainer = (this.pixiNodeContainer = new PIXI.Container());
     app.stage.addChild(nodeContainer);
 

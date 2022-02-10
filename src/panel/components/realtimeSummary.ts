@@ -14,9 +14,9 @@ export function realtimeSummaryHTML(realtimeData: Audion.ContextRealtimeData) {
   const renderCapacity = (realtimeData.renderCapacity * 100).toFixed(3);
   return realtimeData
     ? `<span>Current Time: ${currentTime} s</span>&nbsp;
-<span>\u2758</span>&nbsp;
-<span>Callback Interval: &#956; = ${callbackIntervalMean} ms &#963; = ${callbackIntervalVariance} ms</span>&nbsp;
-<span>\u2758</span>&nbsp;
+<span>&#10072;</span>&nbsp;
+<span>Callback Interval: &mu; = ${callbackIntervalMean} ms &sigma; = ${callbackIntervalVariance} ms</span>&nbsp;
+<span>&#10072;</span>&nbsp;
 <span>Render Capacity: ${renderCapacity} %</span>`
     : '';
 }
