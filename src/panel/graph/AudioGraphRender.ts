@@ -1,15 +1,32 @@
 /// <reference path="../../chrome/Types.js" />
-/// <reference path="../../devtools/Types.ts" />
 
 import * as PIXI from 'pixi.js';
+
+import {Audion} from '../../devtools/Types';
+
 import {AudioEdgeRender} from './AudioEdgeRender';
 import {AudioNodeRender} from './AudioNodeRender';
 import {Camera} from './Camera';
+
+type AnimationFrameId = ReturnType<typeof requestAnimationFrame>;
 
 /**
  * Render a graph of nodes and edges.
  */
 export class AudioGraphRender {
+  nodeMap: Map<string, AudioNodeRender>;
+  edgeMap: Map<string, AudioEdgeRender>;
+
+  camera: Camera;
+
+  elementContainer: HTMLElement;
+  pixiApplication: PIXI.Application | null;
+  pixiView: HTMLCanvasElement | null;
+  pixiNodeContainer: PIXI.Container | null;
+  pixiEdgeContainer: PIXI.Container | null;
+
+  renderFrameId: AnimationFrameId | null;
+
   /**
    * Create an AudioGraphRender.
    * @param {object} options
@@ -43,6 +60,10 @@ export class AudioGraphRender {
     }));
     this.pixiView = app.view;
     // window.$app = app;
+
+    setInterval(() => {
+      app.resize();
+    }, 1000);
 
     const nodeContainer = (this.pixiNodeContainer = new PIXI.Container());
     app.stage.addChild(nodeContainer);
@@ -79,10 +100,9 @@ export class AudioGraphRender {
   }
 
   /**
-   * @param {Audion.GraphContext} message
-   * @return {Audion.GraphContext}
+   * @param message
    */
-  updateGraphSizes(message) {
+  updateGraphSizes(message: Audion.GraphContext): Audion.GraphContext {
     if (message.graph) {
       message.graph.nodes.forEach(({v: nodeId, value: node}) => {
         if (node) {
@@ -106,9 +126,9 @@ export class AudioGraphRender {
   }
 
   /**
-   * @param {Audion.GraphContext} message
+   * @param message
    */
-  update(message) {
+  update(message: Audion.GraphContext) {
     this.camera.setGraphSize(
       message.graph.value.width,
       message.graph.value.height,
@@ -141,14 +161,14 @@ export class AudioGraphRender {
 
       if (edge) {
         const edgeRender = this.createEdgeRender(edgeKeyValue, message);
-        edgeRender.draw(edge.points);
+        if (edgeRender) {
+          edgeRender.draw(edge.points);
+        }
       }
     }
     for (const edgeId of this.edgeMap.keys()) {
       if (
-        !message.graph.edges.find(
-          (edge) => `${edge.v} ${edge.w} ${edge.name}` === edgeId,
-        )
+        !message.graph.edges.find((edge) => this.createEdgeId(edge) === edgeId)
       ) {
         this.destroyEdgeRender(edgeId);
       }
@@ -184,12 +204,11 @@ export class AudioGraphRender {
 
   /**
    * Create the rendering for an audio node.
-   * @param {string} nodeId
-   * @param {Audion.GraphNode} node
-   * @return {AudioNodeRender}
+   * @param nodeId
+   * @param node
+   * @returns
    */
-  createNodeRender(nodeId, node) {
-    /** @type {AudioNodeRender} */
+  createNodeRender(nodeId: string, node: Audion.GraphNode): AudioNodeRender {
     let nodeRender = this.nodeMap.get(nodeId);
     if (!nodeRender) {
       if (node.node && node.node.nodeType) {
@@ -203,9 +222,9 @@ export class AudioGraphRender {
 
   /**
    * Destroy the rendering for an audio node.
-   * @param {*} nodeId
+   * @param nodeId
    */
-  destroyNodeRender(nodeId) {
+  destroyNodeRender(nodeId: any) {
     const nodeRender = this.nodeMap.get(nodeId);
     if (nodeRender) {
       nodeRender.remove();
@@ -213,41 +232,47 @@ export class AudioGraphRender {
     }
   }
 
+  createEdgeId(edge: any) {
+    return `${edge.v} ${edge.w} ${edge.name}`;
+  }
+
   /**
-   * @param {*} edge
-   * @param {Audion.GraphContext} context
-   * @return {AudioEdgeRender}
+   * @param edge
+   * @param context
+   * @return
    */
-  createEdgeRender(edge, context) {
-    const edgeId = `${edge.v} ${edge.w} ${edge.name}`;
+  createEdgeRender(edge: any, context: Audion.GraphContext): AudioEdgeRender {
+    const edgeId = this.createEdgeId(edge);
     let edgeRender = this.edgeMap.get(edgeId);
     if (!edgeRender) {
       const sourceData = context.nodes[edge.v];
       const destinationData = context.nodes[edge.w];
-      const sourceNode = this.nodeMap.get(sourceData.node.nodeId);
-      const destinationNode = this.nodeMap.get(destinationData.node.nodeId);
+      if (sourceData && destinationData) {
+        const sourceNode = this.nodeMap.get(sourceData.node.nodeId);
+        const destinationNode = this.nodeMap.get(destinationData.node.nodeId);
 
-      edgeRender = new AudioEdgeRender({
-        source: sourceNode.output[edge.value.sourceOutputIndex],
-        destination:
-          edge.value.destinationInputIndex >= 0
-            ? destinationNode.input[edge.value.destinationInputIndex]
-            : destinationNode.param[edge.value.destinationParamId],
-      });
-      edgeRender.setPIXIParent(this.pixiEdgeContainer);
+        edgeRender = new AudioEdgeRender({
+          source: sourceNode.output[edge.value.sourceOutputIndex],
+          destination:
+            edge.value.destinationInputIndex >= 0
+              ? destinationNode.input[edge.value.destinationInputIndex]
+              : destinationNode.param[edge.value.destinationParamId],
+        });
+        edgeRender.setPIXIParent(this.pixiEdgeContainer);
 
-      sourceNode.draw();
-      destinationNode.draw();
+        sourceNode.draw();
+        destinationNode.draw();
 
-      this.edgeMap.set(edgeId, edgeRender);
+        this.edgeMap.set(edgeId, edgeRender);
+      }
     }
     return edgeRender;
   }
 
   /**
-   * @param {string} edgeId
+   * @param edgeId
    */
-  destroyEdgeRender(edgeId) {
+  destroyEdgeRender(edgeId: string) {
     const edgeRender = this.edgeMap.get(edgeId);
     if (edgeRender) {
       edgeRender.remove();

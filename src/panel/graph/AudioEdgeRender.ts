@@ -1,7 +1,8 @@
-/// <reference path="../../utils/Types.js" />
-/// <reference path="../Types.js" />
-
 import * as PIXI from 'pixi.js';
+
+import {Utils} from '../../utils/Types';
+
+import type {AudionPanel} from '../Types';
 
 import {Color} from './graphStyle';
 
@@ -16,28 +17,35 @@ const LINE_COEFF = createLineCoefficients();
  * Render a line between AudionNodes and their inputs, outputs, and parameters.
  */
 export class AudioEdgeRender {
+  source: AudionPanel.Port;
+  destination: AudionPanel.Port;
+  parent: PIXI.Container;
+  graphics: PIXI.Graphics;
+
   /**
-   * @param {object} options
-   * @param {AudionPanel.Port} options.source
-   * @param {AudionPanel.Port} options.destination
+   * @param options
+   * @param options.source
+   * @param options.destination
    */
-  constructor({source, destination}) {
-    /** @type {AudionPanel.Port} */
+  constructor({
+    source,
+    destination,
+  }: {
+    source: AudionPanel.Port;
+    destination: AudionPanel.Port;
+  }) {
     this.source = source;
-    /** @type {AudionPanel.Port} */
     this.destination = destination;
-    /** @type {PIXI.Container} */
     this.parent = null;
-    /** @type {PIXI.Graphics} */
     this.graphics = new PIXI.Graphics();
 
     this.source.edges.push(this);
     this.destination.edges.push(this);
   }
   /**
-   * @param {PIXI.Container} parent
+   * @param parent
    */
-  setPIXIParent(parent) {
+  setPIXIParent(parent: PIXI.Container) {
     this.parent = parent;
     parent.addChild(this.graphics);
   }
@@ -51,9 +59,9 @@ export class AudioEdgeRender {
     this.destination.edges.splice(this.destination.edges.indexOf(this), 1);
   }
   /**
-   * @param {AudionPanel.Point[]} line
+   * @param line
    */
-  draw(line) {
+  draw(line: AudionPanel.Point[]) {
     const {graphics} = this;
 
     const {
@@ -87,11 +95,15 @@ export class AudioEdgeRender {
 
   /**
    * Draw an arrow.
-   * @param {AudionPanel.Point} pointOnLine
-   * @param {AudionPanel.Point} end
-   * @param {*} graphics
+   * @param pointOnLine
+   * @param end
+   * @param graphics
    */
-  drawArrow(pointOnLine, end, graphics) {
+  drawArrow(
+    pointOnLine: AudionPanel.Point,
+    end: AudionPanel.Point,
+    graphics: PIXI.Graphics,
+  ) {
     const arrowMagnitude = Math.hypot(
       pointOnLine.y - end.y,
       pointOnLine.x - end.x,
@@ -114,13 +126,19 @@ export class AudioEdgeRender {
 
   /**
    * Draw a curved line with 3 points to control its shape.
-   * @param {AudionPanel.Point} a
-   * @param {AudionPanel.Point} b
-   * @param {AudionPanel.Point} c
-   * @param {*} graphics
-   * @param {AudionPanel.Point} pointOnLine
+   * @param a
+   * @param b
+   * @param c
+   * @param graphics
+   * @param pointOnLine
    */
-  drawCurvedLine(a, b, c, graphics, pointOnLine) {
+  drawCurvedLine(
+    a: AudionPanel.Point,
+    b: AudionPanel.Point,
+    c: AudionPanel.Point,
+    graphics: PIXI.Graphics,
+    pointOnLine: AudionPanel.Point,
+  ) {
     const lineCoeffs = lineCoefficients(a, b, c, LINE_COEFF);
 
     const lineMagnitudeEstimate = Math.hypot(a.y - c.y, a.x - c.x);
@@ -139,11 +157,15 @@ export class AudioEdgeRender {
 
   /**
    * Adjust a point along a line by amount radius.
-   * @param {AudionPanel.Point} end
-   * @param {AudionPanel.Point} destination
-   * @param {number} radius
+   * @param end
+   * @param destination
+   * @param radius
    */
-  adjustPoint(end, destination, radius) {
+  adjustPoint(
+    end: AudionPanel.Point,
+    destination: AudionPanel.Point,
+    radius: number,
+  ) {
     const magnitude = Math.hypot(end.y - destination.y, end.x - destination.x);
 
     destination.x += ((end.x - destination.x) / magnitude) * radius;
@@ -153,21 +175,26 @@ export class AudioEdgeRender {
 
 /**
  * Create a LineCoefficients object.
- * @return {LineCoefficients}
+ * @return
  */
-function createLineCoefficients() {
+function createLineCoefficients(): LineCoefficients {
   return {ax: 0, ay: 0, bx: 0, by: 0, cx: 0, cy: 0};
 }
 
 /**
  * Interpolate a line from 3 points: a, b, c.
- * @param {AudionPanel.Point} a
- * @param {AudionPanel.Point} b
- * @param {AudionPanel.Point} c
- * @param {LineCoefficients} [coeff]
- * @return {LineCoefficients}
+ * @param a
+ * @param b
+ * @param c
+ * @param coeff
+ * @return
  */
-function lineCoefficients(a, b, c, coeff = createLineCoefficients()) {
+function lineCoefficients(
+  a: AudionPanel.Point,
+  b: AudionPanel.Point,
+  c: AudionPanel.Point,
+  coeff = createLineCoefficients(),
+): LineCoefficients {
   const {x: ax, y: ay} = a;
   const {x: bx, y: by} = b;
   const {x: cx, y: cy} = c;
@@ -188,12 +215,16 @@ function lineCoefficients(a, b, c, coeff = createLineCoefficients()) {
 }
 
 /**
- * @param {LineCoefficients} coeff
- * @param {number} t number between 0 and 1 inclusive
- * @param {AudionPanel.Point} [destination]
- * @return {AudionPanel.Point}
+ * @param coeff
+ * @param t number between 0 and 1 inclusive
+ * @param destination
+ * @return
  */
-function interpolateCoefficients(coeff, t, destination = new PIXI.Point()) {
+function interpolateCoefficients(
+  coeff: LineCoefficients,
+  t: number,
+  destination: AudionPanel.Point = new PIXI.Point(),
+): AudionPanel.Point {
   destination.x = coeff.ax * t * t + coeff.bx * t + coeff.cx;
   destination.y = coeff.ay * t * t + coeff.by * t + coeff.cy;
   return destination;
@@ -208,3 +239,12 @@ function interpolateCoefficients(coeff, t, destination = new PIXI.Point()) {
  * @property {number} cx
  * @property {number} cy
  */
+
+interface LineCoefficients {
+  ax: number;
+  ay: number;
+  bx: number;
+  by: number;
+  cx: number;
+  cy: number;
+}
