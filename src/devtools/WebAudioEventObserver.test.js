@@ -3,7 +3,7 @@
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
 import {chrome} from '../chrome';
-import {Event} from '../chrome/DebuggerWebAudioDomain';
+import {Events} from '../chrome/DebuggerWebAudioDomain';
 
 import {WebAudioEventObserver} from './WebAudioEventObserver';
 
@@ -53,19 +53,12 @@ describe('WebAudioEventObserver', () => {
     if (jest.isMockFunction(chrome.debugger.attach)) {
       /** @type {function} */ (chrome.debugger.attach.mock.calls[0][2])();
     }
-    expect(chrome.debugger.sendCommand).toBeCalledTimes(1);
-    if (jest.isMockFunction(chrome.debugger.sendCommand)) {
-      /** @type {function} */ (chrome.debugger.sendCommand.mock.calls[0][2])();
-    }
     unsubscribe();
     expect(chrome.debugger.detach).toBeCalled();
-    if (jest.isMockFunction(chrome.debugger.sendCommand)) {
-      /** @type {function} */ (chrome.debugger.sendCommand.mock.calls[1][2])();
-    }
-    expect(chrome.debugger.sendCommand).toBeCalledTimes(2);
     if (jest.isMockFunction(chrome.debugger.detach)) {
       /** @type {function} */ (chrome.debugger.detach.mock.calls[0][1])();
     }
+    expect(chrome.debugger.sendCommand).toBeCalledTimes(2);
     expect(chrome.debugger.onDetach.removeListener).toBeCalled();
     expect(chrome.debugger.onEvent.removeListener).toBeCalled();
   });
@@ -92,10 +85,10 @@ describe('WebAudioEventObserver', () => {
     if (jest.isMockFunction(chrome.debugger.onEvent.addListener)) {
       /** @type {function} */ (
         chrome.debugger.onEvent.addListener.mock.calls[0][0]
-      )('tab', Event.contextCreated, contextCreated);
+      )('tab', Events.contextCreated, contextCreated);
     }
     expect(nextMock).toBeCalledWith({
-      method: Event.contextCreated,
+      method: Events.contextCreated,
       params: contextCreated,
     });
   });

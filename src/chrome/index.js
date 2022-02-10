@@ -52,7 +52,7 @@ function noopChrome() {
       getURL(url) {
         return url;
       },
-      lastError: undefined,
+      lastError: {message: ''},
       onConnect: noopEvent(),
     },
   };
