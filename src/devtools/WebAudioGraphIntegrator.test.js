@@ -1,8 +1,9 @@
 /// <reference path="../chrome/DebuggerWebAudioDomain.ts" />
 
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
+import {Observable} from 'rxjs';
 
-import {Events} from '../chrome/DebuggerWebAudioDomain';
+import {Event} from '../chrome/DebuggerWebAudioDomain';
 import {Observer} from '../utils/Observer';
 import {WebAudioGraphIntegrator} from './WebAudioGraphIntegrator';
 
@@ -15,13 +16,21 @@ describe('WebAudioGraphIntegrator', () => {
       nextWebAudioEvent = onNext;
       return () => {};
     });
-    const graphIntegrator = new WebAudioGraphIntegrator(webAudioEvents);
+    const webAudioRealtime = {
+      pollContext() {
+        return new Observable();
+      },
+    };
+    const graphIntegrator = new WebAudioGraphIntegrator(
+      webAudioEvents,
+      webAudioRealtime,
+    );
     graphIntegrator.observe(nextGraphContext);
   });
 
   it('adds new context', () => {
     nextWebAudioEvent({
-      method: Events.contextCreated,
+      method: Event.contextCreated,
       params: MockWebAudioEvents.contextCreated[0],
     });
     expect(nextGraphContext).toBeCalledTimes(1);
@@ -54,18 +63,24 @@ Array [
     "id": "context0000",
     "nodes": Object {},
     "params": Object {},
+    "realtimeData": Object {
+      "callbackIntervalMean": 0,
+      "callbackIntervalVariance": 0,
+      "currentTime": 0,
+      "renderCapacity": 0,
+    },
   },
 ]
 `);
   });
   it('changes context', () => {
     nextWebAudioEvent({
-      method: Events.contextCreated,
+      method: Event.contextCreated,
       params: MockWebAudioEvents.contextCreated[0],
     });
     expect(nextGraphContext).toBeCalledTimes(1);
     nextWebAudioEvent({
-      method: Events.contextChanged,
+      method: Event.contextChanged,
       params: MockWebAudioEvents.contextChanged[0],
     });
     expect(nextGraphContext).toBeCalledTimes(2);
@@ -98,18 +113,24 @@ Array [
     "id": "context0000",
     "nodes": Object {},
     "params": Object {},
+    "realtimeData": Object {
+      "callbackIntervalMean": 0,
+      "callbackIntervalVariance": 0,
+      "currentTime": 0,
+      "renderCapacity": 0,
+    },
   },
 ]
 `);
   });
   it('removes old context', () => {
     nextWebAudioEvent({
-      method: Events.contextCreated,
+      method: Event.contextCreated,
       params: MockWebAudioEvents.contextCreated[0],
     });
     expect(nextGraphContext).toBeCalledTimes(1);
     nextWebAudioEvent({
-      method: Events.contextWillBeDestroyed,
+      method: Event.contextWillBeDestroyed,
       params: MockWebAudioEvents.contextWillBeDestroyed[0],
     });
     expect(nextGraphContext).toBeCalledTimes(2);
@@ -121,18 +142,19 @@ Array [
     "id": "context0000",
     "nodes": null,
     "params": null,
+    "realtimeData": null,
   },
 ]
 `);
   });
   it('adds new node', () => {
     nextWebAudioEvent({
-      method: Events.contextCreated,
+      method: Event.contextCreated,
       params: MockWebAudioEvents.contextCreated[0],
     });
     expect(nextGraphContext).toBeCalledTimes(1);
     nextWebAudioEvent({
-      method: Events.audioNodeCreated,
+      method: Event.audioNodeCreated,
       params: MockWebAudioEvents.audioNodeCreated[0],
     });
     expect(nextGraphContext).toBeCalledTimes(2);
@@ -197,23 +219,29 @@ Array [
       },
     },
     "params": Object {},
+    "realtimeData": Object {
+      "callbackIntervalMean": 0,
+      "callbackIntervalVariance": 0,
+      "currentTime": 0,
+      "renderCapacity": 0,
+    },
   },
 ]
 `);
   });
   it('removes old node', () => {
     nextWebAudioEvent({
-      method: Events.contextCreated,
+      method: Event.contextCreated,
       params: MockWebAudioEvents.contextCreated[0],
     });
     expect(nextGraphContext).toBeCalledTimes(1);
     nextWebAudioEvent({
-      method: Events.audioNodeCreated,
+      method: Event.audioNodeCreated,
       params: MockWebAudioEvents.audioNodeCreated[0],
     });
     expect(nextGraphContext).toBeCalledTimes(2);
     nextWebAudioEvent({
-      method: Events.audioNodeWillBeDestroyed,
+      method: Event.audioNodeWillBeDestroyed,
       params: MockWebAudioEvents.audioNodeWillBeDestroyed[0],
     });
     expect(nextGraphContext).toBeCalledTimes(3);
@@ -247,28 +275,34 @@ Array [
     "id": "context0000",
     "nodes": Object {},
     "params": Object {},
+    "realtimeData": Object {
+      "callbackIntervalMean": 0,
+      "callbackIntervalVariance": 0,
+      "currentTime": 0,
+      "renderCapacity": 0,
+    },
   },
 ]
 `);
   });
   it('adds new node edge connection', () => {
     nextWebAudioEvent({
-      method: Events.contextCreated,
+      method: Event.contextCreated,
       params: MockWebAudioEvents.contextCreated[0],
     });
     expect(nextGraphContext).toBeCalledTimes(1);
     nextWebAudioEvent({
-      method: Events.audioNodeCreated,
+      method: Event.audioNodeCreated,
       params: MockWebAudioEvents.audioNodeCreated[0],
     });
     expect(nextGraphContext).toBeCalledTimes(2);
     nextWebAudioEvent({
-      method: Events.audioNodeCreated,
+      method: Event.audioNodeCreated,
       params: MockWebAudioEvents.audioNodeCreated[1],
     });
     expect(nextGraphContext).toBeCalledTimes(3);
     nextWebAudioEvent({
-      method: Events.nodesConnected,
+      method: Event.nodesConnected,
       params: MockWebAudioEvents.nodesConnected[0],
     });
     expect(nextGraphContext).toBeCalledTimes(4);
@@ -394,33 +428,39 @@ Array [
       },
     },
     "params": Object {},
+    "realtimeData": Object {
+      "callbackIntervalMean": 0,
+      "callbackIntervalVariance": 0,
+      "currentTime": 0,
+      "renderCapacity": 0,
+    },
   },
 ]
 `);
   });
   it('removes old node edge connection', () => {
     nextWebAudioEvent({
-      method: Events.contextCreated,
+      method: Event.contextCreated,
       params: MockWebAudioEvents.contextCreated[0],
     });
     expect(nextGraphContext).toBeCalledTimes(1);
     nextWebAudioEvent({
-      method: Events.audioNodeCreated,
+      method: Event.audioNodeCreated,
       params: MockWebAudioEvents.audioNodeCreated[0],
     });
     expect(nextGraphContext).toBeCalledTimes(2);
     nextWebAudioEvent({
-      method: Events.audioNodeCreated,
+      method: Event.audioNodeCreated,
       params: MockWebAudioEvents.audioNodeCreated[1],
     });
     expect(nextGraphContext).toBeCalledTimes(3);
     nextWebAudioEvent({
-      method: Events.nodesConnected,
+      method: Event.nodesConnected,
       params: MockWebAudioEvents.nodesConnected[0],
     });
     expect(nextGraphContext).toBeCalledTimes(4);
     nextWebAudioEvent({
-      method: Events.nodesDisconnected,
+      method: Event.nodesDisconnected,
       params: MockWebAudioEvents.nodesDisconnected[0],
     });
     expect(nextGraphContext).toBeCalledTimes(5);
@@ -511,6 +551,12 @@ Array [
       },
     },
     "params": Object {},
+    "realtimeData": Object {
+      "callbackIntervalMean": 0,
+      "callbackIntervalVariance": 0,
+      "currentTime": 0,
+      "renderCapacity": 0,
+    },
   },
 ]
 `);

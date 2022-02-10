@@ -13,11 +13,19 @@
  *   Chrome.DebuggerDebuggee, string, function(): void
  * ): void} attach
  * @property {function(Chrome.DebuggerDebuggee, function(): void): void} detach
- * @property {Chrome.Event<function(): void>} onDetach
+ * @property {Chrome.Event<function(object, string): void>} onDetach
  * @property {Chrome.Event<Chrome.DebuggerOnEventListener>} onEvent
- * @property {function(Chrome.DebuggerDebuggee, string): void} sendCommand
+ * @property {Chrome.DebuggerSendCommand} sendCommand
  * @see https://developer.chrome.com/docs/extensions/reference/debugger/
  * @see https://chromedevtools.github.io/devtools-protocol/
+ */
+
+/**
+ * @callback Chrome.DebuggerSendCommand
+ * @param {Chrome.DebuggerDebuggee} target
+ * @param {string} method
+ * @param {*} [commandParams]
+ * @param {*} [callback]
  */
 
 /**
