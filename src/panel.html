@@ -2,16 +2,10 @@
   <head>
     <style>
       body {
-        height: 100%;
-        width: 100%;
-        position: relative;
-        overflow: hidden;
-        margin: 0;
         cursor: default;
         font-family: '.SFNSDisplay-Regular', 'Helvetica Neue', 'Lucida Grande',
           sans-serif;
         font-size: 12px;
-        tab-size: 4;
         user-select: none;
         color: var(--color-text-primary);
         background: var(--color-background);
@@ -74,13 +68,6 @@
       :host-context(.-theme-with-dark-background) .platform-linux,
       :host-context(.-theme-with-dark-background) .platform-mac {
         --override-text-color: rgb(189 198 207);
-      }
-
-      body {
-        position: relative;
-        margin: 0;
-        width: 100%;
-        height: 100%;
       }
 
       :root {
@@ -251,6 +238,12 @@
         --color-button-secondary-border: rgb(60 61 65);
       }
 
+      body {
+        position: relative;
+        margin: 0;
+        width: 100%;
+        height: 100%;
+      }
       .hidden {
         display: none !important;
       }

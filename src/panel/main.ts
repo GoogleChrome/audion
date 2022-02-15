@@ -3,7 +3,7 @@
 import * as PIXI from 'pixi.js';
 // This module disable's pixi.js use of new Function to optimize rendering.
 import {install} from '@pixi/unsafe-eval';
-import {combineLatest, map, merge, scan, shareReplay} from 'rxjs';
+import {map, merge, scan, shareReplay} from 'rxjs';
 
 import {Audion} from '../devtools/Types';
 
