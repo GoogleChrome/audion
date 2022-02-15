@@ -23,8 +23,12 @@ export const INITIAL_CONTEXT_REALTIME_DATA = {
 } as Audion.ContextRealtimeData;
 
 export class WebAudioRealtimeData {
+  private readonly intervalMS = 1000;
+
+  private readonly interval$ = interval(this.intervalMS);
+
   pollContext(contextId: string) {
-    return interval(1000).pipe(
+    return this.interval$.pipe(
       concatMap(() =>
         sendCommand({tabId}, WebAudioDebuggerMethod.getRealtimeData, {
           contextId,
