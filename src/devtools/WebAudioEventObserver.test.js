@@ -3,7 +3,7 @@
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 
 import {chrome} from '../chrome';
-import {Events} from '../chrome/DebuggerWebAudioDomain';
+import {WebAudioDebuggerEvent} from '../chrome/DebuggerWebAudioDomain';
 
 import {WebAudioEventObserver} from './WebAudioEventObserver';
 
@@ -85,10 +85,10 @@ describe('WebAudioEventObserver', () => {
     if (jest.isMockFunction(chrome.debugger.onEvent.addListener)) {
       /** @type {function} */ (
         chrome.debugger.onEvent.addListener.mock.calls[0][0]
-      )('tab', Events.contextCreated, contextCreated);
+      )('tab', WebAudioDebuggerEvent.contextCreated, contextCreated);
     }
     expect(nextMock).toBeCalledWith({
-      method: Events.contextCreated,
+      method: WebAudioDebuggerEvent.contextCreated,
       params: contextCreated,
     });
   });

@@ -1,5 +1,5 @@
 import {chrome} from '../chrome';
-import {Methods} from '../chrome/DebuggerWebAudioDomain';
+import {WebAudioDebuggerMethod} from '../chrome/DebuggerWebAudioDomain';
 import {Observer} from '../utils/Observer';
 import {Audion} from './Types';
 
@@ -36,7 +36,7 @@ export class WebAudioEventObserver extends Observer<Audion.WebAudioEvent> {
       return () => {
         chrome.debugger.onDetach.removeListener(onDetach);
         chrome.debugger.onEvent.removeListener(onEvent);
-        chrome.debugger.sendCommand({tabId}, Methods.disable);
+        chrome.debugger.sendCommand({tabId}, WebAudioDebuggerMethod.disable);
         chrome.debugger.detach({tabId}, () => {});
       };
     });
@@ -45,7 +45,7 @@ export class WebAudioEventObserver extends Observer<Audion.WebAudioEvent> {
   /** Attaches the chrome.debugger to start observing events. */
   attach() {
     chrome.debugger.attach({tabId}, debuggerVersion, () => {
-      chrome.debugger.sendCommand({tabId}, Methods.enable);
+      chrome.debugger.sendCommand({tabId}, WebAudioDebuggerMethod.enable);
     });
   }
 }

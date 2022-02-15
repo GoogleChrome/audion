@@ -1,6 +1,243 @@
-<html>
+<html class="-theme-with-dark-background">
   <head>
     <style>
+      body {
+        cursor: default;
+        font-family: '.SFNSDisplay-Regular', 'Helvetica Neue', 'Lucida Grande',
+          sans-serif;
+        font-size: 12px;
+        user-select: none;
+        color: var(--color-text-primary);
+        background: var(--color-background);
+      }
+
+      /* Default fonts */
+      .platform-linux {
+        font-family: Roboto, Ubuntu, Arial, sans-serif;
+      }
+
+      .platform-mac {
+        font-family: '.SFNSDisplay-Regular', 'Helvetica Neue', 'Lucida Grande',
+          sans-serif;
+      }
+
+      .platform-mac,
+      .platform-linux {
+        --override-text-color: rgb(48 57 66);
+
+        color: var(--override-text-color);
+      }
+
+      .platform-windows {
+        font-family: 'Segoe UI', Tahoma, sans-serif;
+      }
+
+      :focus {
+        outline-width: 0;
+      }
+
+      /* Monospace font per platform configuration */
+      .platform-mac,
+      :host-context(.platform-mac) {
+        --monospace-font-size: 11px;
+        --monospace-font-family: menlo, monospace;
+        --source-code-font-size: 11px;
+        --source-code-font-family: menlo, monospace;
+      }
+
+      .platform-windows,
+      :host-context(.platform-windows) {
+        --monospace-font-size: 12px;
+        --monospace-font-family: consolas, lucida console, courier new,
+          monospace;
+        --source-code-font-size: 12px;
+        --source-code-font-family: consolas, lucida console, courier new,
+          monospace;
+      }
+
+      .platform-linux,
+      :host-context(.platform-linux) {
+        --monospace-font-size: 11px;
+        --monospace-font-family: dejavu sans mono, monospace;
+        --source-code-font-size: 11px;
+        --source-code-font-family: dejavu sans mono, monospace;
+      }
+
+      .-theme-with-dark-background .platform-linux,
+      .-theme-with-dark-background .platform-mac,
+      :host-context(.-theme-with-dark-background) .platform-linux,
+      :host-context(.-theme-with-dark-background) .platform-mac {
+        --override-text-color: rgb(189 198 207);
+      }
+
+      :root {
+        --color-primary: rgb(26 115 232);
+        --color-primary-variant: rgb(66 133 244);
+        --color-background: rgb(255 255 255);
+        --color-background-inverted: rgb(0 0 0);
+        --color-background-inverted-opacity-30: rgb(0 0 0 / 30%);
+        --color-background-inverted-opacity-50: rgb(0 0 0 / 50%);
+        --color-background-opacity-50: rgb(255 255 255 / 50%);
+        --color-background-opacity-80: rgb(255 255 255 / 80%);
+        --color-background-elevation-0: rgb(248 249 249);
+        --color-background-elevation-1: rgb(241 243 244);
+        --color-background-elevation-2: rgb(222 225 230);
+        /** Used when the elevation is visible only on dark theme */
+        --color-background-elevation-dark-only: var(--color-background);
+        --color-background-highlight: rgb(202 205 209);
+        /** To draw grid lines behind elements */
+        --divider-line: rgb(0 0 0 / 10%);
+        /**
+         * When hovering over an element and the background should be a little
+         * bit darker. For example, when hovering over a node in the flame chart
+         * tree in the performance panel. This color is intentionally opague,
+         * since the color of the underlying element should still be dominant.
+         */
+        --color-background-hover-overlay: rgb(56 121 217 / 10%);
+        /**
+         * Used when selecting a range of a section, for example when
+         * selecting a range in the performance panel timeline.
+         */
+        --color-selection-highlight: rgb(56 121 217 / 30%);
+        --color-selection-highlight-border: rgb(16 81 177);
+        /**
+         * When showing matching elements of a particular search filter (for example
+         * when showing all matching css selectors/rules in the elements style
+         * pane). The highlight is intended to be used on top of the original background
+         * color and text color.
+         */
+        --color-match-highlight: rgb(56 121 217 / 20%);
+        --color-text-primary: rgb(32 33 36);
+        --color-text-secondary: rgb(95 99 104);
+        --color-text-secondary-selected: rgb(188 185 182);
+        --color-text-disabled: rgb(128 134 139);
+        --color-details-hairline: rgb(202 205 209);
+        --color-details-hairline-light: rgb(223 225 227);
+        --color-accent-red: rgb(217 48 37);
+        --color-red: rgb(238 68 47);
+        --color-accent-green: rgb(24 128 56);
+        --color-green: rgb(99 172 190);
+        --color-link: var(--color-primary);
+        --drop-shadow: 0 0 0 1px rgb(0 0 0 / 5%), 0 2px 4px rgb(0 0 0 / 20%),
+          0 2px 6px rgb(0 0 0 / 10%);
+        --drop-shadow-depth-1: 0 1px 2px rgb(60 64 67 / 30%),
+          0 1px 3px 1px rgb(60 64 67 / 15%);
+        --drop-shadow-depth-2: 0 1px 2px rgb(60 64 67 / 30%),
+          0 2px 6px 2px rgb(60 64 67 / 15%);
+        --drop-shadow-depth-3: 0 4px 8px 3px rgb(60 64 67 / 15%),
+          0 1px 3px rgb(60 64 67 / 30%);
+        --drop-shadow-depth-4: 0 6px 10px 4px rgb(60 64 67 / 15%),
+          0 2px 3px rgb(60 64 67 / 30%);
+        --drop-shadow-depth-5: 0 8px 12px 6px rgb(60 64 67 / 15%),
+          0 4px 4px rgb(60 64 67 / 30%);
+        --box-shadow-outline-color: rgb(0 0 0 / 50%);
+        /** These are the colors of the native Mac scrollbars */
+        --color-scrollbar-mac: rgb(143 143 143 / 60%);
+        --color-scrollbar-mac-hover: rgb(64 64 64 / 60%);
+        /** These colors are used on all non-Mac platforms for scrollbars */
+        --color-scrollbar-other: rgb(0 0 0 / 50%);
+        --color-scrollbar-other-hover: rgb(0 0 0 / 50%);
+        /** These colors have the same value in dark mode */
+        --lighthouse-red: rgb(255 78 67);
+        --lighthouse-orange: rgb(255 164 0);
+        --lighthouse-green: rgb(12 206 106);
+        /** The colors are for issue icons and related highlights */
+        --issue-color-red: rgb(235 57 65);
+        --issue-color-yellow: rgb(242 153 0);
+        --issue-color-blue: rgb(26 115 232);
+        /** Used to indicate an input box */
+        --input-outline: rgb(202 205 209);
+
+        /** These colors are used to show errors */
+        --color-error-text: #f00;
+        --color-error-border: hsl(0deg 100% 92%);
+        --color-error-background: hsl(0deg 100% 97%);
+        --color-image-preview-background: rgb(255 255 255);
+
+        /* Colors for styling inputs */
+        --color-input-outline: rgb(128 134 139);
+        --color-input-outline-active: rgb(26 115 232);
+        --color-input-outline-error: rgb(217 48 37);
+        --color-input-outline-disabled: rgba(128 134 139 / 20%);
+        --color-input-text-disabled: rgba(128 134 139 / 50%);
+
+        /* Colors for styling buttons */
+        --color-button-outline-focus: rgb(26 115 232 / 50%);
+        --color-button-primary-background-hovering: rgb(77 134 225 / 100%);
+        --color-button-primary-background-pressed: rgb(88 132 205);
+        --color-button-primary-text: rgb(255 255 255);
+        --color-button-secondary-background-hovering: rgb(26 115 232 / 10%);
+        --color-button-secondary-background-pressed: rgb(26 92 178 / 25%);
+        --color-button-secondary-border: rgb(218 220 224);
+      }
+
+      .-theme-with-dark-background {
+        --color-primary: rgb(138 180 248);
+        --color-primary-variant: rgb(102 157 246);
+        --color-background: rgb(32 33 36);
+        --color-background-inverted: rgb(255 255 255);
+        --color-background-inverted-opacity-30: rgb(255 255 255 / 30%);
+        --color-background-inverted-opacity-50: rgb(255 255 255 / 50%);
+        --color-background-opacity-50: rgb(32 33 36 / 50%);
+        --color-background-opacity-80: rgb(32 33 36 / 80%);
+        --color-background-elevation-0: rgb(32 32 35);
+        --color-background-elevation-1: rgb(41 42 45);
+        --color-background-elevation-2: rgb(53 54 58);
+        --color-background-elevation-dark-only: var(
+          --color-background-elevation-1
+        );
+        --color-background-highlight: rgb(75 76 79);
+        --divider-line: rgb(255 255 255 / 10%);
+        --color-background-hover-overlay: rgb(56 121 217 / 10%);
+        --color-selection-highlight: rgb(251 202 70 / 20%);
+        --color-selection-highlight-border: rgb(251 202 70);
+        --color-match-highlight: rgb(56 121 217 / 35%);
+        --color-text-primary: rgb(232 234 237);
+        --color-text-secondary: rgb(154 160 166);
+        --color-text-secondary-selected: rgb(188 185 182);
+        --color-text-disabled: rgb(128 134 139);
+        --color-details-hairline: rgb(73 76 80);
+        --color-details-hairline-light: rgb(54 57 59);
+        --color-accent-red: rgb(242 139 130);
+        --color-red: rgb(237 78 76);
+        --color-accent-green: rgb(129 201 149);
+        --color-link: var(--color-primary);
+        --drop-shadow: 0 0 0 1px rgb(255 255 255 / 20%),
+          0 2px 4px 2px rgb(0 0 0 / 20%), 0 2px 6px 2px rgb(0 0 0 / 10%);
+        --drop-shadow-depth-1: 0 1px 2px rgb(0 0 0 / 30%),
+          0 1px 3px 1px rgb(0 0 0 / 15%);
+        --drop-shadow-depth-2: 0 1px 2px rgb(0 0 0 / 30%),
+          0 2px 6px 2px rgb(0 0 0 / 15%);
+        --drop-shadow-depth-3: 0 4px 8px 3px rgb(0 0 0 / 15%),
+          0 1px 3px rgb(0 0 0 / 30%);
+        --drop-shadow-depth-4: 0 6px 10px 4px rgb(0 0 0 / 15%),
+          0 2px 3px rgb(0 0 0 / 30%);
+        --drop-shadow-depth-5: 0 8px 12px 6px rgb(0 0 0 / 15%),
+          0 4px 4px rgb(0 0 0 / 30%);
+        --box-shadow-outline-color: rgb(0 0 0 / 50%);
+        --color-scrollbar-mac: rgb(51 51 51);
+        --color-scrollbar-mac-hover: rgb(75 76 79);
+        --color-scrollbar-other: rgb(51 51 51);
+        --color-scrollbar-other-hover: rgb(75 76 79);
+        --color-error-text: hsl(0deg 100% 75%);
+        --color-error-border: rgb(92 0 0);
+        --color-error-background: hsl(0deg 100% 8%);
+        /* Colors for styling inputs */
+        --color-input-outline: rgb(189 193 198);
+        --color-input-outline-active: rgb(138 180 248);
+        --color-input-outline-error: rgb(242 139 130);
+        --color-input-outline-disabled: rgba(189 193 198 / 20%);
+        --color-input-text-disabled: rgba(128 134 139 / 70%);
+        /* Colors for styling buttons */
+        --color-button-outline-focus: rgb(138 180 248 / 75%);
+        --color-button-primary-background-hovering: rgb(174 203 250 / 100%);
+        --color-button-primary-background-pressed: rgb(210 227 252 / 100%);
+        --color-button-primary-text: rgb(0 0 0);
+        --color-button-secondary-background-hovering: rgb(138 180 248 / 15%);
+        --color-button-secondary-background-pressed: rgb(138 180 248 / 23%);
+        --color-button-secondary-border: rgb(60 61 65);
+      }
+
       body {
         position: relative;
         margin: 0;
@@ -9,6 +246,11 @@
       }
       .hidden {
         display: none !important;
+      }
+      .vbox {
+        display: flex;
+        flex-direction: column;
+        position: relative;
       }
       .full-box {
         display: flex;
@@ -19,6 +261,7 @@
         bottom: 0;
         left: 0;
         background: white;
+        flex: 1 1;
       }
       .full-box div {
         display: flex;
@@ -38,6 +281,29 @@
         bottom: 0;
         left: 0;
         background: white;
+        flex-direction: column;
+      }
+      .web-audio-toolbar-container {
+        background-color: var(--color-background-elevation-1);
+        border-bottom: 1px solid var(--color-background-highlight);
+        min-height: fit-content;
+      }
+      .web-audio-content-container {
+        display: flex;
+        flex: 1;
+        flex-direction: column;
+      }
+      .toolbar-shadow {
+        position: relative;
+        white-space: nowrap;
+        height: 26px;
+        overflow: hidden;
+        display: flex;
+        flex: none;
+        align-items: center;
+      }
+      .dropdown-button {
+        content: '&#9660;';
       }
       .web-audio-debug {
         flex: 0 0 200px;
@@ -48,21 +314,45 @@
         flex: 1 1;
         overflow: hidden;
       }
+      .web-audio-graph canvas {
+        position: absolute;
+      }
+      .web-audio-status {
+        display: flex;
+        position: relative;
+        flex: none;
+        height: 26px;
+        background: var(--color-background-elevation-1);
+        border-top: 1px solid var(--color-background-highlight);
+        align-items: center;
+      }
     </style>
   </head>
   <body>
     <div class="web-audio-container">
-      <div class="web-audio-panel"></div>
-      <div class="web-audio-graph"></div>
-    </div>
-    <div class="web-audio-open-page-instruction full-box hidden">
-      <div>
-        <p>Open a page that uses Web Audio API to start monitoring.</p>
+      <div class="web-audio-toolbar-container vbox">
+        <div class="toolbar-shadow">
+          <div class="toolbar-button"></div>
+          <div class="toolbar-divider"></div>
+          <div class="toolbar-dropdown">
+            <div class="dropdown-title">(no recordings)</div>
+            <div class="dropdown-button"></div>
+          </div>
+        </div>
       </div>
-    </div>
-    <div class="web-audio-reload-instruction full-box hidden">
-      <div>
-        <p>Web Audio API is already in use. Reload to begin monitoring.</p>
+      <div class="web-audio-content-container">
+        <div class="web-audio-graph"></div>
+        <div class="web-audio-status"></div>
+      </div>
+      <div class="web-audio-open-page-instruction full-box hidden">
+        <div>
+          <p>Open a page that uses Web Audio API to start monitoring.</p>
+        </div>
+      </div>
+      <div class="web-audio-reload-instruction full-box hidden">
+        <div>
+          <p>Web Audio API is already in use. Reload to begin monitoring.</p>
+        </div>
       </div>
     </div>
     <div class="web-audio-loading full-box">
@@ -70,6 +360,7 @@
         <div><p>Loading ...</p></div>
       </div>
     </div>
+    <div class="web-audio-select-graph-dropdown hidden"></div>
     <script src="panel.js"></script>
   </body>
 </html>

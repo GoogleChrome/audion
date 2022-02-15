@@ -97,3 +97,51 @@
  * @property {function(T): void} postMessage
  * @template T
  */
+
+export namespace Utils {
+  export interface Observer<T> {
+    /**
+     * @param next called with each observed value
+     * @param complete called when the observer completes, if it does
+     * @param error called when the observer produces an error, if it does
+     * @return function to unsubscribe from this installation
+     */
+    observe(
+      next: (value: T) => void,
+      complete?: () => void,
+      error?: (error: Error) => void,
+    ): () => void;
+  }
+
+  export interface SubscribeCallback<T> {
+    (
+      onNext: (value: T) => void,
+      complete: () => void,
+      error: (error: Error) => void,
+    ): () => void;
+  }
+
+  export interface SubscribeOnNext<T> {
+    (value: T): void;
+  }
+
+  export interface Cancelable<T> {
+    value?: T;
+    canceled: boolean;
+  }
+
+  export interface CancelablePromise<T> {
+    promise: Promise<Utils.Cancelable<T>>;
+    cancel(): void;
+  }
+
+  export interface ThrottleObserverOptions<T> {
+    key?(value: T): any;
+    timeout?(): Promise<void>;
+  }
+
+  export interface RetryOptions {
+    timeout?(): Promise<void>;
+    number?: number;
+  }
+}

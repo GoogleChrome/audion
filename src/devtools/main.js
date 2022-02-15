@@ -4,9 +4,14 @@ import {DevtoolsGraphPanel} from './DevtoolsGraphPanel';
 import {serializeGraphContext} from './serializeGraphContext';
 import {WebAudioEventObserver} from './WebAudioEventObserver';
 import {WebAudioGraphIntegrator} from './WebAudioGraphIntegrator';
+import {WebAudioRealtimeData} from './WebAudioRealtimeData';
 
 const webAudioEvents = new WebAudioEventObserver();
-const integrateMessages = new WebAudioGraphIntegrator(webAudioEvents);
+const webAudioRealtimeData = new WebAudioRealtimeData();
+const integrateMessages = new WebAudioGraphIntegrator(
+  webAudioEvents,
+  webAudioRealtimeData,
+);
 const graphThrottle = Observer.throttle(integrateMessages, {});
 
 const serializeGraph = Observer.transform(graphThrottle, serializeGraphContext);
