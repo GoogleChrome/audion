@@ -52,7 +52,11 @@ function noopChrome() {
       getURL(url) {
         return url;
       },
-      lastError: {message: ''},
+      /**
+       * If a called chrome api method errored, lastError is set to that error
+       * while the provided callback is run. Otherwise lastError is not set.
+       */
+      lastError: undefined,
       onConnect: noopEvent(),
     },
   };

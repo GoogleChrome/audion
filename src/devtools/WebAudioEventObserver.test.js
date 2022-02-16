@@ -53,12 +53,19 @@ describe('WebAudioEventObserver', () => {
     if (jest.isMockFunction(chrome.debugger.attach)) {
       /** @type {function} */ (chrome.debugger.attach.mock.calls[0][2])();
     }
+    expect(chrome.debugger.sendCommand).toBeCalledTimes(1);
+    if (jest.isMockFunction(chrome.debugger.sendCommand)) {
+      /** @type {function} */ (chrome.debugger.sendCommand.mock.calls[0][2])();
+    }
     unsubscribe();
     expect(chrome.debugger.detach).toBeCalled();
+    if (jest.isMockFunction(chrome.debugger.sendCommand)) {
+      /** @type {function} */ (chrome.debugger.sendCommand.mock.calls[1][2])();
+    }
+    expect(chrome.debugger.sendCommand).toBeCalledTimes(2);
     if (jest.isMockFunction(chrome.debugger.detach)) {
       /** @type {function} */ (chrome.debugger.detach.mock.calls[0][1])();
     }
-    expect(chrome.debugger.sendCommand).toBeCalledTimes(2);
     expect(chrome.debugger.onDetach.removeListener).toBeCalled();
     expect(chrome.debugger.onEvent.removeListener).toBeCalled();
   });
