@@ -19,3 +19,22 @@
  * @property {number} radius
  * @property {Array} edges
  */
+
+export namespace AudionPanel {
+  export interface Point {
+    x: number;
+    y: number;
+  }
+
+  export interface Node {
+    position: Point;
+    size: Point;
+  }
+
+  export interface Port {
+    node: Node;
+    offset: Point;
+    radius: number;
+    edges: any[];
+  }
+}

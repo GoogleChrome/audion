@@ -1,5 +1,7 @@
 import * as PIXI from 'pixi.js';
 
+import {Audion} from '../../devtools/Types';
+
 import {Color, colorFromNodeType} from './graphStyle';
 import {AudioNodePort} from './AudioNodePort';
 
@@ -7,65 +9,73 @@ import {AudioNodePort} from './AudioNodePort';
  * Manage the rendered representation of a WebAudio node.
  */
 export class AudioNodeRender {
+  id: string;
+  node: Audion.GraphNode;
+  parent: PIXI.Container;
+  container: PIXI.Container;
+  title: PIXI.Text;
+  labelContainer: PIXI.Container;
+  background: PIXI.Graphics;
+  size: PIXI.Point;
+  position: PIXI.Point;
+  input: AudioNodePort[];
+  output: AudioNodePort[];
+  param: {[key: string]: AudioNodePort};
+
   /**
    * Create a AudioNodeRender instance.
-   * @param {string} id
+   * @param id
    */
-  constructor(id) {
-    /** @type {string} */
+  constructor(id: string) {
     this.id = id;
-    /** @type {Audion.GraphNode} */
     this.node = null;
-    /** @type {PIXI.Container} */
     this.parent = null;
-    /** @type {PIXI.Container} */
     this.container = null;
-    /** @type {PIXI.Text} */
     this.title = null;
-    /** @type {PIXI.Container} */
     this.labelContainer = null;
-    /** @type {PIXI.Graphics} */
     this.background = null;
-    /** @type {PIXI.Point} */
     this.size = new PIXI.Point();
-    /** @type {PIXI.Point} */
     this.position = null;
-    /** @type {Array<AudioNodePort>} */
     this.input = [];
-    /** @type {Array<AudioNodePort>} */
     this.output = [];
-    /** @type {Object<string, AudioNodePort>} */
     this.param = {};
   }
+
   /** Padding around input ports. */
   static get INPUT_GROUP_MARGIN() {
     return 10;
   }
+
   /** Height of input output ports. */
   static get INPUT_HEIGHT() {
     return 30;
   }
+
   /** Radius of the visible port icon. */
   static get INPUT_RADIUS() {
     return 10;
   }
+
   /** Padding around the group of params. */
   static get PARAM_GROUP_MARGIN() {
     return 5;
   }
+
   /** Height of audio parameter ports. */
   static get PARAM_HEIGHT() {
     return 20;
   }
+
   /** Radius of visible port icon. */
   static get PARAM_RADIUS() {
     return 8;
   }
+
   /**
-   * @param {Audion.GraphNode} node
-   * @return {AudioNodeRender}
+   * @param node
+   * @return
    */
-  init(node) {
+  init(node: Audion.GraphNode): AudioNodeRender {
     if (this.node && node.params.length === Object.keys(this.param).length) {
       return this;
     }
@@ -95,19 +105,22 @@ export class AudioNodeRender {
 
     return this;
   }
+
   /**
-   * @param {PIXI.Container} parent
+   * @param parent
    */
-  setPixiParent(parent) {
+  setPixiParent(parent: PIXI.Container) {
     this.parent = parent;
     parent.addChild(this.container);
   }
+
   /**
    * Remove from the rendering hierarchy.
    */
   remove() {
     this.container.parent.removeChild(this.container);
   }
+
   /** Deteremine the size of the node. */
   initSize() {
     const {node, title} = this;
@@ -153,6 +166,7 @@ export class AudioNodeRender {
       ),
     );
   }
+
   /**
    * Initialize ports.
    */
@@ -214,6 +228,7 @@ export class AudioNodeRender {
       });
     }
   }
+
   /**
    * Update the rendering.
    */

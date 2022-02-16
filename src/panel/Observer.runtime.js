@@ -1,4 +1,4 @@
-/// <reference path="../utils/Types.js" />
+/// <reference path="../utils/Types.ts" />
 
 import {chrome} from '../chrome';
 

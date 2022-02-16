@@ -1,23 +1,21 @@
-/// <reference path="Types.js" />
+import {Utils} from './Types';
 
 import {invariant} from './error';
 
 /* istanbul ignore next */
 /**
  * Do nothing.
- * @param {Array} args
+ * @param args
  * @memberof Utils.Observer
  */
-function noop(...args) {}
+function noop(...args: any) {}
 
 /**
- * @param {Promise<T>} promise
- * @return {Utils.CancelablePromise<T>}
- * @template T
+ * @param promise
  * @memberof Utils
  * @alias makeCancelable
  */
-function makeCancelable(promise) {
+function makeCancelable<T>(promise: Promise<T>): Utils.CancelablePromise<T> {
   let cancel = noop;
   const cancelablePromise = Promise.race([
     promise.then((value) => ({value, canceled: false})),
@@ -32,16 +30,15 @@ function makeCancelable(promise) {
 /**
  * Implementation of the observer idiom.
  *
- * @implements {Utils.Observer<T>}
- * @template T
  * @memberof Utils
  * @alias Observer
  */
-export class Observer {
-  /**
-   * @param {Utils.SubscribeCallback<T>} subscribe
-   */
-  constructor(subscribe) {
+export class Observer<T> implements Utils.Observer<T> {
+  subscribe: Utils.SubscribeCallback<T>;
+  _unsubscribeParent: (...args: any) => any;
+  handles: {onNext; onComplete; onError}[];
+
+  constructor(subscribe: Utils.SubscribeCallback<T>) {
     this.subscribe = subscribe;
     /** @type {function | null} */
     this._unsubscribeParent = null;
@@ -52,14 +49,10 @@ export class Observer {
     this._onError = this._onError.bind(this);
   }
 
-  /**
-   * @param {Utils.Observer<T1>} target
-   * @param {function(T1): T2} onTransform
-   * @return {Observer<T2>}
-   * @template T1
-   * @template T2
-   */
-  static transform(target, onTransform) {
+  static transform<T1, T2>(
+    target: Utils.Observer<T1>,
+    onTransform: (value: T1) => T2,
+  ): Utils.Observer<T2> {
     return new Observer((onNext, ...args) => {
       return target.observe((value) => {
         onNext(onTransform(value));
@@ -67,13 +60,10 @@ export class Observer {
     });
   }
 
-  /**
-   * @param {Utils.Observer<T>} target
-   * @param {function(T): boolean} testFunc
-   * @return {Observer<T>}
-   * @template T
-   */
-  static filter(target, testFunc) {
+  static filter<T>(
+    target: Utils.Observer<T>,
+    testFunc: (value: T) => boolean,
+  ): Utils.Observer<T> {
     return new Observer((onNext, ...args) => {
       return target.observe((value) => {
         if (testFunc(value)) {
@@ -83,15 +73,11 @@ export class Observer {
     });
   }
 
-  /**
-   * @param {Utils.Observer<T>} target
-   * @param {function(R, T): R} reducer
-   * @param {R} initial
-   * @return {Utils.Observer<R>}
-   * @template T
-   * @template R
-   */
-  static reduce(target, reducer, initial) {
+  static reduce<T, R>(
+    target: Utils.Observer<T>,
+    reducer: (accum: R, value: T) => R,
+    initial: R,
+  ): Utils.Observer<R> {
     let latest = initial;
     return new Observer((onNext, ...args) => {
       return target.observe((value) => {
@@ -101,13 +87,10 @@ export class Observer {
     });
   }
 
-  /**
-   * @param {Utils.Observer<T>} target
-   * @param {Utils.ThrottleObserverOptions<T>} [options]
-   * @return {Observer<T>}
-   * @template T
-   */
-  static throttle(target, options) {
+  static throttle<T>(
+    target: Utils.Observer<T>,
+    options?: Utils.ThrottleObserverOptions<T>,
+  ): Utils.Observer<T> {
     return new ThrottleObserver(target, options);
   }
 
@@ -119,17 +102,17 @@ export class Observer {
    * @template T1
    * @template T2
    */
-  static onSubscribe(target, onSubscribe) {
+  static onSubscribe<T1, T2>(
+    target: Utils.Observer<T1>,
+    onSubscribe: () => T2,
+  ): Utils.Observer<T1 | T2> {
     return new SubscribeImmediateObserver(target, onSubscribe);
   }
 
-  /**
-   * @param {Object<string, Utils.Observer<*>>} props
-   * @param {T} latest
-   * @return {Utils.Observer<T>}
-   * @template T
-   */
-  static props(props, latest) {
+  static props<T extends {[key: string]: any}>(
+    props: {[key in keyof T]: Utils.Observer<T[key]>},
+    latest: T,
+  ): Utils.Observer<T> {
     return new Observer((onNext, onComplete, onError) => {
       const unsubscribes = [];
       for (const [key, prop] of Object.entries(props)) {
@@ -152,13 +135,11 @@ export class Observer {
     });
   }
 
-  /**
-   * @param {Utils.SubscribeOnNext<T>} onNext
-   * @param {function(): void} [onComplete]
-   * @param {function(*): void} [onError]
-   * @return {function(): void} unsubscribe
-   */
-  observe(onNext, onComplete = noop, onError = noop) {
+  observe(
+    onNext: (value: T) => void,
+    onComplete: () => void = noop,
+    onError: (error: Error) => void = noop,
+  ): () => void {
     this._subscribeToParent();
     const handles = {onNext, onComplete, onError};
     this.handles.push(handles);
@@ -168,28 +149,19 @@ export class Observer {
     };
   }
 
-  /**
-   * @protected
-   * @param {T} message
-   */
-  _onNext(message) {
+  protected _onNext(message: T): void {
     for (let i = 0; i < this.handles.length; i++) {
       this.handles[i].onNext(message);
     }
   }
-  /**
-   * @protected
-   */
-  _onComplete() {
+
+  protected _onComplete(): void {
     for (let i = 0; i < this.handles.length; i++) {
       this.handles[i].onComplete();
     }
   }
-  /**
-   * @protected
-   * @param {*} reason
-   */
-  _onError(reason) {
+
+  protected _onError(reason: any): void {
     for (let i = 0; i < this.handles.length; i++) {
       this.handles[i].onError(reason);
     }
@@ -197,9 +169,8 @@ export class Observer {
 
   /**
    * Subscribe to parent.
-   * @protected
    */
-  _subscribeToParent() {
+  protected _subscribeToParent(): void {
     if (this.handles.length === 0) {
       this._unsubscribeParent = this.subscribe(
         this._onNext,
@@ -208,11 +179,11 @@ export class Observer {
       );
     }
   }
+
   /**
    * Unsubscribe from parent.
-   * @protected
    */
-  _unsubscribeFromParent() {
+  protected _unsubscribeFromParent(): void {
     if (this.handles.length === 0) {
       this._unsubscribeParent();
       this._unsubscribeParent = null;
@@ -222,35 +193,31 @@ export class Observer {
 
 /**
  * Throttle repeated observed messages.
- * @extends {Observer<T>}
- * @template T
  * @memberof Utils
  * @alias ThrottleObserver
  */
-export class ThrottleObserver extends Observer {
+export class ThrottleObserver<T> extends Observer<T> {
+  private _timerMap: Map<any, {cancel(): void; active: boolean; value: T}>;
+
   /**
    * Create a ThrottleObserver.
-   * @param {Utils.Observer<T>} target
-   * @param {Utils.ThrottleObserverOptions<T>} [options]
    */
   constructor(
-    target,
+    target: Utils.Observer<T>,
     {
       key = (obj) => obj,
       timeout = () => new Promise((resolve) => setTimeout(resolve, 16)),
-    } = {},
+    } = {} as Utils.ThrottleObserverOptions<T>,
   ) {
-    /**
-     * @type {Map<*, {cancel: function(): void,
-     *   active: boolean,
-     *   value: T}>}
-     */
-    const timerMap = new Map();
+    const timerMap = new Map() as Map<
+      any,
+      {cancel(): void; active: boolean; value: T}
+    >;
     super((onNext, onComplete, onError) => {
       /**
        * @param {T} message
        */
-      const onThrottleNext = (message) => {
+      const onThrottleNext = (message: T) => {
         invariant(
           typeof message === 'object' && message !== null,
           'Observer.throttle must observe non-null objects. Received: %0',
@@ -293,17 +260,13 @@ export class ThrottleObserver extends Observer {
       );
     });
 
-    /**
-     * @private
-     */
     this._timerMap = timerMap;
   }
 
   /**
    * Flush remaining timers.
-   * @private
    */
-  _flush() {
+  private _flush() {
     for (const timer of this._timerMap.values()) {
       invariant(
         timer.active,
@@ -318,30 +281,26 @@ export class ThrottleObserver extends Observer {
 
 /**
  * Immediately observe a value to any new subscriber.
- * @template T1
- * @template T2
- * @extends {Observer<T1 | T2>}
  */
-export class SubscribeImmediateObserver extends Observer {
+export class SubscribeImmediateObserver<T1, T2> extends Observer<T1 | T2> {
+  onSubscribe: () => T2;
+
   /**
    * Create an SubscribeImmediateObserver.
-   * @param {Observer<T1>} target
-   * @param {function(): T2} onSubscribe
    */
-  constructor(target, onSubscribe) {
+  constructor(target: Utils.Observer<T1>, onSubscribe: () => T2) {
     super((onNext, onComplete, onError) =>
       target.observe(onNext, onComplete, onError),
     );
 
     this.onSubscribe = onSubscribe;
   }
-  /**
-   * @param {Utils.SubscribeOnNext<T1 | T2>} onNext
-   * @param {function(): void} [onComplete]
-   * @param {function(*): void} [onError]
-   * @return {function(): void} unsubscribe
-   */
-  observe(onNext, onComplete, onError) {
+
+  observe(
+    onNext: (value: T1 | T2) => void,
+    onComplete?: () => void,
+    onError?: (error: Error) => void,
+  ): () => void {
     onNext(this.onSubscribe());
     return super.observe(onNext, onComplete, onError);
   }

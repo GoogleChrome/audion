@@ -1,23 +1,49 @@
 /// <reference path="../chrome/DebuggerWebAudioDomain.ts" />
 
 import {Protocol} from 'devtools-protocol/types/protocol';
-import {Graph} from 'graphlib';
+
+import {
+  WebAudioDebuggerEvent,
+  WebAudioDebuggerEventParams,
+} from '../chrome/DebuggerWebAudioDomain';
+
+import {Utils} from '../utils/Types';
 
 /** @namespace Audion */
+
 /**
  * @typedef Audion.WebAudioEvent
- * @property {ChromeDebuggerWebAudioDomain.EventName} method
- * @property {ChromeDebuggerWebAudioDomain.Event} params
+ * @property {Method} method
+ * @property {Params} params
  */
 
 export namespace Audion {
+  export type ContextRealtimeData = Protocol.WebAudio.ContextRealtimeData;
+
   export interface GraphContext {
     id: Protocol.WebAudio.GraphObjectId;
     context: Protocol.WebAudio.BaseAudioContext;
+    realtimeData: ContextRealtimeData;
     nodes: {[key: string]: GraphNode};
     params: {[key: string]: Protocol.WebAudio.AudioParam};
-    graph: Graph;
+    graph: any;
   }
+
+  export interface GraphContextMessage {
+    graphContext: Audion.GraphContext;
+  }
+
+  export interface GraphContextsById {
+    [key: string]: Audion.GraphContext;
+  }
+
+  export interface AllGraphsMessage {
+    allGraphs: GraphContextsById;
+  }
+
+  export type DevtoolsMessage = GraphContextMessage | AllGraphsMessage;
+
+  export interface DevtoolsObserver extends Utils.Observer<DevtoolsMessage> {}
 
   export interface GraphNode {
     node: Protocol.WebAudio.AudioNode;
@@ -25,10 +51,12 @@ export namespace Audion {
     edges: Protocol.WebAudio.NodesConnectedEvent[];
   }
 
-  export interface WebAudioEvent {
-    method: string;
-    params: any;
-  }
+  export type WebAudioEvent<
+    N extends WebAudioDebuggerEvent = WebAudioDebuggerEvent,
+  > = {
+    method: N;
+    params: WebAudioDebuggerEventParams<N>[0];
+  };
 }
 
 /**

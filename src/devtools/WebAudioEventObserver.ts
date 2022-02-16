@@ -9,7 +9,7 @@ import {
 import {catchError, distinctUntilChanged, share} from 'rxjs/operators';
 
 import {chrome} from '../chrome';
-import {Methods} from '../chrome/DebuggerWebAudioDomain';
+import {WebAudioDebuggerMethod} from '../chrome/DebuggerWebAudioDomain';
 import {Observer} from '../utils/Observer';
 import {Audion} from './Types';
 
@@ -140,8 +140,10 @@ export class WebAudioEventObserver extends Observer<Audion.WebAudioEvent> {
       // eventState must be IS_ACTIVE for `onEvent` to receive events.
       eventState: new BinaryTransitionSubject({
         initialState: BinaryTransition.IS_INACTIVE,
-        activateAction: () => sendCommand({tabId}, Methods.enable),
-        deactivateAction: () => sendCommand({tabId}, Methods.disable),
+        activateAction: () =>
+          sendCommand({tabId}, WebAudioDebuggerMethod.enable),
+        deactivateAction: () =>
+          sendCommand({tabId}, WebAudioDebuggerMethod.disable),
       }),
     };
     this.permission = debuggerSubject.permission;
@@ -303,7 +305,7 @@ const detach = bindChromeCallback(chrome.debugger.detach, chrome.debugger);
 const sendCommand = bindChromeCallback(
   chrome.debugger.sendCommand as (
     target: Chrome.DebuggerDebuggee,
-    method: typeof Methods[string],
+    method: WebAudioDebuggerMethod,
     params?,
     callback?,
   ) => void,

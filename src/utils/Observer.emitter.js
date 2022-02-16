@@ -1,4 +1,4 @@
-/// <reference path="Types.js" />
+/// <reference path="Types.ts" />
 
 import {Observer} from './Observer';
 
