@@ -3,13 +3,15 @@
 import * as PIXI from 'pixi.js';
 // This module disable's pixi.js use of new Function to optimize rendering.
 import {install} from '@pixi/unsafe-eval';
-import {map, merge, scan, shareReplay} from 'rxjs';
+
+import {merge, Subject} from 'rxjs';
+import {filter, map, scan, shareReplay, tap} from 'rxjs/operators';
 
 import {Audion} from '../devtools/Types';
 
 import {Utils} from '../utils/Types';
 import {Observer} from '../utils/Observer';
-import {toRX} from '../utils/toRX';
+import {toUtilsObserver} from '../utils/rxInterop';
 import {
   observeMessageEvents,
   postObservations,
@@ -23,14 +25,26 @@ import {WholeGraphButton} from './components/WholeGraphButton';
 import {querySelector} from './components/domUtils';
 import {renderRealtimeSummary} from './components/realtimeSummary';
 import {renderSelectGraph} from './components/selectGraph';
+import {renderDetailPanel} from './components/detailPanel';
+import {chrome} from '../chrome';
+import {renderCollectGarbage} from './components/collectGarbage';
 
 // Install an alternate system to part of pixi.js rendering that does not use
 // new Function.
 install(PIXI);
 
-const devtoolsObserver: Audion.DevtoolsObserver = connect();
+if (chrome.devtools.panels.themeName === 'dark') {
+  document.querySelector('html').className = '-theme-with-dark-background';
+}
 
-const devtoolsObserver$ = toRX<Audion.DevtoolsMessage>(devtoolsObserver);
+const devtoolsRequestSubject$ = new Subject<Audion.DevtoolsRequest>();
+const devtoolsObserver$ = connect<
+  Audion.DevtoolsRequest,
+  Audion.DevtoolsMessage
+>(devtoolsRequestSubject$);
+
+const devtoolsObserver: Audion.DevtoolsObserver =
+  toUtilsObserver(devtoolsObserver$);
 
 const allGraphsObserver: Utils.Observer<Audion.GraphContextsById> =
   Observer.reduce(
@@ -87,8 +101,15 @@ const graphSelector = new GraphSelector({
   allGraphsObserver$,
 });
 graphSelector.optionsObserver.observe((options) => {
-  // Select the newest graph.
-  graphSelector.select(options[options.length - 1] || '');
+  if (
+    // Select a graph automatically if one is not selected.
+    graphSelector.graphId === '' ||
+    // Select a graph automatically if current selected graph is no longer available.
+    !options.includes(graphSelector.graphId)
+  ) {
+    // Select the newest graph (the last in the list).
+    graphSelector.select(options[options.length - 1] || '');
+  }
 });
 
 const graphContainer =
@@ -131,16 +152,47 @@ graphContainer.appendChild(wholeGraphButton.render());
 graphRender.start();
 
 merge(
+  renderCollectGarbage(querySelector('.toolbar-garbage-button')).pipe(
+    tap((action) => {
+      if (action && 'type' in action && action.type === 'collectGarbage') {
+        devtoolsRequestSubject$.next(action);
+      }
+    }),
+    filter(isHTMLElement),
+  ),
   renderSelectGraph(
     querySelector('.web-audio-toolbar-container .dropdown-title'),
     querySelector('.web-audio-select-graph-dropdown'),
+    querySelector('.web-audio-toolbar-container .toolbar-dropdown'),
     graphSelector.graphIdObserver$,
     allGraphsObserver$,
+  ).pipe(
+    tap((action) => {
+      if (action && 'type' in action && action.type === 'selectGraph') {
+        graphSelector.select(action.graphId);
+      }
+    }),
+    filter(isHTMLElement),
   ),
   renderRealtimeSummary(
     querySelector('.web-audio-status'),
     graphSelector.graphObserver$.pipe(map(({realtimeData}) => realtimeData)),
   ),
-).subscribe();
+  renderDetailPanel(
+    querySelector('.web-audio-detail-panel'),
+    graphSelector.graphObserver$,
+    graphRender.selectedNode$,
+  ),
+)
+  // Observe elements as they are changed.
+  .subscribe();
 
 document.getElementsByClassName('web-audio-loading')[0].classList.add('hidden');
+
+/**
+ * @param value
+ * @returns value is a HTMLElement
+ */
+function isHTMLElement(value: unknown): value is HTMLElement {
+  return value && value instanceof HTMLElement;
+}

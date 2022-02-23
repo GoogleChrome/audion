@@ -1,0 +1,15 @@
+:global(.-theme-with-dark-background) .collectIcon {
+  --override-icon-mask-background-color: rgb(145 145 145);
+}
+.collectIcon {
+  display: inline-block;
+  -webkit-mask: url('./collectGarbage.svg') no-repeat center;
+  mask: url('./collectGarbage.svg') no-repeat center;
+  width: 28px;
+  height: 24px;
+  background-color: var(--override-icon-mask-background-color);
+  --override-icon-mask-background-color: rgb(110 110 110);
+}
+:global(.toolbar-button):hover .collectIcon {
+  background-color: var(--color-text-primary);
+}

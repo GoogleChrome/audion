@@ -1,4 +1,5 @@
 import {Observer} from '../utils/Observer';
+import {DebuggerAttachEventController} from './DebuggerAttachEventController';
 
 import {DevtoolsGraphPanel} from './DevtoolsGraphPanel';
 import {serializeGraphContext} from './serializeGraphContext';
@@ -6,7 +7,8 @@ import {WebAudioEventObserver} from './WebAudioEventObserver';
 import {WebAudioGraphIntegrator} from './WebAudioGraphIntegrator';
 import {WebAudioRealtimeData} from './WebAudioRealtimeData';
 
-const webAudioEvents = new WebAudioEventObserver();
+const debuggerAttachController = new DebuggerAttachEventController();
+const webAudioEvents = new WebAudioEventObserver(debuggerAttachController);
 const webAudioRealtimeData = new WebAudioRealtimeData();
 const integrateMessages = new WebAudioGraphIntegrator(
   webAudioEvents,
@@ -47,3 +49,13 @@ panel.onShow = () => {
   panel.onShow = null;
   webAudioEvents.attach();
 };
+
+panel.requests$.subscribe({
+  next(value) {
+    if (value.type === 'collectGarbage') {
+      debuggerAttachController
+        .sendCommand('HeapProfiler.collectGarbage')
+        .subscribe();
+    }
+  },
+});

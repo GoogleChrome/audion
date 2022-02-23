@@ -1,4 +1,4 @@
-<html class="-theme-with-dark-background">
+<html>
   <head>
     <style>
       body {
@@ -293,6 +293,34 @@
         flex: 1;
         flex-direction: column;
       }
+      .web-audio-content-panel {
+        display: flex;
+        flex: 1;
+        flex-direction: row;
+      }
+      .web-audio-detail-panel-container {
+        min-width: 20rem;
+        flex: 0;
+        background-color: var(--color-background-elevation-0);
+        position: relative;
+      }
+      .web-audio-detail-panel {
+        position: absolute;
+        top: 0;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        overflow-x: hidden;
+        overflow-y: auto;
+      }
+      .web-audio-select-graph-dropdown {
+        position: absolute;
+        top: 0;
+        left: 0;
+        min-width: 20rem;
+        max-width: 20rem;
+        background-color: var(--color-background-elevation-1);
+      }
       .toolbar-shadow {
         position: relative;
         white-space: nowrap;
@@ -302,8 +330,19 @@
         flex: none;
         align-items: center;
       }
+      .toolbar-dropdown {
+        height: 100%;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        padding: 0 0.2rem;
+      }
+      .toolbar-dropdown:hover {
+        background: var(--color-background-elevation-2);
+      }
+      .dropdown-title,
       .dropdown-button {
-        content: '&#9660;';
+        display: inline-block;
       }
       .web-audio-debug {
         flex: 0 0 200px;
@@ -332,16 +371,23 @@
     <div class="web-audio-container">
       <div class="web-audio-toolbar-container vbox">
         <div class="toolbar-shadow">
-          <div class="toolbar-button"></div>
+          <div class="toolbar-button toolbar-garbage-button"></div>
           <div class="toolbar-divider"></div>
           <div class="toolbar-dropdown">
-            <div class="dropdown-title">(no recordings)</div>
-            <div class="dropdown-button"></div>
+            <div>
+              <div class="dropdown-title">(no recordings)</div>
+              <div class="dropdown-button">&blacktriangledown;</div>
+            </div>
           </div>
         </div>
       </div>
       <div class="web-audio-content-container">
-        <div class="web-audio-graph"></div>
+        <div class="web-audio-content-panel">
+          <div class="web-audio-detail-panel-container">
+            <div class="web-audio-detail-panel"></div>
+          </div>
+          <div class="web-audio-graph"></div>
+        </div>
         <div class="web-audio-status"></div>
       </div>
       <div class="web-audio-open-page-instruction full-box hidden">
@@ -355,12 +401,12 @@
         </div>
       </div>
     </div>
+    <div class="web-audio-select-graph-dropdown hidden"></div>
     <div class="web-audio-loading full-box">
       <div>
         <div><p>Loading ...</p></div>
       </div>
     </div>
-    <div class="web-audio-select-graph-dropdown hidden"></div>
     <script src="panel.js"></script>
   </body>
 </html>

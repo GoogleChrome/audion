@@ -21,6 +21,7 @@ export class AudioNodeRender {
   input: AudioNodePort[];
   output: AudioNodePort[];
   param: {[key: string]: AudioNodePort};
+  isHighlighted: boolean;
 
   /**
    * Create a AudioNodeRender instance.
@@ -229,6 +230,11 @@ export class AudioNodeRender {
     }
   }
 
+  setHighlight(isHighlighted: boolean) {
+    this.isHighlighted = isHighlighted;
+    this.draw();
+  }
+
   /**
    * Update the rendering.
    */
@@ -236,7 +242,11 @@ export class AudioNodeRender {
     const {background, node} = this;
 
     background.clear();
-    background.lineStyle(0);
+    if (this.isHighlighted) {
+      background.lineStyle({width: 5, color: 0x000000});
+    } else {
+      background.lineStyle(0);
+    }
     background.beginFill(colorFromNodeType(node.node.nodeType));
     background.drawRoundedRect(0, 0, this.size.x, this.size.y, 3);
     background.endFill();

@@ -1,6 +1,7 @@
 /// <reference path="../../chrome/Types.js" />
 
 import * as PIXI from 'pixi.js';
+import {BehaviorSubject} from 'rxjs';
 
 import {Audion} from '../../devtools/Types';
 
@@ -27,6 +28,8 @@ export class AudioGraphRender {
 
   renderFrameId: AnimationFrameId | null;
 
+  selectedNode$: BehaviorSubject<Audion.GraphNode>;
+
   /**
    * Create an AudioGraphRender.
    * @param {object} options
@@ -47,6 +50,8 @@ export class AudioGraphRender {
     this.renderFrameId = null;
 
     this.render = this.render.bind(this);
+
+    this.selectedNode$ = new BehaviorSubject<Audion.GraphNode>(null);
   }
 
   /** Initialize. */
@@ -171,6 +176,26 @@ export class AudioGraphRender {
     }
   }
 
+  getNodeAtViewportPoint(viewportPoint: {x: number; y: number}) {
+    const screenPoint = new PIXI.Point(
+      viewportPoint.x * this.camera.screen.width,
+      viewportPoint.y * this.camera.screen.height,
+    );
+    return this.getNodeAtScreenPoint(screenPoint);
+  }
+
+  getNodeAtScreenPoint(screenPoint: {x: number; y: number}) {
+    for (const nodeRender of this.nodeMap.values()) {
+      if (
+        nodeRender.container.getBounds().contains(screenPoint.x, screenPoint.y)
+      ) {
+        return nodeRender.node;
+      }
+    }
+
+    return null;
+  }
+
   /** Initialize event handling. */
   initEvents() {
     const {pixiApplication: app} = this;
@@ -189,7 +214,22 @@ export class AudioGraphRender {
       }
     });
 
-    app.view.onwheel = (/** @type {WheelEvent} */ e) => {
+    app.view.onclick = ({offsetX, offsetY}) => {
+      const {clientWidth, clientHeight} = app.view;
+      const viewportPoint = new PIXI.Point(
+        offsetX / clientWidth,
+        offsetY / clientHeight,
+      );
+
+      const lastSelectedNode = this.selectedNode$.value;
+      const selectedNode = this.getNodeAtViewportPoint(viewportPoint);
+      this.nodeMap.get(lastSelectedNode?.node?.nodeId)?.setHighlight(false);
+      this.nodeMap.get(selectedNode?.node?.nodeId)?.setHighlight(true);
+
+      this.selectedNode$.next(selectedNode);
+    };
+
+    app.view.onwheel = (e) => {
       this.camera.zoom(
         e.clientX - app.view.clientLeft,
         e.clientY - app.view.clientTop,
@@ -225,6 +265,10 @@ export class AudioGraphRender {
     if (nodeRender) {
       nodeRender.remove();
       this.nodeMap.delete(nodeId);
+
+      if (nodeId === this.selectedNode$.value?.node?.nodeId) {
+        this.selectedNode$.next(null);
+      }
     }
   }
 

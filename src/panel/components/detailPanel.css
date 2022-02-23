@@ -1,0 +1,23 @@
+.detailPanel > * {
+  padding: 0 1rem;
+}
+.detailPanel h1,
+.detailPanel h2,
+.detailPanel h3,
+.detailPanel h4,
+.detailPanel h5,
+.detailPanel h6 {
+  font-weight: normal;
+}
+.detailPanel table {
+  font-size: 12px;
+}
+.detailPanel th {
+  color: var(--color-text-secondary);
+  font-weight: normal;
+  text-align: left;
+}
+.detailPanel th,
+.detailPanel td {
+  padding: 0.2rem;
+}
