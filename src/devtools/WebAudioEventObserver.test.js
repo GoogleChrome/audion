@@ -5,6 +5,7 @@ import {beforeEach, describe, expect, it, jest} from '@jest/globals';
 import {chrome} from '../chrome';
 import {WebAudioDebuggerEvent} from '../chrome/DebuggerWebAudioDomain';
 
+import {DebuggerAttachEventController} from './DebuggerAttachEventController';
 import {WebAudioEventObserver} from './WebAudioEventObserver';
 
 jest.mock('../chrome');
@@ -15,7 +16,8 @@ describe('WebAudioEventObserver', () => {
   });
 
   it('attachs to chrome.debugger', () => {
-    const o = new WebAudioEventObserver();
+    const attachController = new DebuggerAttachEventController();
+    const o = new WebAudioEventObserver(attachController);
     o.observe(() => {});
     o.attach();
     expect(chrome.debugger.attach).toBeCalled();
@@ -28,7 +30,8 @@ describe('WebAudioEventObserver', () => {
   });
 
   it('does not reattach when user triggers detach', () => {
-    const o = new WebAudioEventObserver();
+    const attachController = new DebuggerAttachEventController();
+    const o = new WebAudioEventObserver(attachController);
     o.observe(() => {});
     o.attach();
     if (jest.isMockFunction(chrome.debugger.attach)) {
@@ -47,7 +50,8 @@ describe('WebAudioEventObserver', () => {
   });
 
   it('detachs from chrome.debugger on unsubscribe', () => {
-    const o = new WebAudioEventObserver();
+    const attachController = new DebuggerAttachEventController();
+    const o = new WebAudioEventObserver(attachController);
     o.attach();
     const unsubscribe = o.observe(() => {});
     if (jest.isMockFunction(chrome.debugger.attach)) {
@@ -72,7 +76,8 @@ describe('WebAudioEventObserver', () => {
 
   it('forwards to WebAudio debugger protocol events', () => {
     const nextMock = jest.fn();
-    const o = new WebAudioEventObserver();
+    const attachController = new DebuggerAttachEventController();
+    const o = new WebAudioEventObserver(attachController);
     o.observe(nextMock);
     o.attach();
     if (jest.isMockFunction(chrome.debugger.attach)) {
