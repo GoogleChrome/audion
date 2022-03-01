@@ -2,8 +2,9 @@
 
 import {chrome} from '../chrome';
 import {Audion} from './Types';
+
 import {fromEventPattern, Observable, Subject} from 'rxjs';
-import {takeUntil} from 'rxjs/operators';
+import {map, takeUntil} from 'rxjs/operators';
 
 type AllGraphsContext = {allGraphs: {[key: string]: Audion.GraphContext}};
 
@@ -28,7 +29,7 @@ export class DevtoolsGraphPanel {
    * Create a DevtoolsGraphPanel.
    */
   constructor(graphs$: Observable<AllGraphsContext>) {
-    this.requests$ = new Subject();
+    const requests$ = (this.requests$ = new Subject());
 
     const onPanelShown$ = (this.onPanelShown$ = new Subject<void>());
     chrome.devtools.panels.create('Web Audio', '', 'panel.html', (panel) => {
@@ -37,7 +38,9 @@ export class DevtoolsGraphPanel {
 
     fromChromeEvent(chrome.runtime.onConnect).subscribe({
       next(port) {
-        fromChromeEvent(port.onMessage).subscribe(this.requests$);
+        fromChromeEvent(port.onMessage)
+          .pipe(map(([message]) => message))
+          .subscribe(requests$);
 
         graphs$.pipe(takeUntil(fromChromeEvent(port.onDisconnect))).subscribe({
           next(graphs) {
