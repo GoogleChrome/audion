@@ -51,7 +51,7 @@ const allGraphsObserver: Utils.Observer<Audion.GraphContextsById> =
     devtoolsObserver,
     (allGraphs, message) => {
       if ('allGraphs' in message) {
-        return {...allGraphs, ...message.allGraphs};
+        return message.allGraphs;
       } else if ('graphContext' in message) {
         if (
           message.graphContext.graph &&
@@ -75,7 +75,7 @@ const allGraphsObserver: Utils.Observer<Audion.GraphContextsById> =
 const allGraphsObserver$ = devtoolsObserver$.pipe(
   scan((allGraphs, message) => {
     if ('allGraphs' in message) {
-      return {...allGraphs, ...message.allGraphs};
+      return message.allGraphs;
     } else if ('graphContext' in message) {
       if (
         message.graphContext.graph &&

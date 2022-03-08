@@ -6,8 +6,6 @@ import {Audion} from './Types';
 import {fromEventPattern, Observable, Subject} from 'rxjs';
 import {map, takeUntil} from 'rxjs/operators';
 
-type AllGraphsContext = {allGraphs: {[key: string]: Audion.GraphContext}};
-
 function fromChromeEvent<T>(
   event: Chrome.Event<(msg: T) => void>,
 ): Observable<T> {
@@ -28,7 +26,7 @@ export class DevtoolsGraphPanel {
   /**
    * Create a DevtoolsGraphPanel.
    */
-  constructor(graphs$: Observable<AllGraphsContext>) {
+  constructor(graphs$: Observable<Audion.DevtoolsMessage>) {
     const requests$ = (this.requests$ = new Subject());
 
     const onPanelShown$ = (this.onPanelShown$ = new Subject<void>());

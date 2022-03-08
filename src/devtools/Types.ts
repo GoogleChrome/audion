@@ -43,8 +43,12 @@ export namespace Audion {
 
   export type DevtoolsMessage = GraphContextMessage | AllGraphsMessage;
 
+  export enum DevtoolsRequestType {
+    COLLECT_GARBAGE = 'collectGarbage',
+  }
+
   export interface DevtoolsCollectGarbageRequest {
-    type: 'collectGarbage';
+    type: DevtoolsRequestType.COLLECT_GARBAGE;
   }
 
   export type DevtoolsRequest = DevtoolsCollectGarbageRequest;
