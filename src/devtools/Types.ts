@@ -43,6 +43,12 @@ export namespace Audion {
 
   export type DevtoolsMessage = GraphContextMessage | AllGraphsMessage;
 
+  export interface DevtoolsCollectGarbageRequest {
+    type: 'collectGarbage';
+  }
+
+  export type DevtoolsRequest = DevtoolsCollectGarbageRequest;
+
   export interface DevtoolsObserver extends Utils.Observer<DevtoolsMessage> {}
 
   export interface GraphNode {

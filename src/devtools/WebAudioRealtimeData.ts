@@ -1,5 +1,6 @@
 import Protocol from 'devtools-protocol';
-import {bindCallback, concatMap, interval, map} from 'rxjs';
+import {bindCallback, concatMap, interval} from 'rxjs';
+import {map} from 'rxjs/operators';
 
 import {invariant} from '../utils/error';
 

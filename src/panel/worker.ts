@@ -1,19 +1,18 @@
 import * as dagre from 'dagre';
+import {fromEvent, Observable} from 'rxjs';
+import {
+  filter,
+  map,
+  startWith,
+  throttleTime,
+  withLatestFrom,
+} from 'rxjs/operators';
 
 import {serializeGraphContext} from '../devtools/serializeGraphContext';
 import {
   deserializeGraphContext,
   SerializedGraphContext,
 } from '../devtools/deserializeGraphContext';
-import {
-  filter,
-  fromEvent,
-  map,
-  Observable,
-  startWith,
-  throttleTime,
-  withLatestFrom,
-} from 'rxjs';
 
 interface LayoutOptionsMessage {
   layoutOptions: dagre.GraphLabel;

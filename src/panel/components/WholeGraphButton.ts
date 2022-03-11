@@ -1,4 +1,5 @@
 import {fromEvent} from 'rxjs';
+
 import style from './WholeGraphButton.css';
 import wholeGraphButtonImage from './WholeGraphButton.svg';
 

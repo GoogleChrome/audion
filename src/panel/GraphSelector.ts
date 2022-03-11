@@ -1,23 +1,11 @@
-/// <reference path="../devtools/Types.ts" />
+import {Observable, merge} from 'rxjs';
+import {map, shareReplay, scan} from 'rxjs/operators';
 
-import {
-  Observable,
-  map,
-  startWith,
-  withLatestFrom,
-  share,
-  Subscriber,
-  concat,
-  zip,
-  shareReplay,
-  merge,
-  scan,
-} from 'rxjs';
 import {Audion} from '../devtools/Types';
 
 import {Utils} from '../utils/Types';
 import {Observer} from '../utils/Observer';
-import {toRX} from '../utils/toRX';
+import {toRX} from '../utils/rxInterop';
 
 type GraphMap = {[key: string]: Audion.GraphContext};
 

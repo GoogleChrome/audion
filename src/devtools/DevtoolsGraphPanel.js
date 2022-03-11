@@ -1,6 +1,7 @@
 /// <reference path="../utils/Types.ts" />
 /// <reference path="Types.ts" />
 
+import {Subject} from 'rxjs';
 import {chrome} from '../chrome';
 
 /**
@@ -17,6 +18,9 @@ export class DevtoolsGraphPanel {
   constructor(devtoolsObserver) {
     this.onShow = null;
 
+    /** @type {Subject<Audion.DevtoolsRequest>} */
+    this.requests$ = new Subject();
+
     chrome.devtools.panels.create('Web Audio', '', 'panel.html', (panel) => {
       panel.onShown.addListener(() => {
         if (this.onShow) {
@@ -26,6 +30,8 @@ export class DevtoolsGraphPanel {
     });
 
     chrome.runtime.onConnect.addListener((port) => {
+      port.onMessage.addListener((value) => this.requests$.next(value));
+
       const unsubscribe = devtoolsObserver.observe((graph) => {
         port.postMessage(graph);
       });

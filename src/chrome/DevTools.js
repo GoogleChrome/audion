@@ -33,6 +33,7 @@
  *
  * @typedef Chrome.DevToolsPanels
  * @property {Chrome.DevToolsPanelsCreateFunction} create
+ * @property {'default' | 'dark'} themeName
  */
 
 /**

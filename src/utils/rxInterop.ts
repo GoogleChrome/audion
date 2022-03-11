@@ -1,5 +1,6 @@
 import {Observable} from 'rxjs';
 
+import {Observer} from './Observer';
 import {Utils} from './Types';
 
 /**
@@ -19,4 +20,15 @@ export function toRX<T>(observer: Utils.Observer<T>): Observable<T> {
       (err) => subscriber.error(err),
     ),
   );
+}
+
+export function toUtilsObserver<T>(
+  observable: Observable<T>,
+): Utils.Observer<T> {
+  return new Observer((next, complete, error) => {
+    const subscription = observable.subscribe({next, complete, error});
+    return () => {
+      subscription.unsubscribe();
+    };
+  });
 }

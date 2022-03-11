@@ -1,0 +1,12 @@
+.dropdownOption {
+  display: flex;
+  height: 2rem;
+  align-items: center;
+  cursor: pointer;
+  padding: 0 0.2rem;
+}
+
+.dropdownOption:hover,
+.dropdownButtonActive {
+  background: var(--color-background-elevation-2);
+}
