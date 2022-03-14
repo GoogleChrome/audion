@@ -91,6 +91,12 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     }
     const context = space.graphContext;
     context.graph.removeNode(audioNodeDestroyed.nodeId);
+    const node = context.nodes[audioNodeDestroyed.nodeId];
+    if (node && node.params) {
+      for (const audioParam of node.params) {
+        delete context.params[audioParam.paramId];
+      }
+    }
     delete context.nodes[audioNodeDestroyed.nodeId];
     return context;
   },
@@ -135,14 +141,11 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     }
     const context = space.graphContext;
     const node = context.nodes[audioParamWillBeDestroyed.nodeId];
-    if (node) {
-      const index = node.params.findIndex(
-        ({paramId}) => paramId === audioParamWillBeDestroyed.paramId,
-      );
-      if (index >= 0) {
-        node.params.splice(index, 1);
-      }
-    }
+    removeAll(
+      node?.params,
+      ({paramId}) => paramId === audioParamWillBeDestroyed.paramId,
+    );
+    delete context.params[audioParamWillBeDestroyed.paramId];
   },
 
   [WebAudioDebuggerEvent.contextChanged]: (
@@ -281,12 +284,11 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     const context = space.graphContext;
     const {edges} = context.nodes[nodesDisconnected.sourceId];
     const {sourceId, sourceOutputIndex = 0, destinationId} = nodesDisconnected;
-    edges.splice(
-      edges.findIndex(
-        (edge) =>
-          edge.destinationId === destinationId &&
-          edge.sourceOutputIndex === sourceOutputIndex,
-      ),
+    removeAll(
+      edges,
+      (edge) =>
+        edge.destinationId === destinationId &&
+        edge.sourceOutputIndex === sourceOutputIndex,
     );
     context.graph.removeEdge(
       sourceId,
@@ -344,13 +346,12 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       destinationId,
       destinationInputIndex = 0,
     } = nodesDisconnected;
-    edges.splice(
-      edges.findIndex(
-        (edge) =>
-          edge.destinationId === destinationId &&
-          edge.sourceOutputIndex === sourceOutputIndex &&
-          edge.destinationInputIndex === destinationInputIndex,
-      ),
+    removeAll(
+      edges,
+      (edge) =>
+        edge.destinationId === destinationId &&
+        edge.sourceOutputIndex === sourceOutputIndex &&
+        edge.destinationInputIndex === destinationInputIndex,
     );
     context.graph.removeEdge(
       sourceId,
@@ -360,6 +361,16 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     return context;
   },
 };
+
+function removeAll<T>(array: T[], fn: (value: T) => boolean) {
+  if (array) {
+    let index = array.findIndex(fn);
+    while (index >= 0) {
+      array.splice(index, 1);
+      index = array.findIndex(fn);
+    }
+  }
+}
 
 /**
  * Collect WebAudio debugger events into per context graphs.
