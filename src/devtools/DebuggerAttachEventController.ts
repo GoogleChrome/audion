@@ -3,6 +3,7 @@ import {
   combineLatest,
   concat,
   defer,
+  EMPTY,
   Observable,
   of,
 } from 'rxjs';
@@ -415,17 +416,25 @@ class BinaryTransitionSubject extends BehaviorSubject<BinaryTransition> {
         defer(() =>
           this.value === description.intermediateState
             ? of(description.successState)
-            : of(),
+            : EMPTY,
         ),
       )
         .pipe(
-          catchError((err) =>
-            of(
+          catchError((err) => {
+            console.error(err);
+            if (
+              err.message.startsWith('Another debugger is already attached')
+            ) {
+              return this.value === description.intermediateState
+                ? of(description.successState)
+                : EMPTY;
+            }
+            return of(
               this.value === description.intermediateState
                 ? description.errorState
                 : description.beginningState,
-            ),
-          ),
+            );
+          }),
         )
         .subscribe({next: this.next.bind(this)});
     }
