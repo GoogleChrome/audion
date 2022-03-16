@@ -20,6 +20,33 @@ import {Utils} from '../utils/Types';
 export namespace Audion {
   export type ContextRealtimeData = Protocol.WebAudio.ContextRealtimeData;
 
+  export enum GraphEdgeType {
+    NODE = 'node',
+    PARAM = 'param',
+  }
+
+  export interface GraphNodeEdge {
+    sourceOutputIndex: number;
+    destinationType: GraphEdgeType.NODE;
+    destinationInputIndex: number;
+  }
+
+  export interface GraphParamEdge {
+    sourceOutputIndex: number;
+    destinationType: GraphEdgeType.PARAM;
+    destinationParamId: string;
+    destinationParamIndex: number;
+  }
+
+  export type GraphEdge = GraphNodeEdge | GraphParamEdge;
+
+  export interface GraphlibEdge<V = GraphEdge> {
+    v: string;
+    w: string;
+    name: string;
+    value: V;
+  }
+
   export interface GraphContext {
     id: Protocol.WebAudio.GraphObjectId;
     context: Protocol.WebAudio.BaseAudioContext;

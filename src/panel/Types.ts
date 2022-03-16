@@ -1,3 +1,5 @@
+import * as PIXI from 'pixi.js';
+
 /** @namespace AudionPanel */
 
 /**
@@ -29,6 +31,14 @@ export namespace AudionPanel {
   export interface Node {
     position: Point;
     size: Point;
+
+    updatePortDisplay(portType: PortType, portIndex: number): void;
+  }
+
+  export enum PortType {
+    INPUT = 'input',
+    OUTPUT = 'output',
+    PARAM = 'param',
   }
 
   export interface Port {
@@ -36,5 +46,8 @@ export namespace AudionPanel {
     offset: Point;
     radius: number;
     edges: any[];
+
+    updateNodeDisplay(): void;
+    drawConnect(graphics: PIXI.Graphics): void;
   }
 }

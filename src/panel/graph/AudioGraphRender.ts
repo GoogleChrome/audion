@@ -5,9 +5,10 @@ import {BehaviorSubject} from 'rxjs';
 
 import {Audion} from '../../devtools/Types';
 
-import {AudioEdgeRender} from './AudioEdgeRender';
+import {AudioEdgeKey, AudioEdgeRender} from './AudioEdgeRender';
 import {AudioNodeRender} from './AudioNodeRender';
 import {Camera} from './Camera';
+import {GraphicsCache} from './GraphicsCache';
 
 type AnimationFrameId = ReturnType<typeof requestAnimationFrame>;
 
@@ -16,7 +17,8 @@ type AnimationFrameId = ReturnType<typeof requestAnimationFrame>;
  */
 export class AudioGraphRender {
   nodeMap: Map<string, AudioNodeRender>;
-  edgeMap: Map<string, AudioEdgeRender>;
+  edgeIdMap: Map<string, Map<string, Map<string, AudioEdgeKey>>>;
+  edgeMap: Map<AudioEdgeKey, AudioEdgeRender>;
 
   camera: Camera;
 
@@ -28,15 +30,17 @@ export class AudioGraphRender {
 
   renderFrameId: AnimationFrameId | null;
 
+  graphicsCache: GraphicsCache;
+
   selectedNode$: BehaviorSubject<Audion.GraphNode>;
 
   /**
    * Create an AudioGraphRender.
-   * @param {object} options
-   * @param {HTMLElement} options.elementContainer
+   * @param options
    */
-  constructor({elementContainer}) {
+  constructor({elementContainer}: {elementContainer: HTMLElement}) {
     this.nodeMap = new Map();
+    this.edgeIdMap = new Map();
     this.edgeMap = new Map();
 
     this.camera = new Camera();
@@ -49,7 +53,9 @@ export class AudioGraphRender {
 
     this.renderFrameId = null;
 
-    this.render = this.render.bind(this);
+    this.graphicsCache = null;
+
+    this._render = this._render.bind(this);
 
     this.selectedNode$ = new BehaviorSubject<Audion.GraphNode>(null);
   }
@@ -66,6 +72,8 @@ export class AudioGraphRender {
     this.pixiView = app.view;
     // window.$app = app;
 
+    this.graphicsCache = new GraphicsCache();
+
     const nodeContainer = (this.pixiNodeContainer = new PIXI.Container());
     app.stage.addChild(nodeContainer);
 
@@ -77,14 +85,21 @@ export class AudioGraphRender {
     this.camera.viewportObserver.observe((viewport) => {
       const {x, y, width, height} = this.camera.viewport;
       app.stage.setTransform(-x / width, -y / height, 1 / width, 1 / height);
+      this.requestRender();
     });
   }
 
   /** Render the graph. */
-  render() {
-    const {pixiApplication: app} = this;
+  requestRender() {
+    if (this.renderFrameId === null) {
+      this.renderFrameId = requestAnimationFrame(this._render);
+    }
+  }
 
-    this.renderFrameId = requestAnimationFrame(this.render);
+  _render() {
+    this.renderFrameId = null;
+
+    const {pixiApplication: app} = this;
 
     this.camera.setScreenSize(app.screen.width, app.screen.height);
     app.render();
@@ -92,7 +107,7 @@ export class AudioGraphRender {
 
   /** Start rendering regularly. */
   start() {
-    this.renderFrameId = requestAnimationFrame(this.render);
+    // this.renderFrameId = requestAnimationFrame(this.render);
   }
 
   /** Stop rendering. */
@@ -135,6 +150,7 @@ export class AudioGraphRender {
       message.graph.value.height,
     );
 
+    const previousNodeRenders = new Set(this.nodeMap.values());
     for (let i = 0; i < message.graph.nodes.length; i++) {
       const nodeKeyValue = message.graph.nodes[i];
       const nodeId = nodeKeyValue.v;
@@ -147,15 +163,16 @@ export class AudioGraphRender {
           node.x - nodeRender.size.x / 2,
           node.y - nodeRender.size.y / 2,
         );
+        previousNodeRenders.delete(nodeRender);
       } else {
         this.destroyNodeRender(nodeId);
       }
     }
-    for (const nodeId of this.nodeMap.keys()) {
-      if (!message.graph.nodes.find((node) => node.v === nodeId)) {
-        this.destroyNodeRender(nodeId);
-      }
+    for (const nodeRender of previousNodeRenders) {
+      this.destroyNodeRender(nodeRender.id);
     }
+
+    const previousEdgeRenders = new Set(this.edgeMap.values());
     for (let i = 0; i < message.graph.edges.length; i++) {
       const edgeKeyValue = message.graph.edges[i];
       const edge = edgeKeyValue.value;
@@ -163,17 +180,20 @@ export class AudioGraphRender {
       if (edge) {
         const edgeRender = this.createEdgeRender(edgeKeyValue, message);
         if (edgeRender) {
-          edgeRender.draw(edge.points);
+          edgeRender.draw(
+            edge.points,
+            this.graphicsCache.edgeArrowGraphics,
+            this.graphicsCache.edgeCurvedLineGraphics,
+          );
         }
+        previousEdgeRenders.delete(edgeRender);
       }
     }
-    for (const edgeId of this.edgeMap.keys()) {
-      if (
-        !message.graph.edges.find((edge) => this.createEdgeId(edge) === edgeId)
-      ) {
-        this.destroyEdgeRender(edgeId);
-      }
+    for (const edgeRender of previousEdgeRenders) {
+      this.destroyEdgeRender(edgeRender.key);
     }
+
+    this.requestRender();
   }
 
   getNodeAtViewportPoint(viewportPoint: {x: number; y: number}) {
@@ -225,6 +245,7 @@ export class AudioGraphRender {
       const selectedNode = this.getNodeAtViewportPoint(viewportPoint);
       this.nodeMap.get(lastSelectedNode?.node?.nodeId)?.setHighlight(false);
       this.nodeMap.get(selectedNode?.node?.nodeId)?.setHighlight(true);
+      this.requestRender();
 
       this.selectedNode$.next(selectedNode);
     };
@@ -248,7 +269,7 @@ export class AudioGraphRender {
     let nodeRender = this.nodeMap.get(nodeId);
     if (!nodeRender) {
       if (node.node && node.node.nodeType) {
-        nodeRender = new AudioNodeRender(nodeId).init(node);
+        nodeRender = new AudioNodeRender(nodeId).init(node, this.graphicsCache);
         nodeRender.setPixiParent(this.pixiNodeContainer);
         this.nodeMap.set(nodeId, nodeRender);
       }
@@ -272,8 +293,56 @@ export class AudioGraphRender {
     }
   }
 
-  createEdgeId(edge: any) {
-    return `${edge.v} ${edge.w} ${edge.name}`;
+  compareEdgeKey(left: AudioEdgeKey, right: AudioEdgeKey) {
+    if (left.v < right.v) {
+      return -1;
+    } else if (left.v > right.v) {
+      return 1;
+    }
+    if (left.w < right.w) {
+      return -1;
+    } else if (left.w > right.w) {
+      return 1;
+    }
+    if (left.name < right.name) {
+      return -1;
+    } else if (left.name > right.name) {
+      return 1;
+    }
+    return 0;
+  }
+
+  createEdgeId({v, w, name}: Audion.GraphlibEdge) {
+    if (!this.edgeIdMap.has(v)) {
+      this.edgeIdMap.set(v, new Map());
+    }
+    const edgeIdVMap = this.edgeIdMap.get(v);
+    if (!edgeIdVMap.has(w)) {
+      edgeIdVMap.set(w, new Map());
+    }
+    const edgeIdVWMap = edgeIdVMap.get(w);
+    if (!edgeIdVWMap.has(name)) {
+      edgeIdVWMap.set(name, {v, w, name});
+    }
+    return edgeIdVWMap.get(name);
+  }
+
+  destroyEdgeId(edgeId: AudioEdgeKey) {
+    if (this.edgeIdMap.has(edgeId.v)) {
+      const edgeIdVMap = this.edgeIdMap.get(edgeId.v);
+      if (edgeIdVMap.has(edgeId.w)) {
+        const edgeIdVWMap = edgeIdVMap.get(edgeId.w);
+        if (edgeIdVWMap.has(edgeId.name)) {
+          edgeIdVWMap.delete(edgeId.name);
+        }
+        if (edgeIdVWMap.size === 0) {
+          edgeIdVMap.delete(edgeId.w);
+        }
+      }
+      if (edgeIdVMap.size === 0) {
+        this.edgeIdMap.delete(edgeId.v);
+      }
+    }
   }
 
   /**
@@ -281,7 +350,10 @@ export class AudioGraphRender {
    * @param context
    * @return
    */
-  createEdgeRender(edge: any, context: Audion.GraphContext): AudioEdgeRender {
+  createEdgeRender(
+    edge: Audion.GraphlibEdge,
+    context: Audion.GraphContext,
+  ): AudioEdgeRender {
     const edgeId = this.createEdgeId(edge);
     let edgeRender = this.edgeMap.get(edgeId);
     if (!edgeRender) {
@@ -291,17 +363,22 @@ export class AudioGraphRender {
         const sourceNode = this.nodeMap.get(sourceData.node.nodeId);
         const destinationNode = this.nodeMap.get(destinationData.node.nodeId);
 
+        const {sourceOutputIndex, destinationType} = edge.value;
+        const sourceNodePort = sourceNode.output[sourceOutputIndex];
+        const destinationNodePort =
+          destinationType === Audion.GraphEdgeType.NODE
+            ? destinationNode.input[edge.value.destinationInputIndex]
+            : destinationNode.param[edge.value.destinationParamIndex];
+
         edgeRender = new AudioEdgeRender({
-          source: sourceNode.output[edge.value.sourceOutputIndex],
-          destination:
-            edge.value.destinationInputIndex >= 0
-              ? destinationNode.input[edge.value.destinationInputIndex]
-              : destinationNode.param[edge.value.destinationParamId],
+          key: edgeId,
+          source: sourceNodePort,
+          destination: destinationNodePort,
         });
         edgeRender.setPIXIParent(this.pixiEdgeContainer);
 
-        sourceNode.draw();
-        destinationNode.draw();
+        edgeRender.source.updateNodeDisplay();
+        edgeRender.destination.updateNodeDisplay();
 
         this.edgeMap.set(edgeId, edgeRender);
       }
@@ -312,11 +389,17 @@ export class AudioGraphRender {
   /**
    * @param edgeId
    */
-  destroyEdgeRender(edgeId: string) {
+  destroyEdgeRender(edgeId: AudioEdgeKey) {
     const edgeRender = this.edgeMap.get(edgeId);
     if (edgeRender) {
       edgeRender.remove();
+
+      edgeRender.source.updateNodeDisplay();
+      edgeRender.destination.updateNodeDisplay();
+
       this.edgeMap.delete(edgeId);
+
+      this.destroyEdgeId(edgeId);
     }
   }
 }
