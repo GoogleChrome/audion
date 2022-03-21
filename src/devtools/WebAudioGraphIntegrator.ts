@@ -56,6 +56,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return;
     }
     const context = space.graphContext;
+    context.eventCount += 1;
     if (context.nodes[audioNodeCreated.node.nodeId]) {
       console.warn(
         `Duplicate ${WebAudioDebuggerEvent.audioNodeCreated} event.`,
@@ -90,6 +91,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return;
     }
     const context = space.graphContext;
+    context.eventCount += 1;
     context.graph.removeNode(audioNodeDestroyed.nodeId);
     const node = context.nodes[audioNodeDestroyed.nodeId];
     if (node && node.params) {
@@ -111,6 +113,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return;
     }
     const context = space.graphContext;
+    context.eventCount += 1;
     const node = context.nodes[audioParamCreated.param.nodeId];
     if (!node) {
       return;
@@ -140,6 +143,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return;
     }
     const context = space.graphContext;
+    context.eventCount += 1;
     const node = context.nodes[audioParamWillBeDestroyed.nodeId];
     removeAll(
       node?.params,
@@ -158,6 +162,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return;
     }
     space.graphContext.context = contextChanged.context;
+    space.graphContext.eventCount += 1;
     return contexts[contextChanged.context.contextId].graphContext;
   },
 
@@ -187,6 +192,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts[contextCreated.context.contextId] = {
       graphContext: {
         id: contextId,
+        eventCount: 1,
         context: contextCreated.context,
         realtimeData: INITIAL_CONTEXT_REALTIME_DATA,
         nodes: {},
@@ -229,10 +235,12 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     contextDestroyed,
   ) => {
+    const context = contexts[contextDestroyed.contextId];
     delete contexts[contextDestroyed.contextId];
 
     return {
       id: contextDestroyed.contextId,
+      eventCount: context?.graphContext?.eventCount + 1,
       context: null,
       realtimeData: null,
       nodes: null,
@@ -252,6 +260,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     }
     const context = space.graphContext;
     context.nodes[nodeParamConnected.sourceId].edges.push(nodeParamConnected);
+    context.eventCount += 1;
     const {
       sourceId,
       sourceOutputIndex = 0,
@@ -282,6 +291,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return;
     }
     const context = space.graphContext;
+    context.eventCount += 1;
     const {edges} = context.nodes[nodesDisconnected.sourceId];
     const {sourceId, sourceOutputIndex = 0, destinationId} = nodesDisconnected;
     removeAll(
@@ -309,6 +319,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     }
     const context = space.graphContext;
     context.nodes[nodesConnected.sourceId].edges.push(nodesConnected);
+    context.eventCount += 1;
     const {
       sourceId,
       sourceOutputIndex = 0,
@@ -339,6 +350,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return;
     }
     const context = space.graphContext;
+    context.eventCount += 1;
     const {edges} = context.nodes[nodesDisconnected.sourceId];
     const {
       sourceId,
