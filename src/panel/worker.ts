@@ -5,6 +5,8 @@ import {
   distinctUntilChanged,
   filter,
   map,
+  mergeWith,
+  scan,
   startWith,
   withLatestFrom,
 } from 'rxjs/operators';
@@ -14,6 +16,7 @@ import {
   deserializeGraphContext,
   SerializedGraphContext,
 } from '../devtools/deserializeGraphContext';
+import {patchGraphContext} from '../devtools/patchGraphContext';
 
 interface LayoutOptionsMessage {
   layoutOptions: dagre.GraphLabel;
@@ -43,7 +46,7 @@ messages$
       (a, b) => a?.id === b?.id && a?.eventCount === b?.eventCount,
     ),
     auditTime(16),
-    map((graphContext) => deserializeGraphContext(graphContext)),
+    scan(patchGraphContext, {id: ''}),
     withLatestFrom(layoutOptions$),
     map(([context, layoutOptions]) => {
       if (context.context && context.graph) {
