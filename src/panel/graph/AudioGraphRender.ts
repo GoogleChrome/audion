@@ -180,11 +180,7 @@ export class AudioGraphRender {
       if (edge) {
         const edgeRender = this.createEdgeRender(edgeKeyValue, message);
         if (edgeRender) {
-          edgeRender.draw(
-            edge.points,
-            this.graphicsCache.edgeArrowGraphics,
-            this.graphicsCache.edgeCurvedLineGraphics,
-          );
+          edgeRender.draw(edge.points);
         }
         previousEdgeRenders.delete(edgeRender);
       }
