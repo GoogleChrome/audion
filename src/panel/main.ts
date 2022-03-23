@@ -115,7 +115,7 @@ graphSelector.optionsObserver.observe((options) => {
 const graphContainer =
   /** @type {HTMLElement} */ document.getElementsByClassName(
     'web-audio-graph',
-  )[0];
+  )[0] as HTMLElement;
 
 const graphRender = new AudioGraphRender({elementContainer: graphContainer});
 graphRender.init();
