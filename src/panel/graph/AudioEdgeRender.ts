@@ -76,8 +76,13 @@ export class AudioEdgeRender {
    */
   draw(
     line: AudionPanel.Point[],
-    arrowGraphics: EdgeArrowGraphics,
-    curvedLineGraphics: EdgeCurvedLineGraphics,
+    {
+      edgeArrowGraphics: arrowGraphics,
+      edgeCurvedLineGraphics: curvedLineGraphics,
+    }: {
+      edgeArrowGraphics: EdgeArrowGraphics;
+      edgeCurvedLineGraphics: EdgeCurvedLineGraphics;
+    },
   ) {
     {
       const {
