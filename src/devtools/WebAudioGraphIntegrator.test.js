@@ -1,7 +1,7 @@
 /// <reference path="../chrome/DebuggerWebAudioDomain.ts" />
 
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
-import {from, Observable, Subject, throwError} from 'rxjs';
+import {EMPTY, from, Observable, Subject, throwError} from 'rxjs';
 import {concatWith, filter, takeUntil} from 'rxjs/operators';
 
 import {WebAudioDebuggerEvent} from '../chrome/DebuggerWebAudioDomain';
@@ -582,7 +582,11 @@ Array [
     describe('oscillator -> gain param', () => {
       const events = oscillatorGainFixture.OSCILLATOR_GAIN_PARAM_EVENTS;
       const simulation = () =>
-        integrateWebAudioGraph(new WebAudioRealtimeData());
+        integrateWebAudioGraph({
+          pollContext() {
+            return EMPTY;
+          },
+        });
       const eventSource = from(events);
 
       for (let i = 0; i < events.length; i++) {
