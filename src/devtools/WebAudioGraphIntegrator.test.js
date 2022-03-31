@@ -1,11 +1,17 @@
 /// <reference path="../chrome/DebuggerWebAudioDomain.ts" />
 
 import {beforeEach, describe, expect, it, jest} from '@jest/globals';
-import {Observable} from 'rxjs';
+import {from, Observable, Subject, throwError} from 'rxjs';
+import {concatWith, filter, takeUntil} from 'rxjs/operators';
 
 import {WebAudioDebuggerEvent} from '../chrome/DebuggerWebAudioDomain';
+
 import {integrateWebAudioGraph} from './WebAudioGraphIntegrator';
-import {Subject} from 'rxjs';
+import {WebAudioRealtimeData} from './WebAudioRealtimeData';
+
+// FIX: prettier isn't wrapping this next line.
+// eslint-disable-next-line max-len
+import * as oscillatorGainFixture from '../../fixtures/oscillatorGainParam';
 
 describe('WebAudioGraphIntegrator', () => {
   let nextWebAudioEvent = (value) => {};
@@ -571,6 +577,45 @@ Array [
 ]
 `);
   });
+
+  describe('simulate graphs', () => {
+    describe('oscillator -> gain param', () => {
+      const events = oscillatorGainFixture.OSCILLATOR_GAIN_PARAM_EVENTS;
+      const simulation = () =>
+        integrateWebAudioGraph(new WebAudioRealtimeData());
+      const eventSource = from(events);
+
+      for (let i = 0; i < events.length; i++) {
+        const errorEvent = events[i];
+        const falseSource = eventSource.pipe(
+          takeUntil((event) => event === errorEvent),
+          concatWith([throwError(() => new Error())]),
+        );
+        it(`falsify #${i} ${errorEvent.method}`, () => {
+          const subscriber = mockSubscriber();
+          falseSource.pipe(simulation()).subscribe(subscriber);
+          expect(subscriber.error).toBeCalled();
+        });
+      }
+
+      it(`all events`, () => {
+        const subscriber = mockSubscriber();
+        eventSource.pipe(simulation()).subscribe(subscriber);
+        expect(subscriber.next).toBeCalled();
+        expect(subscriber.error).not.toBeCalled();
+      });
+
+      for (let i = 0; i < events.length; i++) {
+        const skipEvent = events[i];
+        const skipSource = eventSource.pipe(filter((ev) => ev !== skipEvent));
+        it(`skip event #${i} ${skipEvent.method}`, () => {
+          const subscriber = mockSubscriber();
+          skipSource.pipe(simulation()).subscribe(subscriber);
+          expect(subscriber.error).not.toBeCalled();
+        });
+      }
+    });
+  });
 });
 
 /**
@@ -660,3 +705,10 @@ const MockWebAudioEvents = {
     },
   },
 };
+
+/**
+ * @return {Subscriber}
+ */
+function mockSubscriber() {
+  return {next: jest.fn(), complete: jest.fn(), error: jest.fn()};
+}
