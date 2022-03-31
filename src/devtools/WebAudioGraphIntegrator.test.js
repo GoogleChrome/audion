@@ -7,7 +7,6 @@ import {concatWith, filter, takeUntil} from 'rxjs/operators';
 import {WebAudioDebuggerEvent} from '../chrome/DebuggerWebAudioDomain';
 
 import {integrateWebAudioGraph} from './WebAudioGraphIntegrator';
-import {WebAudioRealtimeData} from './WebAudioRealtimeData';
 
 // FIX: prettier isn't wrapping this next line.
 // eslint-disable-next-line max-len
