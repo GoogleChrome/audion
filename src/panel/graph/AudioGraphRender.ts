@@ -70,7 +70,6 @@ export class AudioGraphRender {
       resolution: window.devicePixelRatio,
     }));
     this.pixiView = app.view;
-    // window.$app = app;
 
     this.graphicsCache = new GraphicsCache();
 
@@ -103,11 +102,6 @@ export class AudioGraphRender {
 
     this.camera.setScreenSize(app.screen.width, app.screen.height);
     app.render();
-  }
-
-  /** Start rendering regularly. */
-  start() {
-    // this.renderFrameId = requestAnimationFrame(this.render);
   }
 
   /** Stop rendering. */

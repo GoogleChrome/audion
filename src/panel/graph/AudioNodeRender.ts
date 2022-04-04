@@ -120,7 +120,7 @@ export class AudioNodeRender {
       .getText(node.node.nodeType)
       .createSprite());
     title.position.set(15, 5);
-    // const background = (this.background = new PIXI.Graphics());
+
     const background = (this.background = backgroundCacheGroup.plain
       .getBackground(node)
       .createMesh());
@@ -323,33 +323,5 @@ export class AudioNodeRender {
     this.container.removeChild(this.background);
     this.container.addChildAt(newBackground, 0);
     this.background = newBackground;
-
-    // const {background, node} = this;
-
-    // background.clear();
-    // if (this.isHighlighted) {
-    //   background.lineStyle({width: 5, color: 0x000000});
-    // } else {
-    //   background.lineStyle(0);
-    // }
-    // background.beginFill(colorFromNodeType(node.node.nodeType));
-    // background.drawRoundedRect(0, 0, this.size.x, this.size.y, 3);
-    // background.endFill();
-
-    // for (let i = 0; i < this.input.length; i++) {
-    //   this.input[i].drawSocket(background);
-    // }
-
-    // for (let i = 0; i < this.output.length; i++) {
-    //   this.output[i].drawSocket(background);
-    // }
-
-    // let p = 0;
-    // for (const port of Object.values(this.param)) {
-    //   port.drawSocket(background);
-
-    //   const label = this.labelContainer.getChildAt(p++);
-    //   label.position.set(15, port.offset.y - 6);
-    // }
   }
 }

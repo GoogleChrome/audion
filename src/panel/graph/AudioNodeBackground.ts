@@ -259,6 +259,5 @@ export class AudioNodeBackgroundRender {
 
   createMesh() {
     return new PIXI.Graphics(this.getGeometry());
-    // return new PIXI.Mesh(this.getGeometry(), this.material);
   }
 }
