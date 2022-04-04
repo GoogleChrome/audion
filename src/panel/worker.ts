@@ -5,17 +5,13 @@ import {
   distinctUntilChanged,
   filter,
   map,
-  mergeWith,
   scan,
   startWith,
   withLatestFrom,
 } from 'rxjs/operators';
 
 import {serializeGraphContext} from '../devtools/serializeGraphContext';
-import {
-  deserializeGraphContext,
-  SerializedGraphContext,
-} from '../devtools/deserializeGraphContext';
+import {SerializedGraphContext} from '../devtools/deserializeGraphContext';
 import {patchGraphContext} from '../devtools/patchGraphContext';
 
 interface LayoutOptionsMessage {
