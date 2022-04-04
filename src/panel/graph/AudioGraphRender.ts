@@ -281,7 +281,10 @@ export class AudioGraphRender {
    * @param context
    * @return
    */
-  createEdgeRender(edge: any, context: Audion.GraphContext): AudioEdgeRender {
+  createEdgeRender(
+    edge: Audion.GraphlibEdge,
+    context: Audion.GraphContext,
+  ): AudioEdgeRender {
     const edgeId = this.createEdgeId(edge);
     let edgeRender = this.edgeMap.get(edgeId);
     if (!edgeRender) {
@@ -296,7 +299,7 @@ export class AudioGraphRender {
           const destinationNodePort =
             destinationType === Audion.GraphEdgeType.NODE
               ? destinationNode.input[edge.value.destinationInputIndex]
-              : destinationNode.param[edge.value.destinationParamIndex];
+              : destinationNode.param[edge.value.destinationParamId];
 
           if (sourceNodePort && destinationNodePort) {
             edgeRender = new AudioEdgeRender({
