@@ -64,9 +64,11 @@ export class EdgeCurvedLineGraphics {
   createGraphics(a: PIXI.Point, d: PIXI.Point) {
     const graphics = new PIXI.Graphics(this.getGeometry(a, d));
     graphics.position.set(a.x, a.y);
+    const x = d.x - a.x;
+    const y = d.y - a.y;
     graphics.scale.set(
-      (d.x - a.x) / Math.abs(d.x - a.x),
-      (d.y - a.y) / Math.abs(d.y - a.y),
+      x === 0 ? 1 : x / Math.abs(x),
+      y === 0 ? 1 : y / Math.abs(y),
     );
     return graphics;
   }
@@ -99,9 +101,7 @@ export class EdgeCurvedLineGraphics {
       interpolateCoefficients(lineCoeffs, i / steps, pointOnLine);
       graphics.lineTo(pointOnLine.x, pointOnLine.y);
     }
-    graphics.lineTo(d.x, d.y);
     graphics.lineStyle(0);
-    graphics.endFill();
     graphics.closePath();
   }
 

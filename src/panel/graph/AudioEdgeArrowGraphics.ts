@@ -31,15 +31,17 @@ export class EdgeArrowGraphics {
     graphics: PIXI.Graphics,
   ) {
     graphics.beginFill(GraphColor.INPUT_OUTPUT);
-    graphics.lineTo(
-      end.x + arrowUnitX * ARROW_LENGTH + arrowUnitY * ARROW_HEIGHT,
-      end.y + arrowUnitY * ARROW_LENGTH - arrowUnitX * ARROW_HEIGHT,
-    );
-    graphics.lineTo(
-      end.x + arrowUnitX * ARROW_LENGTH - arrowUnitY * ARROW_HEIGHT,
-      end.y + arrowUnitY * ARROW_LENGTH + arrowUnitX * ARROW_HEIGHT,
-    );
-    graphics.lineTo(end.x, end.y);
+    graphics.drawPolygon([
+      new PIXI.Point(
+        end.x + arrowUnitX * ARROW_LENGTH + arrowUnitY * ARROW_HEIGHT,
+        end.y + arrowUnitY * ARROW_LENGTH - arrowUnitX * ARROW_HEIGHT,
+      ),
+      new PIXI.Point(
+        end.x + arrowUnitX * ARROW_LENGTH - arrowUnitY * ARROW_HEIGHT,
+        end.y + arrowUnitY * ARROW_LENGTH + arrowUnitX * ARROW_HEIGHT,
+      ),
+      new PIXI.Point(end.x, end.y),
+    ]);
     graphics.endFill();
   }
 
