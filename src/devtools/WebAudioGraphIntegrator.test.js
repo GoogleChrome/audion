@@ -42,6 +42,7 @@ Array [
       "maxOutputChannelCount": 2,
       "sampleRate": 48000,
     },
+    "eventCount": 1,
     "graph": Graph {
       "_defaultEdgeLabelFn": [Function],
       "_defaultNodeLabelFn": [Function],
@@ -92,6 +93,7 @@ Array [
       "maxOutputChannelCount": 2,
       "sampleRate": 48000,
     },
+    "eventCount": 2,
     "graph": Graph {
       "_defaultEdgeLabelFn": [Function],
       "_defaultNodeLabelFn": [Function],
@@ -135,6 +137,7 @@ Array [
 Array [
   Object {
     "context": null,
+    "eventCount": 2,
     "graph": null,
     "id": "context0000",
     "nodes": null,
@@ -166,6 +169,7 @@ Array [
       "maxOutputChannelCount": 2,
       "sampleRate": 48000,
     },
+    "eventCount": 2,
     "graph": Graph {
       "_defaultEdgeLabelFn": [Function],
       "_defaultNodeLabelFn": [Function],
@@ -253,6 +257,7 @@ Array [
       "maxOutputChannelCount": 2,
       "sampleRate": 48000,
     },
+    "eventCount": 3,
     "graph": Graph {
       "_defaultEdgeLabelFn": [Function],
       "_defaultNodeLabelFn": [Function],
@@ -314,6 +319,7 @@ Array [
       "maxOutputChannelCount": 2,
       "sampleRate": 48000,
     },
+    "eventCount": 4,
     "graph": Graph {
       "_defaultEdgeLabelFn": [Function],
       "_defaultNodeLabelFn": [Function],
@@ -472,6 +478,7 @@ Array [
       "maxOutputChannelCount": 2,
       "sampleRate": 48000,
     },
+    "eventCount": 5,
     "graph": Graph {
       "_defaultEdgeLabelFn": [Function],
       "_defaultNodeLabelFn": [Function],
@@ -534,7 +541,13 @@ Array [
         "params": Array [],
       },
       "node0001": Object {
-        "edges": Array [],
+        "edges": Array [
+          Object {
+            "contextId": "context0000",
+            "destinationId": "node0000",
+            "sourceId": "node0001",
+          },
+        ],
         "node": Object {
           "channelCountMode": "max",
           "channelInterpretation": "discrete",

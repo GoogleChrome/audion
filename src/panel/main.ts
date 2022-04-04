@@ -4,7 +4,7 @@ import * as PIXI from 'pixi.js';
 // This module disable's pixi.js use of new Function to optimize rendering.
 import {install} from '@pixi/unsafe-eval';
 
-import {merge, Subject} from 'rxjs';
+import {fromEvent, merge, Subject} from 'rxjs';
 import {filter, map, scan, shareReplay, tap} from 'rxjs/operators';
 
 import {Audion} from '../devtools/Types';
@@ -12,10 +12,6 @@ import {Audion} from '../devtools/Types';
 import {Utils} from '../utils/Types';
 import {Observer} from '../utils/Observer';
 import {toUtilsObserver} from '../utils/rxInterop';
-import {
-  observeMessageEvents,
-  postObservations,
-} from '../utils/Observer.emitter';
 
 import {connect} from './Observer.runtime';
 import {AudioGraphRender} from './graph/AudioGraphRender';
@@ -97,10 +93,9 @@ const allGraphsObserver$ = devtoolsObserver$.pipe(
 );
 
 const graphSelector = new GraphSelector({
-  allGraphsObserver,
-  allGraphsObserver$,
+  allGraphs$: allGraphsObserver$,
 });
-graphSelector.optionsObserver.observe((options) => {
+graphSelector.options$.subscribe((options) => {
   if (
     // Select a graph automatically if one is not selected.
     graphSelector.graphId === '' ||
@@ -115,36 +110,32 @@ graphSelector.optionsObserver.observe((options) => {
 const graphContainer =
   /** @type {HTMLElement} */ document.getElementsByClassName(
     'web-audio-graph',
-  )[0];
+  )[0] as HTMLElement;
 
 const graphRender = new AudioGraphRender({elementContainer: graphContainer});
 graphRender.init();
 
-const sizedNodesGraphObserver = Observer.transform(
-  graphSelector.graphObserver,
-  (graphContext) => graphRender.updateGraphSizes(graphContext),
-);
-
-const prelayoutThrottle = Observer.throttle(sizedNodesGraphObserver, {
-  key: (message) => message.id,
-});
-
 const layoutWorker = new Worker('panelWorker.js');
 
-postObservations(
-  Observer.transform(prelayoutThrottle, (graphContext) => ({graphContext})),
-  layoutWorker,
-);
+graphSelector.graph$
+  .pipe(
+    map((graphContext) => graphRender.updateGraphSizes(graphContext)),
+    map((graphContext) => ({graphContext})),
+  )
+  .subscribe({
+    next(value) {
+      layoutWorker.postMessage(value);
+    },
+  });
 
-const layoutObserver: Utils.Observer<Audion.GraphContext> =
-  observeMessageEvents(layoutWorker);
+fromEvent<MessageEvent<Audion.GraphContext>>(layoutWorker, 'message')
+  .pipe(map((message) => message.data))
+  .subscribe((graphContext) => graphRender.update(graphContext));
 
 const wholeGraphButton = new WholeGraphButton();
 wholeGraphButton.click$.subscribe(() => {
   graphRender.camera.fitToScreen();
 });
-
-layoutObserver.observe((message) => graphRender.update(message));
 
 graphContainer.appendChild(graphRender.pixiView);
 graphContainer.appendChild(wholeGraphButton.render());
@@ -164,7 +155,7 @@ merge(
     querySelector('.web-audio-toolbar-container .dropdown-title'),
     querySelector('.web-audio-select-graph-dropdown'),
     querySelector('.web-audio-toolbar-container .toolbar-dropdown'),
-    graphSelector.graphIdObserver$,
+    graphSelector.graphId$,
     allGraphsObserver$,
   ).pipe(
     tap((action) => {
@@ -176,11 +167,11 @@ merge(
   ),
   renderRealtimeSummary(
     querySelector('.web-audio-status'),
-    graphSelector.graphObserver$.pipe(map(({realtimeData}) => realtimeData)),
+    graphSelector.graph$.pipe(map(({realtimeData}) => realtimeData)),
   ),
   renderDetailPanel(
     querySelector('.web-audio-detail-panel'),
-    graphSelector.graphObserver$,
+    graphSelector.graph$,
     graphRender.selectedNode$,
   ),
 )

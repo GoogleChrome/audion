@@ -1,10 +1,11 @@
 import * as dagre from 'dagre';
 import {fromEvent, Observable} from 'rxjs';
 import {
+  auditTime,
+  distinctUntilChanged,
   filter,
   map,
   startWith,
-  throttleTime,
   withLatestFrom,
 } from 'rxjs/operators';
 
@@ -37,8 +38,12 @@ const layoutOptions$: Observable<dagre.GraphLabel> = messages$.pipe(
 messages$
   .pipe(
     filter((msg): msg is GraphContextMessage => 'graphContext' in msg),
-    throttleTime(16),
-    map((message) => deserializeGraphContext(message.graphContext)),
+    map((message) => message.graphContext),
+    distinctUntilChanged(
+      (a, b) => a?.id === b?.id && a?.eventCount === b?.eventCount,
+    ),
+    auditTime(16),
+    map((graphContext) => deserializeGraphContext(graphContext)),
     withLatestFrom(layoutOptions$),
     map(([context, layoutOptions]) => {
       if (context.context && context.graph) {

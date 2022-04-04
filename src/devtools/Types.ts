@@ -22,6 +22,7 @@ export namespace Audion {
 
   export interface GraphContext {
     id: Protocol.WebAudio.GraphObjectId;
+    eventCount: number;
     context: Protocol.WebAudio.BaseAudioContext;
     realtimeData: ContextRealtimeData;
     nodes: {[key: string]: GraphNode};
