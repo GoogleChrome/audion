@@ -307,7 +307,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       sourceNodeId,
       destinationNodeId,
       {
-        type: 'param',
+        destinationType: Audion.GraphEdgeType.PARAM,
         sourceOutputIndex,
         destinationInputIndex: -1,
         destinationParamId,
@@ -394,11 +394,11 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       `${sourceId}`,
       `${destinationId}`,
       {
-        type: 'node',
+        destinationType: Audion.GraphEdgeType.NODE,
         sourceOutputIndex,
         destinationInputIndex,
         destinationParamId: '',
-      },
+      } as Audion.GraphNodeEdge,
       `${sourceOutputIndex},${destinationInputIndex}`,
     );
     return context;
