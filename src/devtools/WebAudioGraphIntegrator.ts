@@ -3,15 +3,16 @@ import * as graphlib from 'graphlib';
 import {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping';
 import {
   EMPTY,
+  from,
   isObservable,
   merge,
   Observable,
   of,
   OperatorFunction,
   pipe,
-  Subscription,
+  Subject,
 } from 'rxjs';
-import {map, filter, catchError, mergeMap} from 'rxjs/operators';
+import {map, filter, catchError, mergeMap, takeUntil} from 'rxjs/operators';
 
 import {invariant} from '../utils/error';
 
@@ -25,10 +26,18 @@ import {
   INITIAL_CONTEXT_REALTIME_DATA,
   WebAudioRealtimeData,
 } from './WebAudioRealtimeData';
+import {
+  ChromeDebuggerAPIDetachEvent,
+  ChromeDebuggerAPIDetachEventParams,
+  ChromeDebuggerAPIEventName,
+  ChromeDebuggerAPIEvent,
+  ChromeDebuggerAPIEventParams,
+} from './DebuggerAttachEventController';
 
 type MutableContexts = {
   [key: string]: {
     graphContext: Audion.GraphContext;
+    graphContextDestroyed$: Subject<void>;
     realtimeDataGraphContext$: Observable<Audion.GraphContext>;
   };
 };
@@ -37,13 +46,28 @@ interface EventHelpers {
   realtimeData: WebAudioRealtimeData;
 }
 
-type EventHandlers = {
-  readonly [K in WebAudioDebuggerEvent]: (
-    helpers: EventHelpers,
-    contexts: MutableContexts,
-    event: ProtocolMapping.Events[K][0],
-  ) => Observable<Audion.GraphContext> | Audion.GraphContext | void;
+type IntegratableEventName = WebAudioDebuggerEvent | ChromeDebuggerAPIEventName;
+
+type IntegratableEvent = Audion.WebAudioEvent | ChromeDebuggerAPIEvent;
+
+type IntegratableEventMapping = {
+  [K in IntegratableEventName]: ProtocolMapping.Events extends {
+    [key in K]: [infer P];
+  }
+    ? P
+    : ChromeDebuggerAPIEvent extends {method: K; params: infer P}
+    ? P
+    : never;
 };
+
+type EventHandlers =
+  | {
+      readonly [K in IntegratableEventName]: (
+        helpers: EventHelpers,
+        contexts: MutableContexts,
+        event: IntegratableEventMapping[K],
+      ) => Observable<Audion.GraphContext> | Audion.GraphContext | void;
+    };
 
 const EVENT_HANDLERS: Partial<EventHandlers> = {
   [WebAudioDebuggerEvent.audioNodeCreated]: (
@@ -189,7 +213,9 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     const contextId = contextCreated.context.contextId;
     const realtimeData$ = helpers.realtimeData.pollContext(contextId);
 
-    contexts[contextCreated.context.contextId] = {
+    const graphContextDestroyed$ = new Subject<void>();
+
+    contexts[contextId] = {
       graphContext: {
         id: contextId,
         eventCount: 1,
@@ -202,6 +228,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
         // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/47439
         graph: graph as unknown as graphlib.Graph,
       },
+      graphContextDestroyed$,
       realtimeDataGraphContext$: realtimeData$.pipe(
         map((realtimeData) => {
           if (contexts[contextId]) {
@@ -221,6 +248,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
           );
           return EMPTY;
         }),
+        takeUntil(graphContextDestroyed$),
       ),
     };
 
@@ -237,6 +265,8 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
   ) => {
     const context = contexts[contextDestroyed.contextId];
     delete contexts[contextDestroyed.contextId];
+
+    space?.graphContextDestroyed$?.next();
 
     return {
       id: contextDestroyed.contextId,
@@ -372,6 +402,34 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     );
     return context;
   },
+
+  [ChromeDebuggerAPIEventName.detached]: (
+    helpers,
+    contexts,
+    debuggerDetached,
+  ) => {
+    return;
+    if (debuggerDetached.reason === 'target_closed') {
+      const spaces = Object.entries(contexts);
+
+      for (const [contextId, space] of spaces) {
+        delete contexts[contextId];
+        space?.graphContextDestroyed$?.next();
+      }
+
+      return from(
+        spaces.map(([contextId, space]) => ({
+          id: contextId,
+          eventCount: space?.graphContext?.eventCount + 1,
+          context: null,
+          realtimeData: null,
+          nodes: null,
+          params: null,
+          graph: null,
+        })),
+      );
+    }
+  },
 };
 
 function removeAll<T>(array: T[], fn: (value: T) => boolean) {
@@ -389,16 +447,17 @@ function removeAll<T>(array: T[], fn: (value: T) => boolean) {
  */
 export function integrateWebAudioGraph(
   webAudioRealtimeData: WebAudioRealtimeData,
-): OperatorFunction<Audion.WebAudioEvent, Audion.GraphContext> {
+): OperatorFunction<IntegratableEvent, Audion.GraphContext> {
   const helpers = {realtimeData: webAudioRealtimeData};
   const contexts: MutableContexts = {};
   return pipe(
     mergeMap(({method, params}) => {
+      console.log(method, params);
       if (EVENT_HANDLERS[method]) {
         const result = EVENT_HANDLERS[method]?.(
           helpers,
           contexts,
-          params as WebAudioDebuggerEventParams<any>,
+          params as any,
         );
         if (typeof result !== 'object' || result === null) return EMPTY;
         if (isObservable(result)) {
