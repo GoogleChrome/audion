@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 
 import {AudionPanel} from '../Types';
+import {PortStyle} from './graphStyle';
 
 /**
  * Port.
@@ -42,8 +43,10 @@ export class AudioNodePort {
    * @param graphics
    */
   draw(graphics: PIXI.Graphics) {
-    graphics.lineStyle(3, this.color);
-    graphics.beginFill(this.edges.length > 0 ? this.color : 0xffffff);
+    graphics.lineStyle(PortStyle.STROKE_WIDTH, this.color);
+    graphics.beginFill(
+      this.edges.length > 0 ? this.color : PortStyle.DISCONNECTED_FILL_COLOR,
+    );
     graphics.drawCircle(this.offset.x, this.offset.y, this.radius);
     graphics.endFill();
   }

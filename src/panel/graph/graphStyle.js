@@ -25,6 +25,37 @@ export const TextStyle = {
   },
 };
 
+export const PortStyle = {
+  /** Stroke width around port radius. */
+  STROKE_WIDTH: 2,
+  /** Inner color for ports without connecting edges. */
+  DISCONNECTED_FILL_COLOR: 0xffffff,
+  /** Padding around input ports. */
+  INPUT_GROUP_MARGIN: 2,
+  /** Height of input output ports. */
+  INPUT_HEIGHT: 20,
+  /** Radius of the visible port icon. */
+  INPUT_RADIUS: 6,
+  /** Padding around the group of params. */
+  PARAM_GROUP_MARGIN: 2,
+  /** Height of audio parameter ports. */
+  PARAM_HEIGHT: 12,
+  /** Radius of visible port icon. */
+  PARAM_RADIUS: 4,
+};
+
+export const NodeStyle = {
+  TITLE_PADDING: 4,
+  /** Stroke width around node when highlighted. */
+  HIGHLIGHT_STROKE_WIDTH: 5,
+  /** Stroke color around node when highlighted. */
+  HIGHLIGHT_STROKE_COLOR: 0x000000,
+  /** Node background corner radius. */
+  CORNER_RADIUS: 3,
+  /** Node background padding around contained text. */
+  PADDING: 10,
+};
+
 /**
  * @param {string} nodeType
  * @param {boolean} [isOffline]

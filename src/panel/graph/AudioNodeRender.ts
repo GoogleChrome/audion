@@ -2,7 +2,13 @@ import * as PIXI from 'pixi.js';
 
 import {Audion} from '../../devtools/Types';
 
-import {Color, colorFromNodeType, TextStyle} from './graphStyle';
+import {
+  Color,
+  colorFromNodeType,
+  NodeStyle,
+  PortStyle,
+  TextStyle,
+} from './graphStyle';
 import {AudioNodePort} from './AudioNodePort';
 
 /**
@@ -44,32 +50,32 @@ export class AudioNodeRender {
 
   /** Padding around input ports. */
   static get INPUT_GROUP_MARGIN() {
-    return 10;
+    return PortStyle.INPUT_GROUP_MARGIN;
   }
 
   /** Height of input output ports. */
   static get INPUT_HEIGHT() {
-    return 30;
+    return PortStyle.INPUT_HEIGHT;
   }
 
   /** Radius of the visible port icon. */
   static get INPUT_RADIUS() {
-    return 10;
+    return PortStyle.INPUT_RADIUS;
   }
 
   /** Padding around the group of params. */
   static get PARAM_GROUP_MARGIN() {
-    return 5;
+    return PortStyle.PARAM_GROUP_MARGIN;
   }
 
   /** Height of audio parameter ports. */
   static get PARAM_HEIGHT() {
-    return 20;
+    return PortStyle.PARAM_HEIGHT;
   }
 
   /** Radius of visible port icon. */
   static get PARAM_RADIUS() {
-    return 8;
+    return PortStyle.PARAM_RADIUS;
   }
 
   /**
@@ -92,7 +98,7 @@ export class AudioNodeRender {
       node.node.nodeType,
       TextStyle.TITLE,
     ));
-    title.position.set(15, 5);
+    title.position.set(NodeStyle.PADDING, NodeStyle.TITLE_PADDING);
     const background = (this.background = new PIXI.Graphics());
     const labelContainer = (this.labelContainer = new PIXI.Container());
     container.addChild(background);
@@ -144,11 +150,10 @@ export class AudioNodeRender {
     title.getLocalBounds(localBounds);
 
     this.size.set(
-      Math.max(localBounds.width, maxParamTextSize.x) + 30,
+      Math.max(localBounds.width, maxParamTextSize.x) + 2 * NodeStyle.PADDING,
       Math.max(
-        localBounds.height + 15,
         Math.max(
-          localBounds.height,
+          localBounds.height + 2 * NodeStyle.TITLE_PADDING,
           AudioNodeRender.INPUT_GROUP_MARGIN +
             AudioNodeRender.INPUT_HEIGHT * node.node.numberOfInputs +
             Math.max(
@@ -200,7 +205,7 @@ export class AudioNodeRender {
     const localBounds = new PIXI.Rectangle();
     this.title.getLocalBounds(localBounds);
     const paramYStart = Math.max(
-      localBounds.height,
+      localBounds.height + NodeStyle.TITLE_PADDING,
       AudioNodeRender.INPUT_GROUP_MARGIN +
         input.length * AudioNodeRender.INPUT_HEIGHT +
         Math.max(
@@ -240,12 +245,21 @@ export class AudioNodeRender {
 
     background.clear();
     if (this.isHighlighted) {
-      background.lineStyle({width: 5, color: 0x000000});
+      background.lineStyle({
+        width: NodeStyle.HIGHLIGHT_STROKE_WIDTH,
+        color: NodeStyle.HIGHLIGHT_STROKE_COLOR,
+      });
     } else {
       background.lineStyle(0);
     }
     background.beginFill(colorFromNodeType(node.node.nodeType));
-    background.drawRoundedRect(0, 0, this.size.x, this.size.y, 3);
+    background.drawRoundedRect(
+      0,
+      0,
+      this.size.x,
+      this.size.y,
+      NodeStyle.CORNER_RADIUS,
+    );
     background.endFill();
 
     for (let i = 0; i < this.input.length; i++) {
@@ -261,7 +275,10 @@ export class AudioNodeRender {
       port.draw(background);
 
       const label = this.labelContainer.getChildAt(p++);
-      label.position.set(15, port.offset.y - 6);
+      label.position.set(
+        NodeStyle.PADDING,
+        port.offset.y - 0.5 * TextStyle.PARAM.fontSize,
+      );
     }
   }
 }
