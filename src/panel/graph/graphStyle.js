@@ -14,6 +14,17 @@ export const Color = {
   EDGE: 0x455a63,
 };
 
+export const TextStyle = {
+  TITLE: {
+    fill: Color.TEXT,
+    fontSize: 16,
+  },
+  PARAM: {
+    fill: Color.TEXT,
+    fontSize: 9,
+  },
+};
+
 /**
  * @param {string} nodeType
  * @param {boolean} [isOffline]

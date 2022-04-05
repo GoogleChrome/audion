@@ -2,7 +2,7 @@ import * as PIXI from 'pixi.js';
 
 import {Audion} from '../../devtools/Types';
 
-import {Color, colorFromNodeType} from './graphStyle';
+import {Color, colorFromNodeType, TextStyle} from './graphStyle';
 import {AudioNodePort} from './AudioNodePort';
 
 /**
@@ -88,10 +88,10 @@ export class AudioNodeRender {
 
     container.visible = false;
 
-    const title = (this.title = new PIXI.Text(node.node.nodeType, {
-      fill: Color.TEXT,
-      fontSize: 24,
-    }));
+    const title = (this.title = new PIXI.Text(
+      node.node.nodeType,
+      TextStyle.TITLE,
+    ));
     title.position.set(15, 5);
     const background = (this.background = new PIXI.Graphics());
     const labelContainer = (this.labelContainer = new PIXI.Container());
@@ -133,10 +133,7 @@ export class AudioNodeRender {
     for (let i = 0; i < node.params.length; i++) {
       const param = node.params[i];
 
-      const label = new PIXI.Text(param.paramType, {
-        fill: Color.TEXT,
-        fontSize: 12,
-      });
+      const label = new PIXI.Text(param.paramType, TextStyle.PARAM);
       this.labelContainer.addChild(label);
 
       label.getLocalBounds(localBounds);
