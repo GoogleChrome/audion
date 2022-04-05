@@ -293,7 +293,7 @@ Context is of type '${contextCreated.context.contextType}' but should be 'realti
           } else {
             console.error(
               `Unknown error requesting realtime data for context '${contextId}'.
-  "${reason && reason.message ? reason.message : reason}"`,
+"${reason && reason.message ? reason.message : reason}"`,
             );
           }
           return EMPTY;
