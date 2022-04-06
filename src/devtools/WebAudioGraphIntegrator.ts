@@ -528,7 +528,6 @@ export function integrateWebAudioGraph(
   const contexts: MutableContexts = {};
   return pipe(
     mergeMap(({method, params}) => {
-      console.log(method, params);
       if (EVENT_HANDLERS[method]) {
         const result = EVENT_HANDLERS[method]?.(
           helpers,
