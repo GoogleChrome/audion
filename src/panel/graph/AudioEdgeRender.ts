@@ -1,10 +1,8 @@
 import * as PIXI from 'pixi.js';
 
-import {Utils} from '../../utils/Types';
-
 import type {AudionPanel} from '../Types';
 
-import {Color} from './graphStyle';
+import {GraphColor} from './graphStyle';
 
 const ARROW_LENGTH = 12;
 const ARROW_HEIGHT = 4;
@@ -13,10 +11,17 @@ const STEP_RATIO = 1 / 10;
 
 const LINE_COEFF = createLineCoefficients();
 
+export interface AudioEdgeKey {
+  v: string;
+  w: string;
+  name: string;
+}
+
 /**
  * Render a line between AudionNodes and their inputs, outputs, and parameters.
  */
 export class AudioEdgeRender {
+  key: AudioEdgeKey;
   source: AudionPanel.Port;
   destination: AudionPanel.Port;
   parent: PIXI.Container;
@@ -24,16 +29,17 @@ export class AudioEdgeRender {
 
   /**
    * @param options
-   * @param options.source
-   * @param options.destination
    */
   constructor({
+    key,
     source,
     destination,
   }: {
+    key: AudioEdgeKey;
     source: AudionPanel.Port;
     destination: AudionPanel.Port;
   }) {
+    this.key = key;
     this.source = source;
     this.destination = destination;
     this.parent = null;
@@ -89,6 +95,9 @@ export class AudioEdgeRender {
     this.adjustPoint(b, a, sourceRadius);
     this.adjustPoint(b, c, destinationRadius);
 
+    graphics.clear();
+    this.source.drawConnect(graphics);
+    this.destination.drawConnect(graphics);
     this.drawCurvedLine(a, b, c, graphics, p);
     this.drawArrow(p, c, graphics);
   }
@@ -111,7 +120,7 @@ export class AudioEdgeRender {
     const arrowUnitX = (pointOnLine.x - end.x) / arrowMagnitude;
     const arrowUnitY = (pointOnLine.y - end.y) / arrowMagnitude;
 
-    graphics.beginFill(Color.INPUT_OUTPUT);
+    graphics.beginFill(GraphColor.INPUT_OUTPUT);
     graphics.lineTo(
       end.x + arrowUnitX * ARROW_LENGTH + arrowUnitY * ARROW_HEIGHT,
       end.y + arrowUnitY * ARROW_LENGTH - arrowUnitX * ARROW_HEIGHT,
@@ -144,8 +153,7 @@ export class AudioEdgeRender {
     const lineMagnitudeEstimate = Math.hypot(a.y - c.y, a.x - c.x);
     const steps = Math.max(2, Math.ceil(lineMagnitudeEstimate * STEP_RATIO));
 
-    graphics.clear();
-    graphics.lineStyle(2, Color.INPUT_OUTPUT);
+    graphics.lineStyle(2, GraphColor.INPUT_OUTPUT);
 
     graphics.moveTo(a.x, a.y);
     for (let i = 1; i < steps; i++) {
