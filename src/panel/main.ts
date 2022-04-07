@@ -4,26 +4,27 @@ import * as PIXI from 'pixi.js';
 // This module disable's pixi.js use of new Function to optimize rendering.
 import {install} from '@pixi/unsafe-eval';
 
-import {fromEvent, merge, Subject} from 'rxjs';
-import {filter, map, scan, shareReplay, tap} from 'rxjs/operators';
+import {merge, Subject} from 'rxjs';
+import {catchError, filter, map, scan, shareReplay, tap} from 'rxjs/operators';
+
+import {chrome} from '../chrome';
 
 import {Audion} from '../devtools/Types';
 
-import {Utils} from '../utils/Types';
-import {Observer} from '../utils/Observer';
-import {toUtilsObserver} from '../utils/rxInterop';
-
-import {connect} from './Observer.runtime';
-import {AudioGraphRender} from './graph/AudioGraphRender';
-import {GraphSelector} from './GraphSelector';
+import {mapThruWorker} from '../utils/mapThruWorker';
 
 import {WholeGraphButton} from './components/WholeGraphButton';
 import {querySelector} from './components/domUtils';
 import {renderRealtimeSummary} from './components/realtimeSummary';
 import {renderSelectGraph} from './components/selectGraph';
 import {renderDetailPanel} from './components/detailPanel';
-import {chrome} from '../chrome';
 import {renderCollectGarbage} from './components/collectGarbage';
+
+import {connect} from './Observer.runtime';
+import {AudioGraphRender} from './graph/AudioGraphRender';
+import {GraphSelector} from './GraphSelector';
+import {updateGraphRender} from './updateGraphRender';
+import {updateGraphSizes} from './updateGraphSizes';
 
 // Install an alternate system to part of pixi.js rendering that does not use
 // new Function.
@@ -38,35 +39,6 @@ const devtoolsObserver$ = connect<
   Audion.DevtoolsRequest,
   Audion.DevtoolsMessage
 >(devtoolsRequestSubject$);
-
-const devtoolsObserver: Audion.DevtoolsObserver =
-  toUtilsObserver(devtoolsObserver$);
-
-const allGraphsObserver: Utils.Observer<Audion.GraphContextsById> =
-  Observer.reduce(
-    devtoolsObserver,
-    (allGraphs, message) => {
-      if ('allGraphs' in message) {
-        return message.allGraphs;
-      } else if ('graphContext' in message) {
-        if (
-          message.graphContext.graph &&
-          message.graphContext.context.contextState !== 'closed'
-        ) {
-          return {
-            ...allGraphs,
-            [message.graphContext.id]: message.graphContext,
-          };
-        } else {
-          allGraphs = {...allGraphs};
-          delete allGraphs[message.graphContext.id];
-          return allGraphs;
-        }
-      }
-      return allGraphs;
-    },
-    {} as {[key: string]: Audion.GraphContext},
-  );
 
 const allGraphsObserver$ = devtoolsObserver$.pipe(
   scan((allGraphs, message) => {
@@ -119,18 +91,19 @@ const layoutWorker = new Worker('panelWorker.js');
 
 graphSelector.graph$
   .pipe(
-    map((graphContext) => graphRender.updateGraphSizes(graphContext)),
+    map(updateGraphSizes(graphRender)),
     map((graphContext) => ({graphContext})),
+    mapThruWorker<Audion.GraphContext>(layoutWorker),
+    map(updateGraphRender(graphRender)),
+    catchError((reason, caught) => {
+      console.error(
+        'An error handling the latest audio graph context occured:',
+        reason,
+      );
+      return caught;
+    }),
   )
-  .subscribe({
-    next(value) {
-      layoutWorker.postMessage(value);
-    },
-  });
-
-fromEvent<MessageEvent<Audion.GraphContext>>(layoutWorker, 'message')
-  .pipe(map((message) => message.data))
-  .subscribe((graphContext) => graphRender.update(graphContext));
+  .subscribe();
 
 const wholeGraphButton = new WholeGraphButton();
 wholeGraphButton.click$.subscribe(() => {

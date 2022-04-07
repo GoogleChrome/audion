@@ -6,4 +6,5 @@ node_modules
 docs
 coverage
 /build
+/simulations/build
 !src/build

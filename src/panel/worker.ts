@@ -14,6 +14,8 @@ import {
   deserializeGraphContext,
   SerializedGraphContext,
 } from '../devtools/deserializeGraphContext';
+import {setOptionsToGraphContext} from '../devtools/setOptionsToGraphContext';
+import {layoutGraphContext} from '../devtools/layoutGraphContext';
 
 interface LayoutOptionsMessage {
   layoutOptions: dagre.GraphLabel;
@@ -45,16 +47,8 @@ messages$
     auditTime(16),
     map((graphContext) => deserializeGraphContext(graphContext)),
     withLatestFrom(layoutOptions$),
-    map(([context, layoutOptions]) => {
-      if (context.context && context.graph) {
-        context.graph.setGraph(layoutOptions);
-        // TODO: dagre's graphlib typings are inaccurate, which is why we use
-        // graphlib's types. Revert to dagre's types once the issue is fixed:
-        // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/47439
-        dagre.layout(context.graph as unknown as dagre.graphlib.Graph);
-      }
-      return context;
-    }),
+    map(setOptionsToGraphContext),
+    map(layoutGraphContext),
     map(serializeGraphContext),
   )
   .subscribe((context) => {

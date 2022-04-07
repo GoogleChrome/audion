@@ -9,11 +9,8 @@ import {
   of,
   OperatorFunction,
   pipe,
-  Subscription,
 } from 'rxjs';
 import {map, filter, catchError, mergeMap} from 'rxjs/operators';
-
-import {invariant} from '../utils/error';
 
 import {
   WebAudioDebuggerEvent,
@@ -51,29 +48,33 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     audioNodeCreated,
   ) => {
-    const space = contexts[audioNodeCreated.node.contextId];
+    const node = audioNodeCreated.node;
+    const {contextId, nodeId, nodeType} = node;
+    const space = contexts[contextId];
     if (!space) {
       return;
     }
+
     const context = space.graphContext;
     context.eventCount += 1;
-    if (context.nodes[audioNodeCreated.node.nodeId]) {
+
+    if (context.nodes[nodeId]) {
       console.warn(
         `Duplicate ${WebAudioDebuggerEvent.audioNodeCreated} event.`,
         audioNodeCreated,
       );
       return;
     }
-    context.nodes[audioNodeCreated.node.nodeId] = {
-      node: audioNodeCreated.node,
+
+    context.nodes[nodeId] = {
+      node,
       params: [],
       edges: [],
     };
-    const {nodeId} = audioNodeCreated.node;
     context.graph.setNode(nodeId, {
       id: nodeId,
-      label: audioNodeCreated.node.nodeType,
-      type: audioNodeCreated.node.nodeType,
+      label: nodeType,
+      type: nodeType,
       color: null,
       width: 150,
       height: 50,
@@ -86,20 +87,23 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     audioNodeDestroyed,
   ) => {
-    const space = contexts[audioNodeDestroyed.contextId];
+    const {contextId, nodeId} = audioNodeDestroyed;
+    const space = contexts[contextId];
     if (!space) {
       return;
     }
+
     const context = space.graphContext;
     context.eventCount += 1;
-    context.graph.removeNode(audioNodeDestroyed.nodeId);
-    const node = context.nodes[audioNodeDestroyed.nodeId];
+
+    context.graph.removeNode(nodeId);
+    const node = context.nodes[nodeId];
     if (node && node.params) {
       for (const audioParam of node.params) {
         delete context.params[audioParam.paramId];
       }
     }
-    delete context.nodes[audioNodeDestroyed.nodeId];
+    delete context.nodes[nodeId];
     return context;
   },
 
@@ -108,29 +112,32 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     audioParamCreated,
   ) => {
-    const space = contexts[audioParamCreated.param.contextId];
+    const {param} = audioParamCreated;
+    const {contextId, nodeId, paramId: paramIdCreated} = param;
+    const space = contexts[contextId];
     if (!space) {
       return;
     }
+
     const context = space.graphContext;
     context.eventCount += 1;
-    const node = context.nodes[audioParamCreated.param.nodeId];
+
+    const node = context.nodes[nodeId];
     if (!node) {
       return;
     }
-    if (
-      node.params.some(
-        ({paramId}) => paramId === audioParamCreated.param.paramId,
-      )
-    ) {
+
+    if (node.params.some(({paramId}) => paramId === paramIdCreated)) {
       console.warn(
         `Duplicate ${WebAudioDebuggerEvent.audioParamCreated} event.`,
         audioParamCreated,
       );
       return;
     }
-    node.params.push(audioParamCreated.param);
-    context.params[audioParamCreated.param.paramId] = audioParamCreated.param;
+
+    node.params.push(param);
+    context.params[paramIdCreated] = param;
+    return context;
   },
 
   [WebAudioDebuggerEvent.audioParamWillBeDestroyed]: (
@@ -138,18 +145,26 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     audioParamWillBeDestroyed,
   ) => {
-    const space = contexts[audioParamWillBeDestroyed.contextId];
+    const {
+      contextId,
+      nodeId,
+      paramId: paramIdCreated,
+    } = audioParamWillBeDestroyed;
+
+    const space = contexts[contextId];
     if (!space) {
       return;
     }
+
     const context = space.graphContext;
     context.eventCount += 1;
-    const node = context.nodes[audioParamWillBeDestroyed.nodeId];
-    removeAll(
-      node?.params,
-      ({paramId}) => paramId === audioParamWillBeDestroyed.paramId,
-    );
-    delete context.params[audioParamWillBeDestroyed.paramId];
+
+    const node = context.nodes[nodeId];
+    if (node && node.params) {
+      removeAll(node.params, ({paramId}) => paramId === paramIdCreated);
+    }
+    delete context.params[paramIdCreated];
+    return context;
   },
 
   [WebAudioDebuggerEvent.contextChanged]: (
@@ -157,13 +172,15 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     contextChanged,
   ) => {
-    const space = contexts[contextChanged.context.contextId];
+    const {contextId} = contextChanged.context;
+    const space = contexts[contextId];
     if (!space) {
       return;
     }
+
     space.graphContext.context = contextChanged.context;
     space.graphContext.eventCount += 1;
-    return contexts[contextChanged.context.contextId].graphContext;
+    return space.graphContext;
   },
 
   [WebAudioDebuggerEvent.contextCreated]: (
@@ -171,7 +188,8 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     contextCreated,
   ) => {
-    if (contexts[contextCreated.context.contextId]) {
+    const {contextId} = contextCreated.context;
+    if (contexts[contextId]) {
       // Duplicate or out of order context created event.
       console.warn(
         `Duplicate ${WebAudioDebuggerEvent.contextCreated} event.`,
@@ -186,10 +204,9 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return {};
     });
 
-    const contextId = contextCreated.context.contextId;
     const realtimeData$ = helpers.realtimeData.pollContext(contextId);
 
-    contexts[contextCreated.context.contextId] = {
+    contexts[contextId] = {
       graphContext: {
         id: contextId,
         eventCount: 1,
@@ -204,12 +221,13 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       },
       realtimeDataGraphContext$: realtimeData$.pipe(
         map((realtimeData) => {
-          if (contexts[contextId]) {
-            contexts[contextId].graphContext = {
-              ...contexts[contextId].graphContext,
+          const space = contexts[contextId];
+          if (space) {
+            space.graphContext = {
+              ...space.graphContext,
               realtimeData,
             };
-            return contexts[contextId].graphContext;
+            return space.graphContext;
           }
         }),
         filter((context): context is Audion.GraphContext => Boolean(context)),
@@ -225,8 +243,8 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     };
 
     return merge(
-      of(contexts[contextCreated.context.contextId].graphContext),
-      contexts[contextCreated.context.contextId].realtimeDataGraphContext$,
+      of(contexts[contextId].graphContext),
+      contexts[contextId].realtimeDataGraphContext$,
     );
   },
 
@@ -235,12 +253,13 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     contextDestroyed,
   ) => {
-    const context = contexts[contextDestroyed.contextId];
-    delete contexts[contextDestroyed.contextId];
+    const {contextId} = contextDestroyed;
+    const space = contexts[contextId];
+    delete contexts[contextId];
 
     return {
-      id: contextDestroyed.contextId,
-      eventCount: context?.graphContext?.eventCount + 1,
+      id: contextId,
+      eventCount: space?.graphContext?.eventCount + 1,
       context: null,
       realtimeData: null,
       nodes: null,
@@ -254,30 +273,44 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     nodeParamConnected,
   ) => {
-    const space = contexts[nodeParamConnected.contextId];
-    if (!space) {
-      return;
-    }
-    const context = space.graphContext;
-    context.nodes[nodeParamConnected.sourceId].edges.push(nodeParamConnected);
-    context.eventCount += 1;
     const {
-      sourceId,
+      contextId,
+      sourceId: sourceNodeId,
       sourceOutputIndex = 0,
       destinationId: destinationParamId,
     } = nodeParamConnected;
 
-    const node = context.nodes[sourceId];
+    const space = contexts[contextId];
+    if (!space) {
+      return;
+    }
 
-    const destinationId = context.params[destinationParamId].nodeId;
+    const context = space.graphContext;
+    context.eventCount += 1;
+
+    const sourceNode = context.nodes[sourceNodeId];
+    if (!sourceNode) {
+      return;
+    }
+    const destinationParam = context.params[destinationParamId];
+    if (!destinationParam) {
+      return;
+    }
+    const destinationNodeId = destinationParam.nodeId;
+    const destinationNode = context.nodes[destinationNodeId];
+    if (!destinationNode) {
+      return;
+    }
+
+    sourceNode.edges.push(nodeParamConnected);
     context.graph.setEdge(
-      sourceId,
-      destinationId,
+      sourceNodeId,
+      destinationNodeId,
       {
         sourceOutputIndex,
         destinationType: Audion.GraphEdgeType.PARAM,
         destinationParamId,
-        destinationParamIndex: node.params.findIndex(
+        destinationParamIndex: destinationNode.params.findIndex(
           ({paramId}) => paramId === destinationParamId,
         ),
       } as Audion.GraphEdge,
@@ -291,14 +324,26 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     nodesDisconnected,
   ) => {
-    const space = contexts[nodesDisconnected.contextId];
+    const {
+      contextId,
+      sourceId,
+      sourceOutputIndex = 0,
+      destinationId,
+    } = nodesDisconnected;
+    const space = contexts[contextId];
     if (!space) {
       return;
     }
+
     const context = space.graphContext;
     context.eventCount += 1;
-    const {edges} = context.nodes[nodesDisconnected.sourceId];
-    const {sourceId, sourceOutputIndex = 0, destinationId} = nodesDisconnected;
+
+    const sourceNode = context.nodes[sourceId];
+    if (!sourceNode) {
+      return;
+    }
+
+    const {edges} = sourceNode;
     removeAll(
       edges,
       (edge) =>
@@ -318,19 +363,32 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     nodesConnected,
   ) => {
-    const space = contexts[nodesConnected.contextId];
-    if (!space) {
-      return;
-    }
-    const context = space.graphContext;
-    context.nodes[nodesConnected.sourceId].edges.push(nodesConnected);
-    context.eventCount += 1;
     const {
+      contextId,
       sourceId,
       sourceOutputIndex = 0,
       destinationId,
       destinationInputIndex = 0,
     } = nodesConnected;
+
+    const space = contexts[contextId];
+    if (!space) {
+      return;
+    }
+
+    const context = space.graphContext;
+    context.eventCount += 1;
+
+    const sourceNode = context.nodes[sourceId];
+    if (!sourceNode) {
+      return;
+    }
+    const destinationNode = context.nodes[destinationId];
+    if (!destinationNode) {
+      return;
+    }
+
+    sourceNode.edges.push(nodesConnected);
     context.graph.setEdge(
       sourceId,
       destinationId,
@@ -338,7 +396,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
         sourceOutputIndex,
         destinationType: Audion.GraphEdgeType.NODE,
         destinationInputIndex,
-      } as Audion.GraphEdge,
+      } as Audion.GraphNodeEdge,
       `${sourceOutputIndex},${destinationInputIndex}`,
     );
     return context;
@@ -349,19 +407,28 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     nodesDisconnected,
   ) => {
-    const space = contexts[nodesDisconnected.contextId];
-    if (!space) {
-      return;
-    }
-    const context = space.graphContext;
-    context.eventCount += 1;
-    const {edges} = context.nodes[nodesDisconnected.sourceId];
     const {
+      contextId,
       sourceId,
       sourceOutputIndex = 0,
       destinationId,
       destinationInputIndex = 0,
     } = nodesDisconnected;
+
+    const space = contexts[contextId];
+    if (!space) {
+      return;
+    }
+
+    const context = space.graphContext;
+    context.eventCount += 1;
+
+    const sourceNode = context.nodes[sourceId];
+    if (!sourceNode) {
+      return;
+    }
+
+    const {edges} = sourceNode;
     removeAll(
       edges,
       (edge) =>
