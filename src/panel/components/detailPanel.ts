@@ -5,6 +5,11 @@ import {Audion} from '../../devtools/Types';
 import {setElementHTML, toggleElementClassList} from './domUtils';
 import style from './detailPanel.css';
 
+const contextTypeNameMap = {
+  realtime: 'AudioContext',
+  offline: 'OfflineAudioContext',
+};
+
 /**
  * @param context web audio context's context information
  * @returns html representation of context information
@@ -17,8 +22,8 @@ function graphContextHTML({
   callbackBufferSize,
   maxOutputChannelCount,
 }: Audion.GraphContext['context']): string {
-  return `<h2>${contextType}</h2>
-<p>${contextId}</p>
+  return `<h2>${contextTypeNameMap[contextType] || contextType}</h2>
+<p>${contextId.slice(-6)}</p>
 <hr>
 <table cellspacing="0" cellpadding="0">
 <tr><th>State</th><td>${contextState}</td></tr>
