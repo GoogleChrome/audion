@@ -1,6 +1,46 @@
+/**
+ * Event sequences that would be produced by an audio context with oscillator
+ * and gain nodes connecting outputs to params.
+ *
+ * @file
+ */
+
 import {WebAudioDebuggerEvent} from '../src/chrome/DebuggerWebAudioDomain';
 import {Audion} from '../src/devtools/Types';
 
+/**
+ * A sequence of events produced by WebAudioEventObservable from a context
+ * connect some oscillator and gain nodes, especially connecting an output to
+ * another gain node's gain param.
+ *
+ * @example
+ *   // unit and integration tests can replace
+ *   new WebAudioEventObservable()
+ *   // with something like
+ *   from(OSCILLATOR_GAIN_PARAM_EVENTS)
+ *   // or something over time such as
+ *   interval(50).pipe(map((_, i) =>
+ *     OSCILLATOR_GAIN_PARAM_EVENTS[i]))
+ *
+ * @example
+ *   // context that creates this sequence from
+ *   // WebAudioEventObservable
+ *   const audioContext = new AudioContext();
+ *   const delayNode = new DelayNode(audioContext,
+ *     {delayTime: delayTime});
+ *   const inputNode = new GainNode(audioContext);
+ *   const outputNode = new GainNode(audioContext);
+ *   const depthNode = new GainNode(audioContext,
+ *     {gain: width});
+ *   const oscillatorNode = new OscillatorNode(audioContext,
+ *     {type: "sine", frequency: speed});
+ *   inputNode.connect(delayNode);
+ *   delayNode.connect(outputNode);
+ *   oscillatorNode.connect(depthNode);
+ *   depthNode.connect(delayNode.delayTime);
+ *
+ * @see https://github.com/GoogleChrome/audion/issues/117
+ */
 export const OSCILLATOR_GAIN_PARAM_EVENTS: Audion.WebAudioEvent[] = [
   {
     method: WebAudioDebuggerEvent.contextCreated,
