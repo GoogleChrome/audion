@@ -30,7 +30,6 @@ function main() {
   });
   graphRender.init();
   graphContainer.appendChild(graphRender.pixiView);
-  graphRender.start();
 
   const simulation = () =>
     pipe(

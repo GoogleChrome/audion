@@ -332,7 +332,6 @@ Array [
       "_edgeLabels": Object {
         "node0001node00000,0": Object {
           "destinationInputIndex": 0,
-          "destinationParamId": "",
           "destinationType": "node",
           "sourceOutputIndex": 0,
         },

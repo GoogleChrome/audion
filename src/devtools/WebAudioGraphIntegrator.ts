@@ -307,9 +307,8 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       sourceNodeId,
       destinationNodeId,
       {
-        destinationType: Audion.GraphEdgeType.PARAM,
         sourceOutputIndex,
-        destinationInputIndex: -1,
+        destinationType: Audion.GraphEdgeType.PARAM,
         destinationParamId,
         destinationParamIndex: destinationNode.params.findIndex(
           ({paramId}) => paramId === destinationParamId,
@@ -391,13 +390,12 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
 
     sourceNode.edges.push(nodesConnected);
     context.graph.setEdge(
-      `${sourceId}`,
-      `${destinationId}`,
+      sourceId,
+      destinationId,
       {
-        destinationType: Audion.GraphEdgeType.NODE,
         sourceOutputIndex,
+        destinationType: Audion.GraphEdgeType.NODE,
         destinationInputIndex,
-        destinationParamId: '',
       } as Audion.GraphNodeEdge,
       `${sourceOutputIndex},${destinationInputIndex}`,
     );

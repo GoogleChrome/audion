@@ -113,8 +113,6 @@ wholeGraphButton.click$.subscribe(() => {
 graphContainer.appendChild(graphRender.pixiView);
 graphContainer.appendChild(wholeGraphButton.render());
 
-graphRender.start();
-
 merge(
   renderCollectGarbage(querySelector('.toolbar-garbage-button')).pipe(
     tap((action) => {
