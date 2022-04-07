@@ -77,13 +77,16 @@ export function patchGraphContext(
     }
   }
 
-  for (const nodeId of staleNodeIdSet) {
-    hydratedGraphContext.graph.removeNode(nodeId);
+  // Remove stale nodes and edges.
+  for (const staleNodeId of staleNodeIdSet) {
+    hydratedGraphContext.graph.removeNode(staleNodeId);
   }
-  for (const edgeId of staleEdgeIdSet) {
-    hydratedGraphContext.graph.removeEdge(edgeId);
+  for (const staleEdgeId of staleEdgeIdSet) {
+    hydratedGraphContext.graph.removeEdge(staleEdgeId);
   }
 
+  // Replace other fields in the hydrated graph with the values in the
+  // serialized graph.
   Object.assign(hydratedGraphContext, {
     eventCount: serializedGraphContext.eventCount,
     context: serializedGraphContext.context,
