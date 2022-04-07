@@ -293,7 +293,10 @@ export class AudioNodeRender {
       this.portContainer.addChild(paramPortDisplays[i]);
 
       const label = this.labelContainer.getChildAt(i);
-      label.position.set(15, paramPort.offset.y - 6);
+      label.position.set(
+        GraphNodeStyle.PADDING,
+        paramPort.offset.y - 0.5 * GraphTextStyle.PARAM.fontSize,
+      );
     }
   }
 

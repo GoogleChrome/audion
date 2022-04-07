@@ -31,11 +31,11 @@ export class AudioGraphTextCacheGroup {
 
   constructor() {
     this.paramText = new AudioGraphTextCache({
-      textStyle: new PIXI.TextStyle(GraphTextStyle.PARAM_TEXT),
+      textStyle: new PIXI.TextStyle(GraphTextStyle.PARAM),
     });
 
     this.titleText = new AudioGraphTextCache({
-      textStyle: new PIXI.TextStyle(GraphTextStyle.TITLE_TEXT),
+      textStyle: new PIXI.TextStyle(GraphTextStyle.TITLE),
     });
   }
 }

@@ -155,7 +155,7 @@ export class AudioNodeBackground {
     numberOfInputs,
   }: AudioNodeMetrics) {
     return Math.max(
-      textMetrics.title.height,
+      textMetrics.title.height + GraphNodeStyle.TITLE_PADDING,
       AudioNodeBackground.INPUT_GROUP_MARGIN +
         numberOfInputs * AudioNodeBackground.INPUT_HEIGHT +
         Math.max(

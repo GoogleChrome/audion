@@ -25,12 +25,12 @@ export class AudioNodePort {
 
   /** Radius of the visible port icon. */
   static get INPUT_RADIUS() {
-    return 10;
+    return GraphPortStyle.INPUT_RADIUS;
   }
 
   /** Radius of visible port icon. */
   static get PARAM_RADIUS() {
-    return 8;
+    return GraphPortStyle.PARAM_RADIUS;
   }
 
   /**

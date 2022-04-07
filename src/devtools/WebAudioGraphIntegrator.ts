@@ -254,30 +254,33 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     nodeParamConnected,
   ) => {
-    const space = contexts[nodeParamConnected.contextId];
+    const {
+      contextId,
+      sourceId: sourceNodeId,
+      sourceOutputIndex = 0,
+      destinationId: destinationParamId,
+    } = nodeParamConnected;
+    const space = contexts[contextId];
     if (!space) {
       return;
     }
     const context = space.graphContext;
-    context.nodes[nodeParamConnected.sourceId].edges.push(nodeParamConnected);
     context.eventCount += 1;
-    const {
-      sourceId,
-      sourceOutputIndex = 0,
-      destinationId: destinationParamId,
-    } = nodeParamConnected;
 
-    const node = context.nodes[sourceId];
+    const sourceNode = context.nodes[sourceNodeId];
+    const destinationParam = context.params[destinationParamId];
+    const destinationNodeId = destinationParam.nodeId;
+    const destinationNode = context.nodes[destinationNodeId];
 
-    const destinationId = context.params[destinationParamId].nodeId;
+    sourceNode.edges.push(nodeParamConnected);
     context.graph.setEdge(
-      sourceId,
-      destinationId,
+      sourceNodeId,
+      destinationNodeId,
       {
         sourceOutputIndex,
         destinationType: Audion.GraphEdgeType.PARAM,
         destinationParamId,
-        destinationParamIndex: node.params.findIndex(
+        destinationParamIndex: destinationNode.params.findIndex(
           ({paramId}) => paramId === destinationParamId,
         ),
       } as Audion.GraphEdge,
