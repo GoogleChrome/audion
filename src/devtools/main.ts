@@ -24,7 +24,10 @@ const attachController = new DebuggerAttachEventController();
 const webAudioEvents$ = new WebAudioEventObservable(attachController);
 const webAudioRealtimeData = new WebAudioRealtimeData();
 
-const serializedGraphContext$ = webAudioEvents$.pipe(
+const serializedGraphContext$ = merge(
+  webAudioEvents$,
+  attachController.debuggerEvent$,
+).pipe(
   integrateWebAudioGraph(webAudioRealtimeData),
   // Split graph contexts into an observable for each unique graph context id.
   partitionMap({

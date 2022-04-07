@@ -6,13 +6,16 @@ import {
   EMPTY,
   Observable,
   of,
+  Subject,
 } from 'rxjs';
 import {
   catchError,
+  delay,
   distinctUntilChanged,
   exhaustMap,
   filter,
   finalize,
+  map,
   share,
   take,
 } from 'rxjs/operators';
@@ -87,6 +90,23 @@ const debuggerVersion = '1.3';
 /** Chrome tab to attach the debugger to. */
 const {tabId} = chrome.devtools.inspectedWindow;
 
+export enum ChromeDebuggerAPIEventName {
+  detached = 'ChromeDebuggerAPI.detached',
+}
+
+export interface ChromeDebuggerAPIDetachEventParams {
+  reason: 'canceled_by_user' | 'target_closed';
+}
+
+export interface ChromeDebuggerAPIDetachEvent {
+  method: ChromeDebuggerAPIEventName.detached;
+  params: ChromeDebuggerAPIDetachEventParams;
+}
+
+export type ChromeDebuggerAPIEvent = ChromeDebuggerAPIDetachEvent;
+
+export type ChromeDebuggerAPIEventParams = ChromeDebuggerAPIEvent['params'];
+
 /**
  * Control attachment to chrome.debugger depending on if the user has given
  * permission and how many parts of the extension need attachment.
@@ -108,6 +128,8 @@ export class DebuggerAttachEventController {
   webAudioEventState$: Observable<BinaryTransition>;
 
   combinedState$: Observable<DebuggerAttachEventState>;
+
+  debuggerEvent$: Observable<ChromeDebuggerAPIEvent>;
 
   constructor() {
     // Create an interface of subjects to track changes in state with the
@@ -177,6 +199,15 @@ export class DebuggerAttachEventController {
         }
       },
     });
+
+    this.debuggerEvent$ = onDebuggerDetach$.pipe(
+      map(([, reason]) => {
+        return {
+          method: ChromeDebuggerAPIEventName.detached,
+          params: {reason},
+        } as ChromeDebuggerAPIDetachEvent;
+      }),
+    );
 
     // Govern permission rejection and externally induced detachment.
     onDebuggerDetach$.subscribe({

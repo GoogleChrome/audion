@@ -9,6 +9,16 @@ import {WebAudioDebuggerMethod} from '../chrome/DebuggerWebAudioDomain';
 
 import {Audion} from './Types';
 
+/**
+ * Error messages returned by WebAudio.getRealtimeData devtool protocol method.
+ */
+export enum RealtimeDataErrorMessage {
+  /** Error returned when a AudioContext cannot be find. */
+  CANNOT_FIND = 'Cannot find BaseAudioContext with such id.',
+  /** Error returned when realtime data is requested from an OfflineAudioContext. */
+  REALTIME_ONLY = 'ContextRealtimeData is only avaliable for an AudioContext.',
+}
+
 const {tabId} = chrome.devtools.inspectedWindow;
 
 const sendCommand = bindCallback<

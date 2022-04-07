@@ -5,27 +5,40 @@ import {
   EMPTY,
   isObservable,
   merge,
+  NEVER,
   Observable,
   of,
   OperatorFunction,
   pipe,
+  Subject,
 } from 'rxjs';
-import {map, filter, catchError, mergeMap} from 'rxjs/operators';
-
 import {
-  WebAudioDebuggerEvent,
-  WebAudioDebuggerEventParams,
-} from '../chrome/DebuggerWebAudioDomain';
+  map,
+  filter,
+  catchError,
+  mergeMap,
+  takeUntil,
+  take,
+  ignoreElements,
+} from 'rxjs/operators';
+
+import {WebAudioDebuggerEvent} from '../chrome/DebuggerWebAudioDomain';
 
 import {Audion} from './Types';
 import {
   INITIAL_CONTEXT_REALTIME_DATA,
+  RealtimeDataErrorMessage,
   WebAudioRealtimeData,
 } from './WebAudioRealtimeData';
+import {
+  ChromeDebuggerAPIEventName,
+  ChromeDebuggerAPIEvent,
+} from './DebuggerAttachEventController';
 
 type MutableContexts = {
   [key: string]: {
     graphContext: Audion.GraphContext;
+    graphContextDestroyed$: Subject<void>;
     realtimeDataGraphContext$: Observable<Audion.GraphContext>;
   };
 };
@@ -34,13 +47,28 @@ interface EventHelpers {
   realtimeData: WebAudioRealtimeData;
 }
 
-type EventHandlers = {
-  readonly [K in WebAudioDebuggerEvent]: (
-    helpers: EventHelpers,
-    contexts: MutableContexts,
-    event: ProtocolMapping.Events[K][0],
-  ) => Observable<Audion.GraphContext> | Audion.GraphContext | void;
+type IntegratableEventName = WebAudioDebuggerEvent | ChromeDebuggerAPIEventName;
+
+type IntegratableEvent = Audion.WebAudioEvent | ChromeDebuggerAPIEvent;
+
+type IntegratableEventMapping = {
+  [K in IntegratableEventName]: ProtocolMapping.Events extends {
+    [key in K]: [infer P];
+  }
+    ? P
+    : ChromeDebuggerAPIEvent extends {method: K; params: infer P}
+    ? P
+    : never;
 };
+
+type EventHandlers =
+  | {
+      readonly [K in IntegratableEventName]: (
+        helpers: EventHelpers,
+        contexts: MutableContexts,
+        event: IntegratableEventMapping[K],
+      ) => Observable<Audion.GraphContext> | Audion.GraphContext | void;
+    };
 
 const EVENT_HANDLERS: Partial<EventHandlers> = {
   [WebAudioDebuggerEvent.audioNodeCreated]: (
@@ -188,7 +216,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     contextCreated,
   ) => {
-    const {contextId} = contextCreated.context;
+    const {contextId, contextType} = contextCreated.context;
     if (contexts[contextId]) {
       // Duplicate or out of order context created event.
       console.warn(
@@ -204,7 +232,11 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return {};
     });
 
-    const realtimeData$ = helpers.realtimeData.pollContext(contextId);
+    const realtimeData$ =
+      contextType === 'realtime'
+        ? helpers.realtimeData.pollContext(contextId)
+        : NEVER;
+    const graphContextDestroyed$ = new Subject<void>();
 
     contexts[contextId] = {
       graphContext: {
@@ -219,6 +251,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
         // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/47439
         graph: graph as unknown as graphlib.Graph,
       },
+      graphContextDestroyed$,
       realtimeDataGraphContext$: realtimeData$.pipe(
         map((realtimeData) => {
           const space = contexts[contextId];
@@ -232,13 +265,51 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
         }),
         filter((context): context is Audion.GraphContext => Boolean(context)),
         catchError((reason) => {
-          console.error(
-            `Error requesting realtime data context for ${contextId}.${
-              reason ? `\n${reason.message}` : reason
-            }`,
-          );
+          if (reason && reason.message && !reason.code) {
+            try {
+              reason = JSON.parse(reason.message);
+            } catch (e) {}
+          }
+
+          if (
+            reason &&
+            reason.message === RealtimeDataErrorMessage.CANNOT_FIND
+          ) {
+            const space = contexts[contextId];
+            if (space) {
+              delete contexts[contextId];
+              return of({
+                id: contextId,
+                eventCount: space?.graphContext?.eventCount + 1,
+                context: null,
+                realtimeData: null,
+                nodes: null,
+                params: null,
+                graph: null,
+              });
+            } else {
+              console.warn(
+                `Error requesting realtime data for context '${contextId}'.
+Context was likely cleaned up during request for realtime data.
+"${reason.message}"`,
+              );
+            }
+          } else if (
+            reason &&
+            reason.message === RealtimeDataErrorMessage.REALTIME_ONLY
+          ) {
+            console.error(`Error requesting realtime data for context '${contextId}'.
+Context is of type '${contextCreated.context.contextType}' but should be 'realtime'.
+"${reason.message}"`);
+          } else {
+            console.error(
+              `Unknown error requesting realtime data for context '${contextId}'.
+"${reason && reason.message ? reason.message : reason}"`,
+            );
+          }
           return EMPTY;
         }),
+        takeUntil(graphContextDestroyed$),
       ),
     };
 
@@ -256,6 +327,8 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     const {contextId} = contextDestroyed;
     const space = contexts[contextId];
     delete contexts[contextId];
+
+    space?.graphContextDestroyed$?.next();
 
     return {
       id: contextId,
@@ -443,6 +516,60 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     );
     return context;
   },
+
+  [ChromeDebuggerAPIEventName.detached]: (
+    helpers,
+    contexts,
+    debuggerDetached,
+  ) => {
+    if (debuggerDetached.reason === 'target_closed') {
+      return merge(
+        ...Object.keys(contexts).map((contextId) =>
+          helpers.realtimeData.pollContext(contextId).pipe(
+            take(1),
+            ignoreElements(),
+            catchError((reason) => {
+              if (reason && reason.message && !reason.code) {
+                try {
+                  reason = JSON.parse(reason.message);
+                } catch (e) {}
+              }
+
+              if (
+                reason &&
+                reason.message === RealtimeDataErrorMessage.CANNOT_FIND
+              ) {
+                const space = contexts[contextId];
+                if (space) {
+                  delete contexts[contextId];
+                  space?.graphContextDestroyed$?.next();
+                  return of({
+                    id: contextId,
+                    eventCount: space?.graphContext?.eventCount + 1,
+                    context: null,
+                    realtimeData: null,
+                    nodes: null,
+                    params: null,
+                    graph: null,
+                  } as Audion.GraphContext);
+                }
+              } else if (
+                reason &&
+                reason.message === RealtimeDataErrorMessage.REALTIME_ONLY
+              ) {
+                // OfflineAudioContexts emit this error if they are still alive.
+              } else {
+                console.error(`Unknown error determining if context '${contextId}' is stale with devtools protocol WebAudio.getRealtimeData.
+"${reason && reason.message ? reason.message : reason}"`);
+              }
+
+              return EMPTY;
+            }),
+          ),
+        ),
+      );
+    }
+  },
 };
 
 function removeAll<T>(array: T[], fn: (value: T) => boolean) {
@@ -460,7 +587,7 @@ function removeAll<T>(array: T[], fn: (value: T) => boolean) {
  */
 export function integrateWebAudioGraph(
   webAudioRealtimeData: WebAudioRealtimeData,
-): OperatorFunction<Audion.WebAudioEvent, Audion.GraphContext> {
+): OperatorFunction<IntegratableEvent, Audion.GraphContext> {
   const helpers = {realtimeData: webAudioRealtimeData};
   const contexts: MutableContexts = {};
   return pipe(
@@ -469,7 +596,7 @@ export function integrateWebAudioGraph(
         const result = EVENT_HANDLERS[method]?.(
           helpers,
           contexts,
-          params as WebAudioDebuggerEventParams<any>,
+          params as any,
         );
         if (typeof result !== 'object' || result === null) return EMPTY;
         if (isObservable(result)) {
