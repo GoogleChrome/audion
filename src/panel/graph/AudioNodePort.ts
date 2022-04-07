@@ -1,6 +1,7 @@
 import * as PIXI from 'pixi.js';
 
 import {AudionPanel} from '../Types';
+import {GraphPortStyle} from './graphStyle';
 
 const ZERO_POINT = new PIXI.Point();
 
@@ -24,12 +25,12 @@ export class AudioNodePort {
 
   /** Radius of the visible port icon. */
   static get INPUT_RADIUS() {
-    return 10;
+    return GraphPortStyle.INPUT_RADIUS;
   }
 
   /** Radius of visible port icon. */
   static get PARAM_RADIUS() {
-    return 8;
+    return GraphPortStyle.PARAM_RADIUS;
   }
 
   /**
@@ -69,10 +70,10 @@ export class AudioNodePort {
    */
   drawSocket(
     graphics: PIXI.Graphics,
-    fill: number = 0xffffff,
+    fill: number = GraphPortStyle.DISCONNECTED_FILL_COLOR,
     offset: AudionPanel.Point = ZERO_POINT,
   ) {
-    graphics.lineStyle(3, this.color);
+    graphics.lineStyle(GraphPortStyle.STROKE_WIDTH, this.color);
     graphics.beginFill(fill);
     graphics.drawCircle(
       offset.x + this.offset.x,

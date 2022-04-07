@@ -2,7 +2,13 @@ import * as PIXI from 'pixi.js';
 
 import {Audion} from '../../devtools/Types';
 
-import {GraphColor, colorFromNodeType} from './graphStyle';
+import {
+  GraphColor,
+  colorFromNodeType,
+  GraphNodeStyle,
+  GraphPortStyle,
+  GraphTextStyle,
+} from './graphStyle';
 import {AudioNodePort, AudioNodePortType} from './AudioNodePort';
 import {AudioGraphTextCacheGroup} from './AudioGraphTextCacheGroup';
 import {AudioNodeBackgroundRenderCacheGroup} from './AudioNodeBackgroundRenderCacheGroup';
@@ -60,32 +66,32 @@ export class AudioNodeRender {
 
   /** Padding around input ports. */
   static get INPUT_GROUP_MARGIN() {
-    return 10;
+    return GraphPortStyle.INPUT_GROUP_MARGIN;
   }
 
   /** Height of input output ports. */
   static get INPUT_HEIGHT() {
-    return 30;
+    return GraphPortStyle.INPUT_HEIGHT;
   }
 
   /** Radius of the visible port icon. */
   static get INPUT_RADIUS() {
-    return 10;
+    return GraphPortStyle.INPUT_RADIUS;
   }
 
   /** Padding around the group of params. */
   static get PARAM_GROUP_MARGIN() {
-    return 5;
+    return GraphPortStyle.PARAM_GROUP_MARGIN;
   }
 
   /** Height of audio parameter ports. */
   static get PARAM_HEIGHT() {
-    return 20;
+    return GraphPortStyle.PARAM_HEIGHT;
   }
 
   /** Radius of visible port icon. */
   static get PARAM_RADIUS() {
-    return 8;
+    return GraphPortStyle.PARAM_RADIUS;
   }
 
   /**
@@ -119,11 +125,12 @@ export class AudioNodeRender {
     const title = (this.title = textCacheGroup.titleText
       .getText(node.node.nodeType)
       .createSprite());
-    title.position.set(15, 5);
+    title.position.set(GraphNodeStyle.PADDING, GraphNodeStyle.TITLE_PADDING);
 
     const background = (this.background = backgroundCacheGroup.plain
       .getBackground(node)
       .createMesh());
+
     const labelContainer = (this.labelContainer = new PIXI.Container());
     const portContainer = (this.portContainer = new PIXI.Container());
     container.addChild(background);
@@ -178,11 +185,11 @@ export class AudioNodeRender {
     title.getLocalBounds(localBounds);
 
     this.size.set(
-      Math.max(localBounds.width, maxParamTextSize.x) + 30,
+      Math.max(localBounds.width, maxParamTextSize.x) +
+        2 * GraphNodeStyle.PADDING,
       Math.max(
-        localBounds.height + 15,
         Math.max(
-          localBounds.height,
+          localBounds.height + 2 * GraphNodeStyle.TITLE_PADDING,
           AudioNodeRender.INPUT_GROUP_MARGIN +
             AudioNodeRender.INPUT_HEIGHT * node.node.numberOfInputs +
             Math.max(
@@ -258,7 +265,7 @@ export class AudioNodeRender {
     const localBounds = new PIXI.Rectangle();
     this.title.getLocalBounds(localBounds);
     const paramYStart = Math.max(
-      localBounds.height,
+      localBounds.height + GraphNodeStyle.TITLE_PADDING,
       AudioNodeRender.INPUT_GROUP_MARGIN +
         input.length * AudioNodeRender.INPUT_HEIGHT +
         Math.max(
@@ -286,7 +293,10 @@ export class AudioNodeRender {
       this.portContainer.addChild(paramPortDisplays[i]);
 
       const label = this.labelContainer.getChildAt(i);
-      label.position.set(15, paramPort.offset.y - 6);
+      label.position.set(
+        GraphNodeStyle.PADDING,
+        paramPort.offset.y - 0.5 * GraphTextStyle.PARAM.fontSize,
+      );
     }
   }
 

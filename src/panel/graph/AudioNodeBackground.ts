@@ -6,7 +6,12 @@ import {AudionPanel} from '../Types';
 
 import {AudioGraphTextCacheGroup} from './AudioGraphTextCacheGroup';
 import {AudioNodePort} from './AudioNodePort';
-import {GraphColor, colorFromNodeType} from './graphStyle';
+import {
+  GraphColor,
+  colorFromNodeType,
+  GraphPortStyle,
+  GraphNodeStyle,
+} from './graphStyle';
 
 export interface AudioNodeBackgroundStyle {
   isHighlighted: boolean;
@@ -62,32 +67,32 @@ export class AudioNodeBackground {
 
   /** Padding around input ports. */
   static get INPUT_GROUP_MARGIN() {
-    return 10;
+    return GraphPortStyle.INPUT_GROUP_MARGIN;
   }
 
   /** Height of input output ports. */
   static get INPUT_HEIGHT() {
-    return 30;
+    return GraphPortStyle.INPUT_HEIGHT;
   }
 
   /** Radius of the visible port icon. */
   static get INPUT_RADIUS() {
-    return 10;
+    return GraphPortStyle.INPUT_RADIUS;
   }
 
   /** Padding around the group of params. */
   static get PARAM_GROUP_MARGIN() {
-    return 5;
+    return GraphPortStyle.PARAM_GROUP_MARGIN;
   }
 
   /** Height of audio parameter ports. */
   static get PARAM_HEIGHT() {
-    return 20;
+    return GraphPortStyle.PARAM_HEIGHT;
   }
 
   /** Radius of visible port icon. */
   static get PARAM_RADIUS() {
-    return 8;
+    return GraphPortStyle.PARAM_RADIUS;
   }
 
   init(metrics: AudioNodeMetrics) {
@@ -150,7 +155,7 @@ export class AudioNodeBackground {
     numberOfInputs,
   }: AudioNodeMetrics) {
     return Math.max(
-      textMetrics.title.height,
+      textMetrics.title.height + GraphNodeStyle.TITLE_PADDING,
       AudioNodeBackground.INPUT_GROUP_MARGIN +
         numberOfInputs * AudioNodeBackground.INPUT_HEIGHT +
         Math.max(
@@ -178,11 +183,11 @@ export class AudioNodeBackground {
     }
 
     size.set(
-      Math.max(textMetrics.title.width, maxParamTextSize.x) + 30,
+      Math.max(textMetrics.title.width, maxParamTextSize.x) +
+        2 * GraphNodeStyle.PADDING,
       Math.max(
-        textMetrics.title.height + 15,
         Math.max(
-          textMetrics.title.height,
+          textMetrics.title.height + 2 * GraphNodeStyle.TITLE_PADDING,
           AudioNodeBackground.INPUT_GROUP_MARGIN +
             AudioNodeBackground.INPUT_HEIGHT * numberOfInputs +
             Math.max(
@@ -221,7 +226,10 @@ export class AudioNodeBackgroundRender {
     graphics.clear();
 
     if (this.style.isHighlighted) {
-      graphics.lineStyle({width: 5, color: 0x000000});
+      graphics.lineStyle({
+        width: GraphNodeStyle.HIGHLIGHT_STROKE_WIDTH,
+        color: GraphNodeStyle.HIGHLIGHT_STROKE_COLOR,
+      });
     } else {
       graphics.lineStyle(0);
     }
@@ -231,7 +239,7 @@ export class AudioNodeBackgroundRender {
       0,
       this.background.size.x,
       this.background.size.y,
-      3,
+      GraphNodeStyle.CORNER_RADIUS,
     );
     graphics.endFill();
 
