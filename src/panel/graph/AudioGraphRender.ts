@@ -352,25 +352,28 @@ export class AudioGraphRender {
       if (sourceData && destinationData) {
         const sourceNode = this.nodeMap.get(sourceData.node.nodeId);
         const destinationNode = this.nodeMap.get(destinationData.node.nodeId);
+        if (sourceNode && destinationNode) {
+          const {sourceOutputIndex, destinationType} = edge.value;
+          const sourceNodePort = sourceNode.output[sourceOutputIndex];
+          const destinationNodePort =
+            destinationType === Audion.GraphEdgeType.NODE
+              ? destinationNode.input[edge.value.destinationInputIndex]
+              : destinationNode.param[edge.value.destinationParamIndex];
 
-        const {sourceOutputIndex, destinationType} = edge.value;
-        const sourceNodePort = sourceNode.output[sourceOutputIndex];
-        const destinationNodePort =
-          destinationType === Audion.GraphEdgeType.NODE
-            ? destinationNode.input[edge.value.destinationInputIndex]
-            : destinationNode.param[edge.value.destinationParamIndex];
+          if (sourceNodePort && destinationNodePort) {
+            edgeRender = new AudioEdgeRender({
+              key: edgeId,
+              source: sourceNodePort,
+              destination: destinationNodePort,
+            });
+            edgeRender.setPIXIParent(this.pixiEdgeContainer);
 
-        edgeRender = new AudioEdgeRender({
-          key: edgeId,
-          source: sourceNodePort,
-          destination: destinationNodePort,
-        });
-        edgeRender.setPIXIParent(this.pixiEdgeContainer);
+            edgeRender.source.updateNodeDisplay();
+            edgeRender.destination.updateNodeDisplay();
 
-        edgeRender.source.updateNodeDisplay();
-        edgeRender.destination.updateNodeDisplay();
-
-        this.edgeMap.set(edgeId, edgeRender);
+            this.edgeMap.set(edgeId, edgeRender);
+          }
+        }
       }
     }
     return edgeRender;
