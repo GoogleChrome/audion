@@ -3,7 +3,6 @@ import * as graphlib from 'graphlib';
 import {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping';
 import {
   EMPTY,
-  from,
   isObservable,
   merge,
   NEVER,
@@ -23,12 +22,7 @@ import {
   ignoreElements,
 } from 'rxjs/operators';
 
-import {invariant} from '../utils/error';
-
-import {
-  WebAudioDebuggerEvent,
-  WebAudioDebuggerEventParams,
-} from '../chrome/DebuggerWebAudioDomain';
+import {WebAudioDebuggerEvent} from '../chrome/DebuggerWebAudioDomain';
 
 import {Audion} from './Types';
 import {
@@ -37,11 +31,8 @@ import {
   WebAudioRealtimeData,
 } from './WebAudioRealtimeData';
 import {
-  ChromeDebuggerAPIDetachEvent,
-  ChromeDebuggerAPIDetachEventParams,
   ChromeDebuggerAPIEventName,
   ChromeDebuggerAPIEvent,
-  ChromeDebuggerAPIEventParams,
 } from './DebuggerAttachEventController';
 
 type MutableContexts = {
@@ -85,29 +76,33 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     audioNodeCreated,
   ) => {
-    const space = contexts[audioNodeCreated.node.contextId];
+    const node = audioNodeCreated.node;
+    const {contextId, nodeId, nodeType} = node;
+    const space = contexts[contextId];
     if (!space) {
       return;
     }
+
     const context = space.graphContext;
     context.eventCount += 1;
-    if (context.nodes[audioNodeCreated.node.nodeId]) {
+
+    if (context.nodes[nodeId]) {
       console.warn(
         `Duplicate ${WebAudioDebuggerEvent.audioNodeCreated} event.`,
         audioNodeCreated,
       );
       return;
     }
-    context.nodes[audioNodeCreated.node.nodeId] = {
-      node: audioNodeCreated.node,
+
+    context.nodes[nodeId] = {
+      node,
       params: [],
       edges: [],
     };
-    const {nodeId} = audioNodeCreated.node;
     context.graph.setNode(nodeId, {
       id: nodeId,
-      label: audioNodeCreated.node.nodeType,
-      type: audioNodeCreated.node.nodeType,
+      label: nodeType,
+      type: nodeType,
       color: null,
       width: 150,
       height: 50,
@@ -120,20 +115,23 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     audioNodeDestroyed,
   ) => {
-    const space = contexts[audioNodeDestroyed.contextId];
+    const {contextId, nodeId} = audioNodeDestroyed;
+    const space = contexts[contextId];
     if (!space) {
       return;
     }
+
     const context = space.graphContext;
     context.eventCount += 1;
-    context.graph.removeNode(audioNodeDestroyed.nodeId);
-    const node = context.nodes[audioNodeDestroyed.nodeId];
+
+    context.graph.removeNode(nodeId);
+    const node = context.nodes[nodeId];
     if (node && node.params) {
       for (const audioParam of node.params) {
         delete context.params[audioParam.paramId];
       }
     }
-    delete context.nodes[audioNodeDestroyed.nodeId];
+    delete context.nodes[nodeId];
     return context;
   },
 
@@ -142,29 +140,32 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     audioParamCreated,
   ) => {
-    const space = contexts[audioParamCreated.param.contextId];
+    const {param} = audioParamCreated;
+    const {contextId, nodeId, paramId: paramIdCreated} = param;
+    const space = contexts[contextId];
     if (!space) {
       return;
     }
+
     const context = space.graphContext;
     context.eventCount += 1;
-    const node = context.nodes[audioParamCreated.param.nodeId];
+
+    const node = context.nodes[nodeId];
     if (!node) {
       return;
     }
-    if (
-      node.params.some(
-        ({paramId}) => paramId === audioParamCreated.param.paramId,
-      )
-    ) {
+
+    if (node.params.some(({paramId}) => paramId === paramIdCreated)) {
       console.warn(
         `Duplicate ${WebAudioDebuggerEvent.audioParamCreated} event.`,
         audioParamCreated,
       );
       return;
     }
-    node.params.push(audioParamCreated.param);
-    context.params[audioParamCreated.param.paramId] = audioParamCreated.param;
+
+    node.params.push(param);
+    context.params[paramIdCreated] = param;
+    return context;
   },
 
   [WebAudioDebuggerEvent.audioParamWillBeDestroyed]: (
@@ -172,18 +173,26 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     audioParamWillBeDestroyed,
   ) => {
-    const space = contexts[audioParamWillBeDestroyed.contextId];
+    const {
+      contextId,
+      nodeId,
+      paramId: paramIdCreated,
+    } = audioParamWillBeDestroyed;
+
+    const space = contexts[contextId];
     if (!space) {
       return;
     }
+
     const context = space.graphContext;
     context.eventCount += 1;
-    const node = context.nodes[audioParamWillBeDestroyed.nodeId];
-    removeAll(
-      node?.params,
-      ({paramId}) => paramId === audioParamWillBeDestroyed.paramId,
-    );
-    delete context.params[audioParamWillBeDestroyed.paramId];
+
+    const node = context.nodes[nodeId];
+    if (node && node.params) {
+      removeAll(node.params, ({paramId}) => paramId === paramIdCreated);
+    }
+    delete context.params[paramIdCreated];
+    return context;
   },
 
   [WebAudioDebuggerEvent.contextChanged]: (
@@ -191,13 +200,15 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     contextChanged,
   ) => {
-    const space = contexts[contextChanged.context.contextId];
+    const {contextId} = contextChanged.context;
+    const space = contexts[contextId];
     if (!space) {
       return;
     }
+
     space.graphContext.context = contextChanged.context;
     space.graphContext.eventCount += 1;
-    return contexts[contextChanged.context.contextId].graphContext;
+    return space.graphContext;
   },
 
   [WebAudioDebuggerEvent.contextCreated]: (
@@ -205,7 +216,8 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     contextCreated,
   ) => {
-    if (contexts[contextCreated.context.contextId]) {
+    const {contextId, contextType} = contextCreated.context;
+    if (contexts[contextId]) {
       // Duplicate or out of order context created event.
       console.warn(
         `Duplicate ${WebAudioDebuggerEvent.contextCreated} event.`,
@@ -220,10 +232,8 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return {};
     });
 
-    const contextId = contextCreated.context.contextId;
-
     const realtimeData$ =
-      contextCreated.context.contextType === 'realtime'
+      contextType === 'realtime'
         ? helpers.realtimeData.pollContext(contextId)
         : NEVER;
     const graphContextDestroyed$ = new Subject<void>();
@@ -244,12 +254,13 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       graphContextDestroyed$,
       realtimeDataGraphContext$: realtimeData$.pipe(
         map((realtimeData) => {
-          if (contexts[contextId]) {
-            contexts[contextId].graphContext = {
-              ...contexts[contextId].graphContext,
+          const space = contexts[contextId];
+          if (space) {
+            space.graphContext = {
+              ...space.graphContext,
               realtimeData,
             };
-            return contexts[contextId].graphContext;
+            return space.graphContext;
           }
         }),
         filter((context): context is Audion.GraphContext => Boolean(context)),
@@ -303,8 +314,8 @@ Context is of type '${contextCreated.context.contextType}' but should be 'realti
     };
 
     return merge(
-      of(contexts[contextCreated.context.contextId].graphContext),
-      contexts[contextCreated.context.contextId].realtimeDataGraphContext$,
+      of(contexts[contextId].graphContext),
+      contexts[contextId].realtimeDataGraphContext$,
     );
   },
 
@@ -313,13 +324,14 @@ Context is of type '${contextCreated.context.contextType}' but should be 'realti
     contexts,
     contextDestroyed,
   ) => {
-    const space = contexts[contextDestroyed.contextId];
-    delete contexts[contextDestroyed.contextId];
+    const {contextId} = contextDestroyed;
+    const space = contexts[contextId];
+    delete contexts[contextId];
 
     space?.graphContextDestroyed$?.next();
 
     return {
-      id: contextDestroyed.contextId,
+      id: contextId,
       eventCount: space?.graphContext?.eventCount + 1,
       context: null,
       realtimeData: null,
@@ -334,28 +346,47 @@ Context is of type '${contextCreated.context.contextType}' but should be 'realti
     contexts,
     nodeParamConnected,
   ) => {
-    const space = contexts[nodeParamConnected.contextId];
-    if (!space) {
-      return;
-    }
-    const context = space.graphContext;
-    context.nodes[nodeParamConnected.sourceId].edges.push(nodeParamConnected);
-    context.eventCount += 1;
     const {
-      sourceId,
+      contextId,
+      sourceId: sourceNodeId,
       sourceOutputIndex = 0,
       destinationId: destinationParamId,
     } = nodeParamConnected;
-    const destinationId = context.params[destinationParamId].nodeId;
+
+    const space = contexts[contextId];
+    if (!space) {
+      return;
+    }
+
+    const context = space.graphContext;
+    context.eventCount += 1;
+
+    const sourceNode = context.nodes[sourceNodeId];
+    if (!sourceNode) {
+      return;
+    }
+    const destinationParam = context.params[destinationParamId];
+    if (!destinationParam) {
+      return;
+    }
+    const destinationNodeId = destinationParam.nodeId;
+    const destinationNode = context.nodes[destinationNodeId];
+    if (!destinationNode) {
+      return;
+    }
+
+    sourceNode.edges.push(nodeParamConnected);
     context.graph.setEdge(
-      `${sourceId}`,
-      `${destinationId}`,
+      sourceNodeId,
+      destinationNodeId,
       {
-        type: 'param',
         sourceOutputIndex,
-        destinationInputIndex: -1,
+        destinationType: Audion.GraphEdgeType.PARAM,
         destinationParamId,
-      },
+        destinationParamIndex: destinationNode.params.findIndex(
+          ({paramId}) => paramId === destinationParamId,
+        ),
+      } as Audion.GraphEdge,
       sourceOutputIndex.toString(),
     );
     return context;
@@ -366,14 +397,26 @@ Context is of type '${contextCreated.context.contextType}' but should be 'realti
     contexts,
     nodesDisconnected,
   ) => {
-    const space = contexts[nodesDisconnected.contextId];
+    const {
+      contextId,
+      sourceId,
+      sourceOutputIndex = 0,
+      destinationId,
+    } = nodesDisconnected;
+    const space = contexts[contextId];
     if (!space) {
       return;
     }
+
     const context = space.graphContext;
     context.eventCount += 1;
-    const {edges} = context.nodes[nodesDisconnected.sourceId];
-    const {sourceId, sourceOutputIndex = 0, destinationId} = nodesDisconnected;
+
+    const sourceNode = context.nodes[sourceId];
+    if (!sourceNode) {
+      return;
+    }
+
+    const {edges} = sourceNode;
     removeAll(
       edges,
       (edge) =>
@@ -393,28 +436,40 @@ Context is of type '${contextCreated.context.contextType}' but should be 'realti
     contexts,
     nodesConnected,
   ) => {
-    const space = contexts[nodesConnected.contextId];
-    if (!space) {
-      return;
-    }
-    const context = space.graphContext;
-    context.nodes[nodesConnected.sourceId].edges.push(nodesConnected);
-    context.eventCount += 1;
     const {
+      contextId,
       sourceId,
       sourceOutputIndex = 0,
       destinationId,
       destinationInputIndex = 0,
     } = nodesConnected;
+
+    const space = contexts[contextId];
+    if (!space) {
+      return;
+    }
+
+    const context = space.graphContext;
+    context.eventCount += 1;
+
+    const sourceNode = context.nodes[sourceId];
+    if (!sourceNode) {
+      return;
+    }
+    const destinationNode = context.nodes[destinationId];
+    if (!destinationNode) {
+      return;
+    }
+
+    sourceNode.edges.push(nodesConnected);
     context.graph.setEdge(
-      `${sourceId}`,
-      `${destinationId}`,
+      sourceId,
+      destinationId,
       {
-        type: 'node',
         sourceOutputIndex,
+        destinationType: Audion.GraphEdgeType.NODE,
         destinationInputIndex,
-        destinationParamId: '',
-      },
+      } as Audion.GraphNodeEdge,
       `${sourceOutputIndex},${destinationInputIndex}`,
     );
     return context;
@@ -425,19 +480,28 @@ Context is of type '${contextCreated.context.contextType}' but should be 'realti
     contexts,
     nodesDisconnected,
   ) => {
-    const space = contexts[nodesDisconnected.contextId];
-    if (!space) {
-      return;
-    }
-    const context = space.graphContext;
-    context.eventCount += 1;
-    const {edges} = context.nodes[nodesDisconnected.sourceId];
     const {
+      contextId,
       sourceId,
       sourceOutputIndex = 0,
       destinationId,
       destinationInputIndex = 0,
     } = nodesDisconnected;
+
+    const space = contexts[contextId];
+    if (!space) {
+      return;
+    }
+
+    const context = space.graphContext;
+    context.eventCount += 1;
+
+    const sourceNode = context.nodes[sourceId];
+    if (!sourceNode) {
+      return;
+    }
+
+    const {edges} = sourceNode;
     removeAll(
       edges,
       (edge) =>
