@@ -1,33 +1,31 @@
-export enum GraphColor {
-  PROCESSOR = 0x64b5f6,
-  MEDIA = 0xba68c8,
-  SOURCE = 0x81c784,
-  DESTINATION = 0x90a4ad,
-  ANALYSER = 0xf48fb1,
-  AUDIO_WORKLET = 0x9fa8da,
-  OFFLINE_DESTINATION = 0x5d4037,
+/** @enum {number} */
+export const Color = {
+  PROCESSOR: 0x64b5f6,
+  MEDIA: 0xba68c8,
+  SOURCE: 0x81c784,
+  DESTINATION: 0x90a4ad,
+  ANALYSER: 0xf48fb1,
+  AUDIO_WORKLET: 0x9fa8da,
 
-  DEPRECATED = 0xe0e0e0,
-  AUDIO_PARAM = 0xffa726,
-  TEXT = 0x263238,
-  INPUT_OUTPUT = 0x455a63,
-  EDGE = 0x455a63,
+  DEPRECATED: 0xe0e0e0,
+  AUDIO_PARAM: 0xffa726,
+  TEXT: 0x263238,
+  INPUT_OUTPUT: 0x455a63,
+  EDGE: 0x455a63,
+};
 
-  UNKNOWN = 0xc62828,
-}
-
-export const GraphTextStyle = {
+export const TextStyle = {
   TITLE: {
-    fill: GraphColor.TEXT,
+    fill: Color.TEXT,
     fontSize: 16,
   },
   PARAM: {
-    fill: GraphColor.TEXT,
+    fill: Color.TEXT,
     fontSize: 9,
   },
 };
 
-export const GraphPortStyle = {
+export const PortStyle = {
   /** Stroke width around port radius. */
   STROKE_WIDTH: 2,
   /** Inner color for ports without connecting edges. */
@@ -46,8 +44,7 @@ export const GraphPortStyle = {
   PARAM_RADIUS: 4,
 };
 
-export const GraphNodeStyle = {
-  /** Padding above and below title text. */
+export const NodeStyle = {
   TITLE_PADDING: 4,
   /** Stroke width around node when highlighted. */
   HIGHLIGHT_STROKE_WIDTH: 5,
@@ -60,24 +57,23 @@ export const GraphNodeStyle = {
 };
 
 /**
- * @param nodeType
- * @param isOffline
+ * @param {string} nodeType
+ * @param {boolean} [isOffline]
+ * @return {number}
  */
-export const colorFromNodeType = (nodeType: string, isOffline = false) => {
+export const colorFromNodeType = (nodeType, isOffline = false) => {
   // AudioNodes are grouped into color categories based on their purposes.
   switch (nodeType) {
     case 'AudioDestination':
       // The destination nodes of OfflineAudioContexts are brown. Those of
       // "non-offline" AudioContexts are a dark grey.
-      return isOffline
-        ? GraphColor.OFFLINE_DESTINATION
-        : GraphColor.DESTINATION;
+      return isOffline ? 0x5d4037 : Color.DESTINATION;
     case 'AudioBufferSource':
     case 'ConstantSource':
     case 'Oscillator':
-      return GraphColor.SOURCE;
+      return Color.SOURCE;
     case 'Analyser':
-      return GraphColor.ANALYSER;
+      return Color.ANALYSER;
     case 'BiquadFilter':
     case 'Convolver':
     case 'Delay':
@@ -89,17 +85,17 @@ export const colorFromNodeType = (nodeType: string, isOffline = false) => {
     case 'Gain':
     case 'ChannelMerger':
     case 'ChannelSplitter':
-      return GraphColor.PROCESSOR;
+      return Color.PROCESSOR;
     case 'MediaElementAudioSource':
     case 'MediaStreamAudioDestination':
     case 'MediaStreamAudioSource':
-      return GraphColor.MEDIA;
+      return Color.MEDIA;
     case 'AudioWorklet':
-      return GraphColor.AUDIO_WORKLET;
+      return Color.AUDIO_WORKLET;
     case 'ScriptProcessor':
-      return GraphColor.DEPRECATED;
+      return Color.DEPRECATED;
   }
 
   // Nothing matched. Odd. Highlight this node in dark red.
-  return GraphColor.UNKNOWN;
+  return 0xc62828;
 };

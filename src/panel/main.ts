@@ -5,29 +5,26 @@ import * as PIXI from 'pixi.js';
 import {install} from '@pixi/unsafe-eval';
 
 import {merge, Subject} from 'rxjs';
-import {filter, map, scan, shareReplay, tap} from 'rxjs/operators';
+import {catchError, filter, map, scan, shareReplay, tap} from 'rxjs/operators';
+
+import {chrome} from '../chrome';
 
 import {Audion} from '../devtools/Types';
 
-import {Utils} from '../utils/Types';
-import {Observer} from '../utils/Observer';
-import {toUtilsObserver} from '../utils/rxInterop';
-import {
-  observeMessageEvents,
-  postObservations,
-} from '../utils/Observer.emitter';
-
-import {connect} from './Observer.runtime';
-import {AudioGraphRender} from './graph/AudioGraphRender';
-import {GraphSelector} from './GraphSelector';
+import {mapThruWorker} from '../utils/mapThruWorker';
 
 import {WholeGraphButton} from './components/WholeGraphButton';
 import {querySelector} from './components/domUtils';
 import {renderRealtimeSummary} from './components/realtimeSummary';
 import {renderSelectGraph} from './components/selectGraph';
 import {renderDetailPanel} from './components/detailPanel';
-import {chrome} from '../chrome';
 import {renderCollectGarbage} from './components/collectGarbage';
+
+import {connect} from './Observer.runtime';
+import {AudioGraphRender} from './graph/AudioGraphRender';
+import {GraphSelector} from './GraphSelector';
+import {updateGraphRender} from './updateGraphRender';
+import {updateGraphSizes} from './updateGraphSizes';
 
 // Install an alternate system to part of pixi.js rendering that does not use
 // new Function.
@@ -42,35 +39,6 @@ const devtoolsObserver$ = connect<
   Audion.DevtoolsRequest,
   Audion.DevtoolsMessage
 >(devtoolsRequestSubject$);
-
-const devtoolsObserver: Audion.DevtoolsObserver =
-  toUtilsObserver(devtoolsObserver$);
-
-const allGraphsObserver: Utils.Observer<Audion.GraphContextsById> =
-  Observer.reduce(
-    devtoolsObserver,
-    (allGraphs, message) => {
-      if ('allGraphs' in message) {
-        return message.allGraphs;
-      } else if ('graphContext' in message) {
-        if (
-          message.graphContext.graph &&
-          message.graphContext.context.contextState !== 'closed'
-        ) {
-          return {
-            ...allGraphs,
-            [message.graphContext.id]: message.graphContext,
-          };
-        } else {
-          allGraphs = {...allGraphs};
-          delete allGraphs[message.graphContext.id];
-          return allGraphs;
-        }
-      }
-      return allGraphs;
-    },
-    {} as {[key: string]: Audion.GraphContext},
-  );
 
 const allGraphsObserver$ = devtoolsObserver$.pipe(
   scan((allGraphs, message) => {
@@ -97,10 +65,9 @@ const allGraphsObserver$ = devtoolsObserver$.pipe(
 );
 
 const graphSelector = new GraphSelector({
-  allGraphsObserver,
-  allGraphsObserver$,
+  allGraphs$: allGraphsObserver$,
 });
-graphSelector.optionsObserver.observe((options) => {
+graphSelector.options$.subscribe((options) => {
   if (
     // Select a graph automatically if one is not selected.
     graphSelector.graphId === '' ||
@@ -120,36 +87,31 @@ const graphContainer =
 const graphRender = new AudioGraphRender({elementContainer: graphContainer});
 graphRender.init();
 
-const sizedNodesGraphObserver = Observer.transform(
-  graphSelector.graphObserver,
-  (graphContext) => graphRender.updateGraphSizes(graphContext),
-);
-
-const prelayoutThrottle = Observer.throttle(sizedNodesGraphObserver, {
-  key: (message) => message.id,
-});
-
 const layoutWorker = new Worker('panelWorker.js');
 
-postObservations(
-  Observer.transform(prelayoutThrottle, (graphContext) => ({graphContext})),
-  layoutWorker,
-);
-
-const layoutObserver: Utils.Observer<Audion.GraphContext> =
-  observeMessageEvents(layoutWorker);
+graphSelector.graph$
+  .pipe(
+    map(updateGraphSizes(graphRender)),
+    map((graphContext) => ({graphContext})),
+    mapThruWorker<Audion.GraphContext>(layoutWorker),
+    map(updateGraphRender(graphRender)),
+    catchError((reason, caught) => {
+      console.error(
+        'An error handling the latest audio graph context occured:',
+        reason,
+      );
+      return caught;
+    }),
+  )
+  .subscribe();
 
 const wholeGraphButton = new WholeGraphButton();
 wholeGraphButton.click$.subscribe(() => {
   graphRender.camera.fitToScreen();
 });
 
-layoutObserver.observe((message) => graphRender.update(message));
-
 graphContainer.appendChild(graphRender.pixiView);
 graphContainer.appendChild(wholeGraphButton.render());
-
-graphRender.start();
 
 merge(
   renderCollectGarbage(querySelector('.toolbar-garbage-button')).pipe(
@@ -164,7 +126,7 @@ merge(
     querySelector('.web-audio-toolbar-container .dropdown-title'),
     querySelector('.web-audio-select-graph-dropdown'),
     querySelector('.web-audio-toolbar-container .toolbar-dropdown'),
-    graphSelector.graphIdObserver$,
+    graphSelector.graphId$,
     allGraphsObserver$,
   ).pipe(
     tap((action) => {
@@ -176,11 +138,11 @@ merge(
   ),
   renderRealtimeSummary(
     querySelector('.web-audio-status'),
-    graphSelector.graphObserver$.pipe(map(({realtimeData}) => realtimeData)),
+    graphSelector.graph$.pipe(map(({realtimeData}) => realtimeData)),
   ),
   renderDetailPanel(
     querySelector('.web-audio-detail-panel'),
-    graphSelector.graphObserver$,
+    graphSelector.graph$,
     graphRender.selectedNode$,
   ),
 )

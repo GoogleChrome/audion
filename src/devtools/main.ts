@@ -5,9 +5,8 @@ import {
   take,
   shareReplay,
   share,
-  sampleTime,
-  takeLast,
   mergeMap,
+  auditTime,
 } from 'rxjs/operators';
 
 import {Audion} from './Types';
@@ -25,16 +24,19 @@ const attachController = new DebuggerAttachEventController();
 const webAudioEvents$ = new WebAudioEventObservable(attachController);
 const webAudioRealtimeData = new WebAudioRealtimeData();
 
-const serializedGraphContext$ = webAudioEvents$.pipe(
+const serializedGraphContext$ = merge(
+  webAudioEvents$,
+  attachController.debuggerEvent$,
+).pipe(
   integrateWebAudioGraph(webAudioRealtimeData),
   // Split graph contexts into an observable for each unique graph context id.
   partitionMap({
     getPartitionId: ({id}) => id,
     isPartitionComplete: ({context}) => context === null,
   }),
-  // For each partition, limit updates to the last value every given interval or
-  // the very last value when the partition completes.
-  (source) => merge(source.pipe(sampleTime(50)), source.pipe(takeLast(1))),
+  // For each partition, start a timer on the first value in that partition but
+  // emit the last value during that timer when the timer completes.
+  map(auditTime(16)),
   // Merge all the partitions together.
   mergeMap((source) => source),
   map(serializeGraphContext),

@@ -86,6 +86,12 @@ function getGlobal() {
  */
 function getChrome() {
   const g = getGlobal();
-  if ('chrome' in g && typeof g.chrome === 'object') return g.chrome;
+  if (
+    'chrome' in g &&
+    typeof g.chrome === 'object' &&
+    typeof g.chrome.devtools === 'object'
+  ) {
+    return g.chrome;
+  }
   return noopChrome();
 }

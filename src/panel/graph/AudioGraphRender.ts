@@ -70,7 +70,8 @@ export class AudioGraphRender {
       resolution: window.devicePixelRatio,
     }));
     this.pixiView = app.view;
-    // window.$app = app;
+
+    this.graphicsCache = new GraphicsCache();
 
     this.graphicsCache = new GraphicsCache();
 
@@ -103,11 +104,6 @@ export class AudioGraphRender {
 
     this.camera.setScreenSize(app.screen.width, app.screen.height);
     app.render();
-  }
-
-  /** Start rendering regularly. */
-  start() {
-    // this.renderFrameId = requestAnimationFrame(this.render);
   }
 
   /** Stop rendering. */
@@ -359,24 +355,28 @@ export class AudioGraphRender {
         const sourceNode = this.nodeMap.get(sourceData.node.nodeId);
         const destinationNode = this.nodeMap.get(destinationData.node.nodeId);
 
-        const {sourceOutputIndex, destinationType} = edge.value;
-        const sourceNodePort = sourceNode.output[sourceOutputIndex];
-        const destinationNodePort =
-          destinationType === Audion.GraphEdgeType.NODE
-            ? destinationNode.input[edge.value.destinationInputIndex]
-            : destinationNode.param[edge.value.destinationParamIndex];
+        if (sourceNode && destinationNode) {
+          const {sourceOutputIndex, destinationType} = edge.value;
+          const sourceNodePort = sourceNode.output[sourceOutputIndex];
+          const destinationNodePort =
+            destinationType === Audion.GraphEdgeType.NODE
+              ? destinationNode.input[edge.value.destinationInputIndex]
+              : destinationNode.param[edge.value.destinationParamIndex];
 
-        edgeRender = new AudioEdgeRender({
-          key: edgeId,
-          source: sourceNodePort,
-          destination: destinationNodePort,
-        });
-        edgeRender.setPIXIParent(this.pixiEdgeContainer);
+          if (sourceNodePort && destinationNodePort) {
+            edgeRender = new AudioEdgeRender({
+              key: edgeId,
+              source: sourceNodePort,
+              destination: destinationNodePort,
+            });
+            edgeRender.setPIXIParent(this.pixiEdgeContainer);
 
-        edgeRender.source.updateNodeDisplay();
-        edgeRender.destination.updateNodeDisplay();
+            edgeRender.source.updateNodeDisplay();
+            edgeRender.destination.updateNodeDisplay();
 
-        this.edgeMap.set(edgeId, edgeRender);
+            this.edgeMap.set(edgeId, edgeRender);
+          }
+        }
       }
     }
     return edgeRender;
