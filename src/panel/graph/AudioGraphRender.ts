@@ -73,8 +73,6 @@ export class AudioGraphRender {
 
     this.graphicsCache = new GraphicsCache();
 
-    this.graphicsCache = new GraphicsCache();
-
     const nodeContainer = (this.pixiNodeContainer = new PIXI.Container());
     app.stage.addChild(nodeContainer);
 

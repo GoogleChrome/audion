@@ -58,7 +58,6 @@ export class AudioEdgeRender {
    */
   setPIXIParent(parent: PIXI.Container) {
     this.parent = parent;
-    // parent.addChild(this.graphics);
     parent.addChild(this.container);
   }
   /**
