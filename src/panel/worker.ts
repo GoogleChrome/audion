@@ -5,15 +5,14 @@ import {
   distinctUntilChanged,
   filter,
   map,
+  scan,
   startWith,
   withLatestFrom,
 } from 'rxjs/operators';
 
 import {serializeGraphContext} from '../devtools/serializeGraphContext';
-import {
-  deserializeGraphContext,
-  SerializedGraphContext,
-} from '../devtools/deserializeGraphContext';
+import {SerializedGraphContext} from '../devtools/deserializeGraphContext';
+import {patchGraphContext} from '../devtools/patchGraphContext';
 import {setOptionsToGraphContext} from '../devtools/setOptionsToGraphContext';
 import {layoutGraphContext} from '../devtools/layoutGraphContext';
 
@@ -45,7 +44,7 @@ messages$
       (a, b) => a?.id === b?.id && a?.eventCount === b?.eventCount,
     ),
     auditTime(16),
-    map((graphContext) => deserializeGraphContext(graphContext)),
+    scan(patchGraphContext, {id: ''}),
     withLatestFrom(layoutOptions$),
     map(setOptionsToGraphContext),
     map(layoutGraphContext),
