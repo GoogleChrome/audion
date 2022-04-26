@@ -2,6 +2,9 @@ import * as PIXI from 'pixi.js';
 
 import type {AudionPanel} from '../Types';
 
+import {EdgeArrowGraphics} from './AudioEdgeArrowGraphics';
+import {EdgeCurvedLineGraphics} from './AudioEdgeCurvedLineGraphics';
+
 import {GraphColor} from './graphStyle';
 
 const ARROW_LENGTH = 12;
@@ -26,6 +29,7 @@ export class AudioEdgeRender {
   destination: AudionPanel.Port;
   parent: PIXI.Container;
   graphics: PIXI.Graphics;
+  container: PIXI.Container;
 
   /**
    * @param options
@@ -44,6 +48,7 @@ export class AudioEdgeRender {
     this.destination = destination;
     this.parent = null;
     this.graphics = new PIXI.Graphics();
+    this.container = new PIXI.Container();
 
     this.source.edges.push(this);
     this.destination.edges.push(this);
@@ -53,13 +58,13 @@ export class AudioEdgeRender {
    */
   setPIXIParent(parent: PIXI.Container) {
     this.parent = parent;
-    parent.addChild(this.graphics);
+    parent.addChild(this.container);
   }
   /**
    * Remove the PIXI DisplayObject from the rendered hierarchy.
    */
   remove() {
-    this.graphics.parent.removeChild(this.graphics);
+    this.container.parent.removeChild(this.container);
 
     this.source.edges.splice(this.source.edges.indexOf(this), 1);
     this.destination.edges.splice(this.destination.edges.indexOf(this), 1);
@@ -67,39 +72,35 @@ export class AudioEdgeRender {
   /**
    * @param line
    */
-  draw(line: AudionPanel.Point[]) {
-    const {graphics} = this;
-
+  draw(
+    line: AudionPanel.Point[],
+    {
+      edgeArrowGraphics: arrowGraphics,
+      edgeCurvedLineGraphics: curvedLineGraphics,
+    }: {
+      edgeArrowGraphics: EdgeArrowGraphics;
+      edgeCurvedLineGraphics: EdgeCurvedLineGraphics;
+    },
+  ) {
     const {
       offset: start,
       node: {position: sourcePosition},
-      radius: sourceRadius,
     } = this.source;
     const {
       offset: end,
       node: {position: destinationPosition},
-      radius: destinationRadius,
     } = this.destination;
-
-    const p = new PIXI.Point();
     const a = new PIXI.Point(
       sourcePosition.x + start.x,
       sourcePosition.y + start.y,
     );
-    const b = line[1];
-    const c = new PIXI.Point(
+    const d = new PIXI.Point(
       destinationPosition.x + end.x,
       destinationPosition.y + end.y,
     );
-
-    this.adjustPoint(b, a, sourceRadius);
-    this.adjustPoint(b, c, destinationRadius);
-
-    graphics.clear();
-    this.source.drawConnect(graphics);
-    this.destination.drawConnect(graphics);
-    this.drawCurvedLine(a, b, c, graphics, p);
-    this.drawArrow(p, c, graphics);
+    this.container.removeChildren();
+    this.container.addChild(arrowGraphics.createGraphics(a, d));
+    this.container.addChild(curvedLineGraphics.createGraphics(a, d));
   }
 
   /**

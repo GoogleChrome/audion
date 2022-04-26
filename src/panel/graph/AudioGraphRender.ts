@@ -174,7 +174,7 @@ export class AudioGraphRender {
       if (edge) {
         const edgeRender = this.createEdgeRender(edgeKeyValue, message);
         if (edgeRender) {
-          edgeRender.draw(edge.points);
+          edgeRender.draw(edge.points, this.graphicsCache);
         }
         previousEdgeRenders.delete(edgeRender);
       }
@@ -352,6 +352,7 @@ export class AudioGraphRender {
       if (sourceData && destinationData) {
         const sourceNode = this.nodeMap.get(sourceData.node.nodeId);
         const destinationNode = this.nodeMap.get(destinationData.node.nodeId);
+
         if (sourceNode && destinationNode) {
           const {sourceOutputIndex, destinationType} = edge.value;
           const sourceNodePort = sourceNode.output[sourceOutputIndex];
