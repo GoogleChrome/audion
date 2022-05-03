@@ -10,13 +10,14 @@ Soon you will be able to install the extension from Chrome Web Store page.
 
 ## Usage
 
-1. Install the extension from Chrome Web Store page when it becomes available.
-1. Alternatively, you can clone this repository and build the extension
+1. [Install the extension](https://chrome.google.com/webstore/detail/audion/cmhomipkklckpomafalojobppmmidlgl)
+   from Chrome Web Store.
+   1. Alternatively, you can clone this repository and build the extension
    locally. Follow
    [this instruction](https://developer.chrome.com/docs/extensions/mv3/faq/#faq-dev-01)
    to load the local build.
 1. [Open Chrome Developer Tools](https://developer.chrome.com/docs/devtools/open/).
-   You should be able to find “Audion” panel in the top. Select the panel.
+   You should be able to find “Web Audio” panel in the top. Select the panel.
 1. Visit or reload a page that uses Web Audio API. If the page is loaded before
    opening Developer Tools, you need to reload the page for the extension to
    work correctly.
