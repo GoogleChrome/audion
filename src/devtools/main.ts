@@ -14,17 +14,23 @@ import {Audion} from './Types';
 import {DebuggerAttachEventController} from './DebuggerAttachEventController';
 import {DevtoolsGraphPanel} from './DevtoolsGraphPanel';
 import {serializeGraphContext} from './serializeGraphContext';
-import {WebAudioEventObservable} from './WebAudioEventObserver';
 import {integrateWebAudioGraph} from './WebAudioGraphIntegrator';
 import {WebAudioRealtimeData} from './WebAudioRealtimeData';
 import {partitionMap} from './partitionMap';
+import {DebuggerEventsObservable} from './DebuggerEvents';
 
 const attachController = new DebuggerAttachEventController();
 
-const webAudioEvents$ = new WebAudioEventObservable(attachController);
+const pageEvent$ = new DebuggerEventsObservable(attachController, {
+  domain: 'page',
+});
+const webAudioEvents$ = new DebuggerEventsObservable(attachController, {
+  domain: 'webAudio',
+});
 const webAudioRealtimeData = new WebAudioRealtimeData();
 
 const serializedGraphContext$ = merge(
+  pageEvent$,
   webAudioEvents$,
   attachController.debuggerEvent$,
 ).pipe(
