@@ -87,7 +87,7 @@ const graphContainer =
 const graphRender = new AudioGraphRender({elementContainer: graphContainer});
 graphRender.init();
 
-const layoutWorker = new Worker('panelWorker.js');
+const layoutWorker = new Worker('audion-panelWorker.js');
 
 graphSelector.graph$
   .pipe(
