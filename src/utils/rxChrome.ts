@@ -1,5 +1,6 @@
-import {Observable} from 'rxjs';
+import {fromEventPattern, Observable} from 'rxjs';
 import {chrome} from '../chrome';
+import {ChromeDebuggerAPIEvent} from '../devtools/DebuggerAttachEventController';
 
 /**
  * Create a function that returns an observable that completes when the api
@@ -32,3 +33,16 @@ export function bindChromeCallback<P extends any[], R extends any[]>(
       },
     );
 }
+
+export const fromChromeEvent = <T extends (...args: any) => any>(
+  onEvent: Chrome.Event<T>,
+) =>
+  fromEventPattern<
+    Parameters<T> extends infer T1
+      ? T1 extends []
+        ? void
+        : T1 extends [infer T2]
+        ? T2
+        : T1
+      : never
+  >(onEvent.addListener.bind(onEvent), onEvent.removeListener.bind(onEvent));
