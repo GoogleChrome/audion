@@ -1,6 +1,6 @@
 import Protocol from 'devtools-protocol';
-import {bindCallback, concatMap, interval} from 'rxjs';
-import {map} from 'rxjs/operators';
+import {bindCallback, concatMap, interval, Observable} from 'rxjs';
+import {map, timeout} from 'rxjs/operators';
 
 import {invariant} from '../utils/error';
 
@@ -8,6 +8,7 @@ import {chrome} from '../chrome';
 import {WebAudioDebuggerMethod} from '../chrome/DebuggerWebAudioDomain';
 
 import {Audion} from './Types';
+import {bindChromeCallback} from '../utils/rxChrome';
 
 /**
  * Error messages returned by WebAudio.getRealtimeData devtool protocol method.
@@ -19,12 +20,16 @@ export enum RealtimeDataErrorMessage {
   REALTIME_ONLY = 'ContextRealtimeData is only avaliable for an AudioContext.',
 }
 
+interface RealtimeDataReason<Message extends RealtimeDataErrorMessage> {
+  message: Message;
+}
+
 const {tabId} = chrome.devtools.inspectedWindow;
 
-const sendCommand = bindCallback<
+const sendCommand = bindChromeCallback<
   [{tabId: string}, WebAudioDebuggerMethod.getRealtimeData, any?],
   [{realtimeData: Protocol.WebAudio.ContextRealtimeData}]
->(chrome.debugger.sendCommand.bind(chrome.debugger));
+>(chrome.debugger.sendCommand, chrome.debugger);
 
 export const INITIAL_CONTEXT_REALTIME_DATA = {
   callbackIntervalMean: 0,
@@ -35,6 +40,7 @@ export const INITIAL_CONTEXT_REALTIME_DATA = {
 
 export class WebAudioRealtimeData {
   private readonly intervalMS = 1000;
+  private readonly timeoutMS = 500;
 
   private readonly interval$ = interval(this.intervalMS);
 
@@ -44,10 +50,8 @@ export class WebAudioRealtimeData {
         sendCommand({tabId}, WebAudioDebuggerMethod.getRealtimeData, {
           contextId,
         }).pipe(
+          timeout({first: this.timeoutMS}),
           map((result) => {
-            if (chrome.runtime.lastError) {
-              throw chrome.runtime.lastError;
-            }
             invariant(
               result && result !== null,
               'ContextRealtimeData not returned for WebAudio context %0.',
@@ -60,3 +64,30 @@ export class WebAudioRealtimeData {
     );
   }
 }
+
+export const WebAudioRealtimeDataReason = {
+  parseReason(reason: any) {
+    if (reason && reason.message && !reason.code) {
+      try {
+        reason = JSON.parse(reason.message);
+      } catch (e) {}
+    }
+    return reason;
+  },
+
+  toString(reason: any) {
+    return reason && reason.message ? reason.message : reason;
+  },
+
+  isRealtimeOnlyReason(
+    reason: any,
+  ): reason is RealtimeDataReason<RealtimeDataErrorMessage.REALTIME_ONLY> {
+    return reason && reason.message === RealtimeDataErrorMessage.REALTIME_ONLY;
+  },
+
+  isCannotFindReason(
+    reason: any,
+  ): reason is RealtimeDataReason<RealtimeDataErrorMessage.CANNOT_FIND> {
+    return reason && reason.message === RealtimeDataErrorMessage.CANNOT_FIND;
+  },
+};

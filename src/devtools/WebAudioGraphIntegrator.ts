@@ -20,6 +20,8 @@ import {
   takeUntil,
   take,
   ignoreElements,
+  finalize,
+  share,
 } from 'rxjs/operators';
 
 import {WebAudioDebuggerEvent} from '../chrome/DebuggerWebAudioDomain';
@@ -29,16 +31,26 @@ import {
   INITIAL_CONTEXT_REALTIME_DATA,
   RealtimeDataErrorMessage,
   WebAudioRealtimeData,
+  WebAudioRealtimeDataReason,
 } from './WebAudioRealtimeData';
 import {
   ChromeDebuggerAPIEventName,
   ChromeDebuggerAPIEvent,
 } from './DebuggerAttachEventController';
+import {
+  PageDebuggerEvent,
+  PageDebuggerEventParams,
+} from '../chrome/DebuggerPageDomain';
+
+enum GraphContextDestroyReasonMessage {
+  RECEIVE_WILL_DESTROY_EVENT = 'ReceiveWillDestroyEvent',
+  CANNOT_FIND_REALTIME_DATA = 'CannotFindRealtimeData',
+}
 
 type MutableContexts = {
   [key: string]: {
     graphContext: Audion.GraphContext;
-    graphContextDestroyed$: Subject<void>;
+    graphContextDestroyed$: Subject<GraphContextDestroyReasonMessage>;
     realtimeDataGraphContext$: Observable<Audion.GraphContext>;
   };
 };
@@ -47,9 +59,15 @@ interface EventHelpers {
   realtimeData: WebAudioRealtimeData;
 }
 
-type IntegratableEventName = WebAudioDebuggerEvent | ChromeDebuggerAPIEventName;
+type IntegratableEventName =
+  | PageDebuggerEvent
+  | WebAudioDebuggerEvent
+  | ChromeDebuggerAPIEventName;
 
-type IntegratableEvent = Audion.WebAudioEvent | ChromeDebuggerAPIEvent;
+type IntegratableEvent =
+  | Audion.PageEvent
+  | Audion.WebAudioEvent
+  | ChromeDebuggerAPIEvent;
 
 type IntegratableEventMapping = {
   [K in IntegratableEventName]: ProtocolMapping.Events extends {
@@ -203,6 +221,13 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     const {contextId} = contextChanged.context;
     const space = contexts[contextId];
     if (!space) {
+      console.warn(
+        `Unexpected ${
+          WebAudioDebuggerEvent.contextChanged
+        } event. Did not receive an event when Audio Context ${contextId.slice(
+          -6,
+        )} was created.`,
+      );
       return;
     }
 
@@ -224,6 +249,12 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
         contextCreated,
       );
       return;
+    } else {
+      console.debug(
+        `Audio Context (${contextId.slice(
+          -6,
+        )}-${contextType}) created. Adding the context to the tracked set.`,
+      );
     }
 
     const graph = new dagre.graphlib.Graph({multigraph: true});
@@ -232,11 +263,61 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return {};
     });
 
-    const realtimeData$ =
-      contextType === 'realtime'
-        ? helpers.realtimeData.pollContext(contextId)
-        : NEVER;
-    const graphContextDestroyed$ = new Subject<void>();
+    // Request realtime data for realtime and offline contexts. We use this
+    // information to help confirm the existence of this new context. Events
+    // that normally mark when contexts are destroyed may not arrive and so we
+    // need this extra way to determine when the contexts no longer exist.
+    const realtimeData$ = helpers.realtimeData.pollContext(contextId);
+    const graphContextDestroyed$ =
+      new Subject<GraphContextDestroyReasonMessage>();
+
+    const realtimeDataGraphContext$ = realtimeData$.pipe(
+      map((realtimeData) => {
+        const space = contexts[contextId];
+        if (space) {
+          space.graphContext = {
+            ...space.graphContext,
+            realtimeData,
+          };
+          return space.graphContext;
+        }
+      }),
+      filter((context): context is Audion.GraphContext => Boolean(context)),
+      catchError((reason, caught) => {
+        reason = WebAudioRealtimeDataReason.parseReason(reason);
+
+        if (WebAudioRealtimeDataReason.isCannotFindReason(reason)) {
+          const space = contexts[contextId];
+          space?.graphContextDestroyed$?.next(
+            GraphContextDestroyReasonMessage.CANNOT_FIND_REALTIME_DATA,
+          );
+
+          if (!space) {
+            console.warn(
+              `Error requesting realtime data for context '${contextId}'.
+Context was likely cleaned up during request for realtime data.
+"${reason.message}"`,
+            );
+          }
+
+          return EMPTY;
+        } else if (WebAudioRealtimeDataReason.isRealtimeOnlyReason(reason)) {
+          // Non-realtime/offline contexts do not have realtime data and will
+          // produce this error when that data is requested.
+        } else {
+          console.error(
+            `Unexpected error requesting realtime data for context '${contextId}'.
+"${WebAudioRealtimeDataReason.toString(reason)}"`,
+          );
+        }
+
+        // Redirect back to the caught observable. We want to keep receiving
+        // realtime data values or errors until we receive CANNOT_FIND error.
+        return caught;
+      }),
+
+      takeUntil(graphContextDestroyed$),
+    );
 
     contexts[contextId] = {
       graphContext: {
@@ -252,69 +333,57 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
         graph: graph as unknown as graphlib.Graph,
       },
       graphContextDestroyed$,
-      realtimeDataGraphContext$: realtimeData$.pipe(
-        map((realtimeData) => {
-          const space = contexts[contextId];
-          if (space) {
-            space.graphContext = {
-              ...space.graphContext,
-              realtimeData,
-            };
-            return space.graphContext;
-          }
-        }),
-        filter((context): context is Audion.GraphContext => Boolean(context)),
-        catchError((reason) => {
-          if (reason && reason.message && !reason.code) {
-            try {
-              reason = JSON.parse(reason.message);
-            } catch (e) {}
-          }
-
-          if (
-            reason &&
-            reason.message === RealtimeDataErrorMessage.CANNOT_FIND
-          ) {
-            const space = contexts[contextId];
-            if (space) {
-              delete contexts[contextId];
-              return of({
-                id: contextId,
-                eventCount: space?.graphContext?.eventCount + 1,
-                context: null,
-                realtimeData: null,
-                nodes: null,
-                params: null,
-                graph: null,
-              });
-            } else {
-              console.warn(
-                `Error requesting realtime data for context '${contextId}'.
-Context was likely cleaned up during request for realtime data.
-"${reason.message}"`,
-              );
-            }
-          } else if (
-            reason &&
-            reason.message === RealtimeDataErrorMessage.REALTIME_ONLY
-          ) {
-            console.error(`Error requesting realtime data for context '${contextId}'.
-Context is of type '${contextCreated.context.contextType}' but should be 'realtime'.
-"${reason.message}"`);
-          } else {
-            console.error(
-              `Unknown error requesting realtime data for context '${contextId}'.
-"${reason && reason.message ? reason.message : reason}"`,
-            );
-          }
-          return EMPTY;
-        }),
-        takeUntil(graphContextDestroyed$),
-      ),
+      realtimeDataGraphContext$,
     };
 
     return merge(
       of(contexts[contextId].graphContext),
+      graphContextDestroyed$.pipe(
+        share(),
+        take(1),
+        mergeMap((message) => {
+          if (
+            message ===
+            GraphContextDestroyReasonMessage.CANNOT_FIND_REALTIME_DATA
+          ) {
+            console.debug(
+              `Audio Context (${contextId.slice(
+                -6,
+              )}-${contextType}) cannot be found. Removing the context from the tracked set.`,
+            );
+          } else if (
+            message ===
+            GraphContextDestroyReasonMessage.RECEIVE_WILL_DESTROY_EVENT
+          ) {
+            console.debug(
+              `Audio Context (${contextId.slice(
+                -6,
+              )}-${contextType}) will be destroyed. Removing the context from the tracked set.`,
+            );
+          }
+
+          const space = contexts[contextId];
+          if (space) {
+            delete contexts[contextId];
+            return of({
+              id: contextId,
+              eventCount: space.graphContext?.eventCount + 1,
+              context: null,
+              realtimeData: null,
+              nodes: null,
+              params: null,
+              graph: null,
+            });
+          } else {
+            console.warn(
+              `Audio Context (${contextId.slice(
+                -6,
+              )}-${contextType}) could not be removed from tracked set. It was not tracked.`,
+            );
+          }
+          return EMPTY;
+        }),
+      ),
       contexts[contextId].realtimeDataGraphContext$,
     );
   },
@@ -326,19 +395,9 @@ Context is of type '${contextCreated.context.contextType}' but should be 'realti
   ) => {
     const {contextId} = contextDestroyed;
     const space = contexts[contextId];
-    delete contexts[contextId];
-
-    space?.graphContextDestroyed$?.next();
-
-    return {
-      id: contextId,
-      eventCount: space?.graphContext?.eventCount + 1,
-      context: null,
-      realtimeData: null,
-      nodes: null,
-      params: null,
-      graph: null,
-    };
+    space?.graphContextDestroyed$?.next(
+      GraphContextDestroyReasonMessage.RECEIVE_WILL_DESTROY_EVENT,
+    );
   },
 
   [WebAudioDebuggerEvent.nodeParamConnected]: (
@@ -517,60 +576,77 @@ Context is of type '${contextCreated.context.contextType}' but should be 'realti
     return context;
   },
 
+  [PageDebuggerEvent.frameNavigated]: (helpers, contexts) => {
+    console.debug(
+      `Checking if tracked Audio Contexts (${Object.keys(contexts)
+        .map((contextId) => contextId.slice(-6))
+        .join(', ')}) exist after frame navigated.`,
+    );
+
+    return ensureContextsExist(contexts, helpers);
+  },
+
+  [PageDebuggerEvent.loadEventFired]: (helpers, contexts) => {
+    console.debug(
+      `Checking if tracked Audio Contexts (${Object.keys(contexts)
+        .map((contextId) => contextId.slice(-6))
+        .join(', ')}) exist after load event.`,
+    );
+
+    return ensureContextsExist(contexts, helpers);
+  },
+
   [ChromeDebuggerAPIEventName.detached]: (
     helpers,
     contexts,
     debuggerDetached,
   ) => {
     if (debuggerDetached.reason === 'target_closed') {
-      return merge(
-        ...Object.keys(contexts).map((contextId) =>
-          helpers.realtimeData.pollContext(contextId).pipe(
-            take(1),
-            ignoreElements(),
-            catchError((reason) => {
-              if (reason && reason.message && !reason.code) {
-                try {
-                  reason = JSON.parse(reason.message);
-                } catch (e) {}
-              }
-
-              if (
-                reason &&
-                reason.message === RealtimeDataErrorMessage.CANNOT_FIND
-              ) {
-                const space = contexts[contextId];
-                if (space) {
-                  delete contexts[contextId];
-                  space?.graphContextDestroyed$?.next();
-                  return of({
-                    id: contextId,
-                    eventCount: space?.graphContext?.eventCount + 1,
-                    context: null,
-                    realtimeData: null,
-                    nodes: null,
-                    params: null,
-                    graph: null,
-                  } as Audion.GraphContext);
-                }
-              } else if (
-                reason &&
-                reason.message === RealtimeDataErrorMessage.REALTIME_ONLY
-              ) {
-                // OfflineAudioContexts emit this error if they are still alive.
-              } else {
-                console.error(`Unknown error determining if context '${contextId}' is stale with devtools protocol WebAudio.getRealtimeData.
-"${reason && reason.message ? reason.message : reason}"`);
-              }
-
-              return EMPTY;
-            }),
-          ),
-        ),
+      console.debug(
+        `Checking if tracked Audio Contexts (${Object.keys(contexts)
+          .map((contextId) => contextId.slice(-6))
+          .join(
+            ', ',
+          )}) exist after debugger detached because target was closed.`,
       );
+
+      return ensureContextsExist(contexts, helpers);
     }
   },
 };
+
+function ensureContextsExist(
+  contexts: MutableContexts,
+  helpers: EventHelpers,
+): void | Audion.GraphContext | Observable<Audion.GraphContext> {
+  return merge(
+    ...Object.keys(contexts).map((contextId) =>
+      helpers.realtimeData.pollContext(contextId).pipe(
+        take(1),
+        ignoreElements(),
+        catchError((reason) => {
+          reason = WebAudioRealtimeDataReason.parseReason(reason);
+
+          if (WebAudioRealtimeDataReason.isCannotFindReason(reason)) {
+            const space = contexts[contextId];
+            if (space) {
+              space?.graphContextDestroyed$?.next(
+                GraphContextDestroyReasonMessage.CANNOT_FIND_REALTIME_DATA,
+              );
+            }
+          } else if (WebAudioRealtimeDataReason.isRealtimeOnlyReason(reason)) {
+            // OfflineAudioContexts emit this error if they are still alive.
+          } else {
+            console.error(`Unexpected error determining if context '${contextId}' is stale with devtools protocol WebAudio.getRealtimeData.
+"${WebAudioRealtimeDataReason.toString(reason)}"`);
+          }
+
+          return EMPTY;
+        }),
+      ),
+    ),
+  );
+}
 
 function removeAll<T>(array: T[], fn: (value: T) => boolean) {
   if (array) {

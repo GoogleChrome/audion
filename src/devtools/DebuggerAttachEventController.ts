@@ -7,6 +7,7 @@ import {
   Observable,
   of,
   Subject,
+  Subscriber,
 } from 'rxjs';
 import {
   catchError,
@@ -21,6 +22,7 @@ import {
 } from 'rxjs/operators';
 
 import {chrome} from '../chrome';
+import {PageDebuggerMethod} from '../chrome/DebuggerPageDomain';
 import {WebAudioDebuggerMethod} from '../chrome/DebuggerWebAudioDomain';
 
 /**
@@ -80,6 +82,8 @@ export interface DebuggerAttachEventState {
   permission: AttachPermission;
   attachInterest: number;
   attachState: BinaryTransition;
+  pageEventInterest: number;
+  pageEventState: BinaryTransition;
   webAudioEventInterest: number;
   webAudioEventState: BinaryTransition;
 }
@@ -121,6 +125,12 @@ export class DebuggerAttachEventController {
   attachInterest$: CounterSubject;
   attachState$: Observable<BinaryTransition>;
   /**
+   * How many subscriptions want to receive page events through
+   * `chrome.debugger.onEvent`.
+   */
+  pageEventInterest$: CounterSubject;
+  pageEventState$: Observable<BinaryTransition>;
+  /**
    * How many subscriptions want to receive web audio events through
    * `chrome.debugger.onEvent`.
    */
@@ -146,6 +156,15 @@ export class DebuggerAttachEventController {
         activateAction: () => attach({tabId}, debuggerVersion),
         deactivateAction: () => detach({tabId}),
       }),
+      // How many entities want to listen to page events through `onEvent`.
+      pageEventInterest: new CounterSubject(0),
+      // must be IS_ACTIVE for `onEvent` to receive events.
+      pageEventState: new BinaryTransitionSubject({
+        initialState: BinaryTransition.IS_INACTIVE,
+        activateAction: () => sendCommand({tabId}, PageDebuggerMethod.enable),
+        deactivateAction: () =>
+          sendCommand({tabId}, PageDebuggerMethod.disable),
+      }),
       // How many entities want to listen to web audio events through `onEvent`.
       webAudioEventInterest: new CounterSubject(0),
       // webAudioEventState must be IS_ACTIVE for `onEvent` to receive events.
@@ -160,6 +179,8 @@ export class DebuggerAttachEventController {
     this.permission$ = debuggerSubject.permission;
     this.attachInterest$ = debuggerSubject.attachInterest;
     this.attachState$ = debuggerSubject.attachState;
+    this.pageEventInterest$ = debuggerSubject.pageEventInterest;
+    this.pageEventState$ = debuggerSubject.pageEventState;
     this.webAudioEventInterest$ = debuggerSubject.webAudioEventInterest;
     this.webAudioEventState$ = debuggerSubject.webAudioEventState;
 
@@ -174,6 +195,8 @@ export class DebuggerAttachEventController {
             previous.permission === current.permission &&
             previous.attachInterest === current.attachInterest &&
             previous.attachState === current.attachState &&
+            previous.pageEventInterest === current.pageEventInterest &&
+            previous.pageEventState === current.pageEventState &&
             previous.webAudioEventInterest === current.webAudioEventInterest &&
             previous.webAudioEventState === current.webAudioEventState,
         ),
@@ -225,33 +248,19 @@ export class DebuggerAttachEventController {
       },
     });
 
-    // Govern receiving web audio events through `chrome.debugger.onEvent`.
-    debuggerState$.subscribe({
-      next(state) {
-        if (
-          state.attachState === BinaryTransition.IS_ACTIVE &&
-          state.webAudioEventInterest > 0
-        ) {
-          // Start receiving events. The attachemnt is active and some entities
-          // are listeneing for events.
-          debuggerSubject.webAudioEventState.activate();
-        } else {
-          if (state.attachState === BinaryTransition.IS_ACTIVE) {
-            // Stop receiving events. The attachment is still active but no
-            // entities are listening for events.
-            debuggerSubject.webAudioEventState.deactivate();
-          } else {
-            // "Skip" deactivation of receiving events and immediately go to
-            // the inactive state. The process of detachment either requested by
-            // the extension or initiated otherwise has implicitly stopped
-            // reception of events.
-            debuggerSubject.webAudioEventState.next(
-              BinaryTransition.IS_INACTIVE,
-            );
-          }
-        }
-      },
-    });
+    // Govern receiving events through `chrome.debugger.onEvent`.
+    debuggerState$.subscribe(
+      activateEventWhileAttached(
+        debuggerSubject.pageEventState,
+        ({pageEventInterest}) => pageEventInterest > 0,
+      ),
+    );
+    debuggerState$.subscribe(
+      activateEventWhileAttached(
+        debuggerSubject.webAudioEventState,
+        ({webAudioEventInterest}) => webAudioEventInterest > 0,
+      ),
+    );
   }
 
   /**
@@ -268,6 +277,36 @@ export class DebuggerAttachEventController {
       finalize(() => this.attachInterest$.decrement()),
     );
   }
+}
+
+function activateEventWhileAttached(
+  eventState: BinaryTransitionSubject,
+  interestExists: (state: DebuggerAttachEventState) => boolean,
+): Partial<Subscriber<DebuggerAttachEventState>> {
+  return {
+    next(state) {
+      if (
+        state.attachState === BinaryTransition.IS_ACTIVE &&
+        interestExists(state)
+      ) {
+        // Start receiving events. The attachemnt is active and some entities
+        // are listening for events.
+        eventState.activate();
+      } else {
+        if (state.attachState === BinaryTransition.IS_ACTIVE) {
+          // Stop receiving events. The attachment is still active but no
+          // entities are listening for events.
+          eventState.deactivate();
+        } else {
+          // "Skip" deactivation of receiving events and immediately go to the
+          // inactive state. The process of detachment either requested by the
+          // extension or initiated otherwise has implicitly stopped reception
+          // of events.
+          eventState.next(BinaryTransition.IS_INACTIVE);
+        }
+      }
+    },
+  };
 }
 
 /**

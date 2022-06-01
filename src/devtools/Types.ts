@@ -1,6 +1,10 @@
 /// <reference path="../chrome/DebuggerWebAudioDomain.ts" />
 
 import {Protocol} from 'devtools-protocol/types/protocol';
+import {
+  PageDebuggerEvent,
+  PageDebuggerEventParams,
+} from '../chrome/DebuggerPageDomain';
 
 import {
   WebAudioDebuggerEvent,
@@ -88,6 +92,11 @@ export namespace Audion {
     params: Protocol.WebAudio.AudioParam[];
     edges: Protocol.WebAudio.NodesConnectedEvent[];
   }
+
+  export type PageEvent<N extends PageDebuggerEvent = PageDebuggerEvent> = {
+    method: N;
+    params: PageDebuggerEventParams<N>[0];
+  };
 
   export type WebAudioEvent<
     N extends WebAudioDebuggerEvent = WebAudioDebuggerEvent,

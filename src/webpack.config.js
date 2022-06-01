@@ -3,9 +3,9 @@ const {resolve} = require('path');
 module.exports = (env, argv) => ({
   context: __dirname,
   entry: {
-    devtools: './devtools/main',
-    panel: './panel/main',
-    panelWorker: './panel/worker',
+    'audion-devtools': './devtools/main',
+    'audion-panel': './panel/main',
+    'audion-panelWorker': './panel/worker',
   },
   output: {
     path: resolve(__dirname, '../build/audion'),

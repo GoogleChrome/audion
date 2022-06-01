@@ -22,7 +22,6 @@ export class AudioNodeBackgroundCache {
 
   getBackground(node: Audion.GraphNode) {
     if (!this.cache.has(node.node.nodeType)) {
-      console.log(node);
       const background = new AudioNodeBackground();
       background.init(AudioNodeMetrics.from(node, this.textCacheGroup));
       this.cache.set(node.node.nodeType, background);
