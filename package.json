@@ -42,7 +42,7 @@
     "husky": ">=6",
     "jest": "^27.0.6",
     "jest-puppeteer": "^5.0.4",
-    "jsdoc": "^3.6.7",
+    "jsdoc": "^3.6.11",
     "lint-staged": ">=10",
     "mustache": "^4.2.0",
     "pinst": ">=2",
