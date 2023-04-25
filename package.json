@@ -43,7 +43,7 @@
     "jest": "^27.0.6",
     "jest-puppeteer": "^5.0.4",
     "jsdoc": "^3.6.7",
-    "lint-staged": ">=10",
+    "lint-staged": ">=13",
     "mustache": "^4.2.0",
     "pinst": ">=2",
     "prettier": "^2.3.2",
