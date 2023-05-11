@@ -23,7 +23,7 @@ export class AudioGraphRender {
   camera: Camera;
 
   elementContainer: HTMLElement;
-  pixiApplication: PIXI.Application | null;
+  pixiApplication: PIXI.Application<HTMLCanvasElement> | null;
   pixiView: HTMLCanvasElement | null;
   pixiNodeContainer: PIXI.Container | null;
   pixiEdgeContainer: PIXI.Container | null;
@@ -62,13 +62,15 @@ export class AudioGraphRender {
 
   /** Initialize. */
   init() {
-    const app = (this.pixiApplication = new PIXI.Application({
-      backgroundColor: 0xffffff,
-      resizeTo: this.elementContainer,
-      antialias: true,
-      autoDensity: true,
-      resolution: window.devicePixelRatio,
-    }));
+    const app = (this.pixiApplication = new PIXI.Application<HTMLCanvasElement>(
+      {
+        backgroundColor: 0xffffff,
+        resizeTo: this.elementContainer,
+        antialias: true,
+        autoDensity: true,
+        resolution: window.devicePixelRatio,
+      },
+    ));
     this.pixiView = app.view;
 
     this.graphicsCache = new GraphicsCache();
@@ -210,18 +212,13 @@ export class AudioGraphRender {
   initEvents() {
     const {pixiApplication: app} = this;
 
-    app.stage.interactive = true;
+    app.stage.eventMode = 'dynamic';
     let lastPoint = null;
     app.stage.addListener('mousemove', (e) => {
-      if (e instanceof PIXI.InteractionEvent) {
-        if (lastPoint && e.data.buttons) {
-          this.camera.move(
-            lastPoint.x - e.data.global.x,
-            lastPoint.y - e.data.global.y,
-          );
-        }
-        lastPoint = e.data.global.clone();
+      if (lastPoint && e.buttons) {
+        this.camera.move(lastPoint.x - e.globalX, lastPoint.y - e.globalY);
       }
+      lastPoint = e.global.clone();
     });
 
     app.view.onclick = ({offsetX, offsetY}) => {

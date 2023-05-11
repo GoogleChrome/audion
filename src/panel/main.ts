@@ -1,8 +1,7 @@
 /// <reference path="../chrome/DebuggerWebAudioDomain.ts" />
 
-import * as PIXI from 'pixi.js';
 // This module disable's pixi.js use of new Function to optimize rendering.
-import {install} from '@pixi/unsafe-eval';
+import '@pixi/unsafe-eval';
 
 import {merge, Subject} from 'rxjs';
 import {catchError, filter, map, scan, shareReplay, tap} from 'rxjs/operators';
@@ -25,10 +24,6 @@ import {AudioGraphRender} from './graph/AudioGraphRender';
 import {GraphSelector} from './GraphSelector';
 import {updateGraphRender} from './updateGraphRender';
 import {updateGraphSizes} from './updateGraphSizes';
-
-// Install an alternate system to part of pixi.js rendering that does not use
-// new Function.
-install(PIXI);
 
 if (chrome.devtools.panels.themeName === 'dark') {
   document.querySelector('html').className = '-theme-with-dark-background';

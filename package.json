@@ -1,7 +1,7 @@
 {
   "name": "audion",
   "private": true,
-  "version": "3.0.5",
+  "version": "3.0.6",
   "description": "A Chrome DevTools extension traces Web Audio API calls and visualizes in the DevTools.",
   "repository": {
     "type": "git",
@@ -19,11 +19,11 @@
     "node": "14"
   },
   "dependencies": {
-    "@pixi/events": "^6.1.0-rc",
-    "@pixi/unsafe-eval": "^6.0.4",
+    "@pixi/events": "^7.2.4",
+    "@pixi/unsafe-eval": "^7.2.4",
     "dagre": "^0.8.5",
-    "pixi.js": "^6.0.4",
-    "rxjs": "^7.3.0"
+    "pixi.js": "^7.2.4",
+    "rxjs": "^7.8.1"
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",
@@ -42,7 +42,7 @@
     "husky": ">=6",
     "jest": "^27.0.6",
     "jest-puppeteer": "^5.0.4",
-    "jsdoc": "^3.6.7",
+    "jsdoc": "^4.0.2",
     "lint-staged": ">=10",
     "mustache": "^4.2.0",
     "pinst": ">=2",
