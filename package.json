@@ -16,13 +16,14 @@
   "homepage": "https://github.com/GoogleChrome/audion#readme",
   "main": "index.js",
   "engines": {
-    "node": "14"
+    "node": "18"
   },
   "dependencies": {
     "@pixi/unsafe-eval": "^7.2.4",
     "dagre": "^0.8.5",
     "pixi.js": "^7.2.4",
-    "rxjs": "^7.8.1"
+    "rxjs": "^7.8.1",
+    "taffydb": "^2.7.3"
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",
