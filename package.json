@@ -1,7 +1,7 @@
 {
   "name": "audion",
   "private": true,
-  "version": "3.0.5",
+  "version": "3.0.6",
   "description": "A Chrome DevTools extension traces Web Audio API calls and visualizes in the DevTools.",
   "repository": {
     "type": "git",
@@ -16,14 +16,14 @@
   "homepage": "https://github.com/GoogleChrome/audion#readme",
   "main": "index.js",
   "engines": {
-    "node": "14"
+    "node": "18"
   },
   "dependencies": {
-    "@pixi/events": "^6.1.0-rc",
-    "@pixi/unsafe-eval": "^6.0.4",
+    "@pixi/unsafe-eval": "^7.2.4",
     "dagre": "^0.8.5",
-    "pixi.js": "^6.0.4",
-    "rxjs": "^7.3.0"
+    "pixi.js": "^7.2.4",
+    "rxjs": "^7.8.1",
+    "taffydb": "^2.7.3"
   },
   "devDependencies": {
     "@babel/core": "^7.14.6",
@@ -33,16 +33,16 @@
     "@pixi/jsdoc-template": "^2.6.0",
     "@types/dagre": "^0.7.46",
     "@types/graphlib": "^2.1.8",
-    "babel-jest": "^27.0.6",
+    "babel-jest": "^29.5.0",
     "css-loader": "^6.6.0",
     "devtools-protocol": "^0.0.924232",
-    "eslint": "^7.30.0",
+    "eslint": "^8.40.0",
     "eslint-config-google": "^0.14.0",
     "file-loader": "^6.2.0",
     "husky": ">=6",
     "jest": "^27.0.6",
     "jest-puppeteer": "^5.0.4",
-    "jsdoc": "^3.6.7",
+    "jsdoc": "^4.0.2",
     "lint-staged": ">=10",
     "mustache": "^4.2.0",
     "pinst": ">=2",
