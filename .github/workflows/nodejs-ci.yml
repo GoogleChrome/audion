@@ -14,6 +14,6 @@ jobs:
           node-version: '18.x'
       - run: npm ci
       - name: Run npm test with xvfb
-        uses: GabrielBB/xvfb-action@v1.6
+        uses: coactions/setup-xvfb@v1
         with:
           run: npm test
