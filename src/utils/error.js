@@ -40,3 +40,75 @@ export function invariant(test, message, ...args) {
     throw new InvariantError(message, args);
   }
 }
+
+/**
+ * Send console logging to inspect window
+ * @param {String} message The description of the debug event
+ * @param {AudioEventProperties} properties The properties of
+ *     audio element for debugging
+ */
+export function debugLog(message, properties) {
+  let debugMessage = '[' + performance.now().toFixed(2) + '] ';
+  if (message) {
+    debugMessage += message + '\n';
+  }
+
+  for (const property in properties) {
+    if (properties[property]) {
+      switch (property) {
+        case 'contextId':
+          debugMessage +=
+            '[' +
+            performance.now().toFixed(2) +
+            '] The context ID is ' +
+            properties[property].slice(-6) +
+            '\n';
+          break;
+        case 'sourceNodeId':
+          debugMessage +=
+            '[' +
+            performance.now().toFixed(2) +
+            '] The source node ID is ' +
+            properties[property].slice(-6) +
+            '\n';
+          break;
+        case 'nodeId':
+          debugMessage +=
+            '[' +
+            performance.now().toFixed(2) +
+            '] The node ID is ' +
+            properties[property].slice(-6) +
+            '\n';
+          break;
+        case 'destinationNodeId':
+          debugMessage +=
+            '[' +
+            performance.now().toFixed(2) +
+            '] The destination node ID is ' +
+            properties[property].slice(-6) +
+            '\n';
+          break;
+        case 'destinationParamId':
+          debugMessage +=
+            '[' +
+            performance.now().toFixed(2) +
+            '] The destination param ID is ' +
+            properties[property].slice(-6) +
+            '\n';
+          break;
+        case 'paramId':
+          debugMessage +=
+            '[' +
+            performance.now().toFixed(2) +
+            '] The audio param ID is ' +
+            properties[property].slice(-6) +
+            '\n';
+          break;
+        default:
+          break;
+      }
+    }
+  }
+
+  console.debug(debugMessage);
+}
