@@ -358,24 +358,20 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contextCreated,
   ) => {
     const {contextId, contextType} = contextCreated.context;
+
+    const properties = new AudioEventProperties(contextId, '', '', '', '', '');
+
     if (contexts[contextId]) {
       // Duplicate or out of order context created event.
-      console.debug(
-        '[' +
-          performance.now().toFixed(2) +
-          '] ' +
-          `Duplicate ${WebAudioDebuggerEvent.contextCreated} event.`,
-        contextCreated,
+      debugLog(
+        'This BaseAudioContext id already exist. Duplicate event',
+        properties,
       );
       return;
     } else {
-      console.debug(
-        '[' +
-          performance.now().toFixed(2) +
-          '] ' +
-          `Audio Context (${contextId.slice(
-            -6,
-          )}-${contextType}) created. Adding the context to the tracked set.`,
+      debugLog(
+        'Notifies that a new BaseAudioContext has been created. Adding the context to the tracked set.',
+        properties,
       );
     }
 
@@ -538,6 +534,7 @@ Context was likely cleaned up during requests for real time data.
     space?.graphContextDestroyed$?.next(
       GraphContextDestroyReasonMessage.RECEIVE_WILL_DESTROY_EVENT,
     );
+
     const properties = new AudioEventProperties(contextId, '', '', '', '', '');
     debugLog(
       'Notifies that an existing BaseAudioContext will be destroyed.',
