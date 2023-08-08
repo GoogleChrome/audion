@@ -7,7 +7,7 @@ document.addEventListener(
   /**
    * Handles the DOMContentLoaded event to set up the options page.
    */
-  function() {
+  function () {
     /**
      * Function to save the options in storage
      */
