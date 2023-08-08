@@ -9,7 +9,7 @@ document.addEventListener(
    */
   function() {
     /**
-     * Function to save the options
+     * Function to save the options in storage
      */
     function saveOptions() {
       const checkboxValue = document.getElementById('showDebugInfo').checked;
@@ -25,7 +25,7 @@ document.addEventListener(
     }
 
     /**
-     * Function to restore the options
+     * Function to restore the options from storage
      */
     function restoreOptions() {
       /* eslint-disable */
