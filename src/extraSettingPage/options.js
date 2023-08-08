@@ -2,7 +2,7 @@
  * Initializes the options page by setting up event
  * listeners and restoring saved options.
  */
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', function() {
   /**
    * Logs a message to the console
    * based on whether the checkbox is checked or not.
