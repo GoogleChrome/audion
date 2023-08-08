@@ -48,9 +48,8 @@ export function DLOG(message, properties) {
           }
         }
       }
+      
       console.debug(debugMessage);
-    } else {
-      return;
     }
   });
 }
