@@ -1,3 +1,4 @@
+// prettier-ignore
 /**
  * Initializes the options page by setting up event listeners and
  * restoring saved options.
@@ -16,7 +17,7 @@ document.addEventListener(
       /* eslint-disable */
       chrome.storage.sync.set(
         {isShownExtraDebugLog: checkboxValue},
-        function () {
+        function() {
           console.log('Options saved.');
         },
       );

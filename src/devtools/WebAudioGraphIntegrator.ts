@@ -1,7 +1,7 @@
 import * as dagre from 'dagre';
 import * as graphlib from 'graphlib';
 import {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping';
-import {DLOG} from '../utils/error';
+import {DLOG} from '../utils/dlog';
 import {
   EMPTY,
   isObservable,
