@@ -15,9 +15,7 @@ document.addEventListener(
       const checkboxValue = document.getElementById('showDebugInfo').checked;
       /* eslint-disable */
       chrome.storage.sync.set(
-        {
-          isShownExtraDebugLog: checkboxValue,
-        },
+        {isShownExtraDebugLog: checkboxValue},
         function () {
           console.log('Options saved.');
         },
