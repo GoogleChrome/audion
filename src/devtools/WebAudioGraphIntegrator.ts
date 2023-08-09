@@ -319,11 +319,10 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return {};
     });
 
-    // Request realtime data for realtime and offline contexts. We use
-    // this information to help confirm the existence of this new
-    // context. Events that normally mark when contexts are destroyed
-    // may not arrive and so we need this extra way to determine when
-    // the contexts no longer exist.
+    // Request realtime data for realtime and offline contexts. We use this
+    // information to help confirm the existence of this new context. Events
+    // that normally mark when contexts are destroyed may not arrive and so we
+    // need this extra way to determine when the contexts no longer exist.
     const realtimeData$ = helpers.realtimeData.pollContext(contextId);
     const graphContextDestroyed$ =
       new Subject<GraphContextDestroyReasonMessage>();
@@ -362,8 +361,10 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
           // Non-realtime/offline contexts do not have realtime data and will
           // produce this error when that data is requested.
         } else {
-          console.error(`Unexpected error requesting realtime data for context '${contextId}'.
-              "${WebAudioRealtimeDataReason.toString(reason)}"`);
+          console.error(
+            `Unexpected error requesting realtime data for context '${contextId}'.
+"${WebAudioRealtimeDataReason.toString(reason)}"`,
+          );
         }
         // Redirect back to the caught observable. We want to keep receiving
         // realtime data values or errors until we receive CANNOT_FIND error.
@@ -383,6 +384,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
         params: {},
         // TODO: dagre's graphlib typings are inaccurate, which is why we use
         // graphlib's types. Revert to dagre's types once the issue is fixed:
+        // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/47439
         graph: graph as unknown as graphlib.Graph,
       },
       graphContextDestroyed$,
@@ -718,8 +720,7 @@ function ensureContextsExist(
               );
             }
           } else if (WebAudioRealtimeDataReason.isRealtimeOnlyReason(reason)) {
-            // OfflineAudioContexts emit this error if they are still
-            // alive.
+            // OfflineAudioContexts emit this error if they are still alive.
           } else {
             console.error(
               getTimestampAsString() +
