@@ -1,3 +1,5 @@
+import {getTimestampAsString} from '../devtools/WebAudioGraphIntegrator';
+
 // prettier-ignore
 /**
  * Send console logging to inspect window
@@ -9,7 +11,7 @@ export function DLOG(message, properties) {
   const EXTENSION_OPTIONS_DEBUG_LOG =
       localStorage.getItem('isShownExtraDebugLog') === 'true';
   if (EXTENSION_OPTIONS_DEBUG_LOG) {
-    let debugMessage = '[' + performance.now().toFixed(2) + '] ';
+    let debugMessage = getTimestampAsString();
     if (message) {
       debugMessage += message + '\n';
     }

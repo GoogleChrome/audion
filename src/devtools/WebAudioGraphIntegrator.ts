@@ -89,8 +89,8 @@ type EventHandlers =
       ) => Observable<Audion.GraphContext> | Audion.GraphContext | void;
     };
 
-const getTimestampAsString = () => {
-  return `[${performance.now().toFixed(2)}]`;
+export const getTimestampAsString = () => {
+  return '[' + performance.now().toFixed(2) + '] ';
 };
 
 const EVENT_HANDLERS: Partial<EventHandlers> = {
@@ -303,7 +303,8 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     if (contexts[contextId]) {
       // Duplicate or out of order context created event.
       console.warn(
-        `Duplicate ${WebAudioDebuggerEvent.contextCreated} event.`,
+        getTimestampAsString() +
+          `Duplicate ${WebAudioDebuggerEvent.contextCreated} event.`,
         contextCreated,
       );
       return;
