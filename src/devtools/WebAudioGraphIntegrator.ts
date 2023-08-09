@@ -44,8 +44,8 @@ import {
 } from '../chrome/DebuggerPageDomain';
 
 enum GraphContextDestroyReasonMessage {
-  RECEIVE_WILL_DESTROY_EVENT = 'ReceiveWillDestroyEvent',
-  CANNOT_FIND_REALTIME_DATA = 'CannotFindRealtimeData',
+  RECEIVE_WILL_DESTROY_EVENT = `ReceiveWillDestroyEvent`,
+  CANNOT_FIND_REALTIME_DATA = `CannotFindRealtimeData`,
 }
 
 type MutableContexts = {
@@ -106,7 +106,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return;
     }
 
-    DLOG('A new AudioNode has been created.', {
+    DLOG(`A new AudioNode has been created.`, {
       contextId,
       nodeId,
     });
@@ -115,7 +115,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     context.eventCount += 1;
 
     if (context.nodes[nodeId]) {
-      DLOG('Duplicate WebAudio.audioNodeCreated event', {contextId, nodeId});
+      DLOG(`Duplicate WebAudio.audioNodeCreated event`, {contextId, nodeId});
       return;
     }
 
@@ -142,7 +142,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
   ) => {
     const {contextId, nodeId} = audioNodeDestroyed;
 
-    DLOG('An existing AudioNode has been destroyed.', {
+    DLOG(`An existing AudioNode has been destroyed.`, {
       contextId,
       nodeId,
     });
@@ -174,7 +174,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     const {param} = audioParamCreated;
     const {contextId, nodeId, paramId: paramIdCreated} = param;
 
-    DLOG('A new AudioParam has been created.', {
+    DLOG(`A new AudioParam has been created.`, {
       contextId,
       nodeId,
       paramIdCreated,
@@ -194,7 +194,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     }
 
     if (node.params.some(({paramId}) => paramId === paramIdCreated)) {
-      DLOG('Duplicate WebAudio.audioParamCreated event', {
+      DLOG(`Duplicate WebAudio.audioParamCreated event`, {
         contextId,
         nodeId,
         paramIdCreated,
@@ -218,7 +218,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       paramId: paramIdCreated,
     } = audioParamWillBeDestroyed;
 
-    DLOG('An existing AudioParam has been destroyed.', {
+    DLOG(`An existing AudioParam has been destroyed.`, {
       contextId,
       nodeId,
       paramIdCreated,
@@ -257,8 +257,8 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     }
 
     DLOG(
-      'Some properties in BaseAudioContext have changed.' +
-        'properties (id stays the same)',
+      `Some properties in BaseAudioContext have changed.` +
+        `properties (id stays the same)`,
       {contextId},
     );
 
@@ -274,7 +274,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
   ) => {
     const {contextId} = contextChanged.listener;
 
-    DLOG('An AudioListener has been created.', {
+    DLOG(`An AudioListener has been created.`, {
       contextId,
     });
     return;
@@ -287,7 +287,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
   ) => {
     const {contextId} = contextChanged;
 
-    DLOG('An AudioListener will be destroyed.', {
+    DLOG(`An AudioListener will be destroyed.`, {
       contextId,
     });
     return;
@@ -301,14 +301,14 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     const {contextId, contextType} = contextCreated.context;
 
     if (contexts[contextId]) {
-      DLOG('This BaseAudioContext id already exists. Duplicate event', {
+      DLOG(`This BaseAudioContext id already exists. Duplicate event`, {
         contextId,
       });
       return;
     } else {
       DLOG(
-        'A new BaseAudioContext has been created.' +
-          'Adding the context to the tracked set.',
+        `A new BaseAudioContext has been created.` +
+          `Adding the context to the tracked set.`,
         {contextId},
       );
     }
@@ -351,8 +351,8 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
 
           if (!space) {
             DLOG(
-              `Error requesting realtime data for context, Context was likely cleaned up' + 
-                'during requests for real time data.`,
+              `Error requesting realtime data for context, Context was likely cleaned up` +
+                `during requests for real time data.`,
               {reason, contextId},
             );
           }
@@ -455,7 +455,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       GraphContextDestroyReasonMessage.RECEIVE_WILL_DESTROY_EVENT,
     );
 
-    DLOG('A BaseAudioContext will be destroyed.', {
+    DLOG(`A BaseAudioContext will be destroyed.`, {
       contextId,
     });
   },
@@ -472,7 +472,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       destinationId: destinationParamId,
     } = nodeParamConnected;
 
-    DLOG('An AudioNode is connected to an AudioParam.', {
+    DLOG(`An AudioNode is connected to an AudioParam.`, {
       contextId,
       sourceNodeId,
       destinationParamId,
@@ -529,7 +529,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       destinationId: destinationParamId,
     } = nodesDisconnected;
 
-    DLOG('An AudioNode is disconnected to an AudioParam.', {
+    DLOG(`An AudioNode is disconnected to an AudioParam.`, {
       contextId,
       sourceNodeId,
       destinationParamId,
@@ -576,7 +576,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       destinationInputIndex = 0,
     } = nodesConnected;
 
-    DLOG('Two AudioNodes are connected.', {
+    DLOG(`Two AudioNodes are connected.`, {
       contextId,
       sourceId,
       destinationId,
@@ -627,9 +627,9 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     } = nodesDisconnected;
 
     DLOG(
-      'Notifies AudioNodes is disconnected. The destination' +
-        'can be null, and it means all the outgoing connections' +
-        'from the source are disconnected.',
+      `Notifies AudioNodes is disconnected. The destination` +
+        `can be null, and it means all the outgoing connections` +
+        `from the source are disconnected.`,
       {contextId, sourceId, destinationId},
     );
 
@@ -667,7 +667,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       getTimestampAsString() +
         `Checking if tracked Audio Contexts (${Object.keys(contexts)
           .map((contextId) => contextId.slice(-6))
-          .join(', ')}) exist after frame navigated.`,
+          .join(`, `)}) exist after frame navigated.`,
     );
 
     return ensureContextsExist(contexts, helpers);
@@ -678,7 +678,7 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       getTimestampAsString() +
         `Checking if tracked Audio Contexts (${Object.keys(contexts)
           .map((contextId) => contextId.slice(-6))
-          .join(', ')}) exist after load event.`,
+          .join(`, `)}) exist after load event.`,
     );
 
     return ensureContextsExist(contexts, helpers);
@@ -689,13 +689,13 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contexts,
     debuggerDetached,
   ) => {
-    if (debuggerDetached.reason === 'target_closed') {
+    if (debuggerDetached.reason === `target_closed`) {
       console.debug(
         getTimestampAsString() +
           `Checking if tracked Audio Contexts (${Object.keys(contexts)
             .map((contextId) => contextId.slice(-6))
             .join(
-              ', ',
+              `, `,
             )}) exist after debugger detached because target was closed.`,
       );
 
