@@ -1,3 +1,5 @@
+import {chrome} from '../chrome';
+
 // prettier-ignore
 /**
  * Send console logging to inspect window
@@ -6,8 +8,7 @@
  *     of audio element for debugging
  */
 export function DLOG(message, properties) {
-  /* eslint-disable */
-  chrome.storage.sync.get('isShownExtraDebugLog', function (msg) {
+  chrome.storage.sync.get('isShownExtraDebugLog', function(msg) {
     if (msg.isShownExtraDebugLog) {
       let debugMessage = '[' + performance.now().toFixed(2) + '] ';
       if (message) {
@@ -48,7 +49,7 @@ export function DLOG(message, properties) {
           }
         }
       }
-      
+
       console.debug(debugMessage);
     }
   });
