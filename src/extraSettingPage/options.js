@@ -1,5 +1,3 @@
-import {chrome} from '../chrome';
-
 // prettier-ignore
 /**
  * Initializes the options page by setting up event listeners and
@@ -16,7 +14,7 @@ document.addEventListener(
      */
     function saveOptions() {
       const checkboxValue = document.getElementById('showDebugInfo').checked;
-
+      // eslint-disable-next-line
       chrome.storage.sync.set(
         {isShownExtraDebugLog: checkboxValue},
         function() {
@@ -29,6 +27,7 @@ document.addEventListener(
      * Function to restore the options from storage
      */
     function restoreOptions() {
+      // eslint-disable-next-line
       chrome.storage.sync.get('isShownExtraDebugLog', function(items) {
         document.getElementById('showDebugInfo').checked =
           items.isShownExtraDebugLog;

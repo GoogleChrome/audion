@@ -4,7 +4,7 @@ import {chrome} from '../chrome';
 /**
  * Send console logging to inspect window
  * @param {String} message The description of the debug event
- * @param {AudioEventProperties} properties The properties
+ * @param {Object} properties The properties
  *     of audio element for debugging
  */
 export function DLOG(message, properties) {

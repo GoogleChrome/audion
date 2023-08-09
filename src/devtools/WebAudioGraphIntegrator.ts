@@ -309,9 +309,10 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return;
     } else {
       console.debug(
-        `Audio Context (${contextId.slice(
-          -6,
-        )}-${contextType}) created. Adding the context to the tracked set.`,
+        getTimestampAsString() +
+          `Audio Context (${contextId.slice(
+            -6,
+          )}-${contextType}) created. Adding the context to the tracked set.`,
       );
     }
 
