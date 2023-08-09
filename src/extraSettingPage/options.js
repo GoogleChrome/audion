@@ -15,12 +15,7 @@ document.addEventListener(
     function saveOptions() {
       const checkboxValue = document.getElementById('showDebugInfo').checked;
       // eslint-disable-next-line
-      chrome.storage.sync.set(
-        {isShownExtraDebugLog: checkboxValue},
-        function() {
-          console.log('Options saved.');
-        },
-      );
+      localStorage.setItem('isShownExtraDebugLog', checkboxValue);
     }
 
     /**
@@ -28,10 +23,7 @@ document.addEventListener(
      */
     function restoreOptions() {
       // eslint-disable-next-line
-      chrome.storage.sync.get('isShownExtraDebugLog', function(items) {
-        document.getElementById('showDebugInfo').checked =
-          items.isShownExtraDebugLog;
-      });
+      document.getElementById('showDebugInfo').checked = localStorage.getItem('isShownExtraDebugLog') === 'true';
     }
 
     /**

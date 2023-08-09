@@ -12,6 +12,19 @@ import {integrateWebAudioGraph} from './WebAudioGraphIntegrator';
 // eslint-disable-next-line max-len
 import * as oscillatorGainFixture from '../../fixtures/oscillatorGainParam';
 
+// prettier-ignore
+global.performance = {
+  now: jest.fn(() => Date.now()),
+};
+
+const localStorageMock = {
+  getItem: jest.fn(),
+  setItem: jest.fn(),
+  clear: jest.fn(),
+  removeItem: jest.fn(),
+};
+global.localStorage = localStorageMock;
+
 describe('WebAudioGraphIntegrator', () => {
   let nextWebAudioEvent = (value) => {};
   let nextGraphContext = jest.fn();
