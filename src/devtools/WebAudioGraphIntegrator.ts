@@ -301,15 +301,17 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     const {contextId, contextType} = contextCreated.context;
 
     if (contexts[contextId]) {
-      DLOG(`This BaseAudioContext id already exists. Duplicate event`, {
-        contextId,
-      });
+      // Duplicate or out of order context created event.
+      console.warn(
+        `Duplicate ${WebAudioDebuggerEvent.contextCreated} event.`,
+        contextCreated,
+      );
       return;
     } else {
-      DLOG(
-        `A new BaseAudioContext has been created.` +
-          `Adding the context to the tracked set.`,
-        {contextId},
+      console.debug(
+        `Audio Context (${contextId.slice(
+          -6,
+        )}-${contextType}) created. Adding the context to the tracked set.`,
       );
     }
 
@@ -362,7 +364,8 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
           // produce this error when that data is requested.
         } else {
           console.error(
-            `Unexpected error requesting realtime data for context '${contextId}'.
+            getTimestampAsString() +
+              `Unexpected error requesting realtime data for context '${contextId}'.
 "${WebAudioRealtimeDataReason.toString(reason)}"`,
           );
         }
@@ -724,9 +727,9 @@ function ensureContextsExist(
           } else {
             console.error(
               getTimestampAsString() +
-                `Unexpected error determining 
-                if context '${contextId}' is stale with devtools protocol WebAudio.getRealtimeData.
-                "${WebAudioRealtimeDataReason.toString(reason)}"`,
+                `Unexpected error determining if context
+                  '${contextId}' is stale with devtools protocol WebAudio.getRealtimeData.
+                  "${WebAudioRealtimeDataReason.toString(reason)}"`,
             );
           }
 
