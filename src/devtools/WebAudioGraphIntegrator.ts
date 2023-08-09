@@ -359,18 +359,14 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
 
           return EMPTY;
         } else if (WebAudioRealtimeDataReason.isRealtimeOnlyReason(reason)) {
-          // Non-realtime/offline contexts do not have realtime data
-          // and will produce this error when that data is requested.
+          // Non-realtime/offline contexts do not have realtime data and will
+          // produce this error when that data is requested.
         } else {
-          DLOG(`Unexpected error requesting realtime data for context`, {
-            contextId,
-            reason,
-          });
+          console.error(`Unexpected error requesting realtime data for context '${contextId}'.
+              "${WebAudioRealtimeDataReason.toString(reason)}"`);
         }
-
-        // Redirect back to the caught observable. We want to keep
-        // receiving realtime data values or errors until we receive
-        // CANNOT_FIND error.
+        // Redirect back to the caught observable. We want to keep receiving
+        // realtime data values or errors until we receive CANNOT_FIND error.
         return caught;
       }),
 
@@ -385,10 +381,8 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
         realtimeData: INITIAL_CONTEXT_REALTIME_DATA,
         nodes: {},
         params: {},
-        // TODO: dagre's graphlib typings are inaccurate, which is why
-        // we use graphlib's types. Revert to dagre's types once the
-        // issue is fixed:
-        // https://github.com/DefinitelyTyped/DefinitelyTyped/issues/47439
+        // TODO: dagre's graphlib typings are inaccurate, which is why we use
+        // graphlib's types. Revert to dagre's types once the issue is fixed:
         graph: graph as unknown as graphlib.Graph,
       },
       graphContextDestroyed$,
@@ -727,9 +721,12 @@ function ensureContextsExist(
             // OfflineAudioContexts emit this error if they are still
             // alive.
           } else {
-            getTimestampAsString() +
-              console.debug(`Unexpected error determining if context '${contextId}' is stale with devtools protocol WebAudio.getRealtimeData.
-"${WebAudioRealtimeDataReason.toString(reason)}"`);
+            console.error(
+              getTimestampAsString() +
+                `Unexpected error determining 
+                if context '${contextId}' is stale with devtools protocol WebAudio.getRealtimeData.
+                "${WebAudioRealtimeDataReason.toString(reason)}"`,
+            );
           }
 
           return EMPTY;
