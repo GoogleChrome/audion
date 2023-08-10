@@ -311,9 +311,8 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     } else {
       console.debug(
         getTimestampAsString() +
-          `Audio Context (${contextId.slice(
-            -6,
-          )}-${contextType}) created. Adding the context to the tracked set.`,
+          `Audio Context (${contextId.slice(-6)}-${contextType}) created.` +
+          `Adding the context to the tracked set.`,
       );
     }
 
@@ -367,8 +366,8 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
         } else {
           console.error(
             getTimestampAsString() +
-              `Unexpected error requesting realtime data for context '${contextId}'.
-"${WebAudioRealtimeDataReason.toString(reason)}"`,
+              `Unexpected error requesting realtime data for context '${contextId}'.` +
+              `"${WebAudioRealtimeDataReason.toString(reason)}"`,
           );
         }
         // Redirect back to the caught observable. We want to keep receiving
@@ -729,9 +728,9 @@ function ensureContextsExist(
           } else {
             console.error(
               getTimestampAsString() +
-                `Unexpected error determining if context
-                  '${contextId}' is stale with devtools protocol WebAudio.getRealtimeData.
-                  "${WebAudioRealtimeDataReason.toString(reason)}"`,
+                `Unexpected error determining if context "${contextId}" is ` +
+                `stale with devtools protocol WebAudio.getRealtimeData.` +
+                `"${WebAudioRealtimeDataReason.toString(reason)}"`,
             );
           }
 
