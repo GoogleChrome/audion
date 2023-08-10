@@ -115,7 +115,10 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     context.eventCount += 1;
 
     if (context.nodes[nodeId]) {
-      DLOG(`Duplicate WebAudio.audioNodeCreated event`, {contextId, nodeId});
+      DLOG(`Duplicate WebAudio.audioNodeCreated event`, {
+        contextId,
+        nodeId,
+      });
       return;
     }
 
@@ -249,9 +252,11 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     const space = contexts[contextId];
     if (!space) {
       DLOG(
-        `Unexpected WebAudio.contextChanged event. Did not receive an event when 
-          Audio Context was created`,
-        {contextId},
+        `Unexpected WebAudio.contextChanged event.` +
+          `Did not receive an event when Audio Context was created`,
+        {
+          contextId,
+        },
       );
       return;
     }
@@ -259,7 +264,9 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     DLOG(
       `Some properties in BaseAudioContext have changed.` +
         `properties (id stays the same)`,
-      {contextId},
+      {
+        contextId,
+      },
     );
 
     space.graphContext.context = contextChanged.context;
@@ -353,9 +360,12 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
 
           if (!space) {
             DLOG(
-              `Error requesting realtime data for context, Context was likely cleaned up` +
-                `during requests for real time data.`,
-              {reason, contextId},
+              `Error requesting realtime data for context,` +
+                `Context was likely cleaned up during requests for real time data.`,
+              {
+                reason,
+                contextId,
+              },
             );
           }
 
@@ -406,16 +416,22 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
             GraphContextDestroyReasonMessage.CANNOT_FIND_REALTIME_DATA
           ) {
             DLOG(
-              `Audio Context cannot be found. Removing the context from the tracked set.`,
-              {contextId},
+              `Audio Context cannot be found. ` +
+                `Removing the context from the tracked set.`,
+              {
+                contextId,
+              },
             );
           } else if (
             message ===
             GraphContextDestroyReasonMessage.RECEIVE_WILL_DESTROY_EVENT
           ) {
             DLOG(
-              `Audio Context will be destroyed. Removing the context from the tracked set.`,
-              {contextId},
+              `Audio Context will be destroyed.` +
+                `Removing the context from the tracked set.`,
+              {
+                contextId,
+              },
             );
           }
 
@@ -433,8 +449,11 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
             });
           } else {
             DLOG(
-              `Audio Context could not be removed from the tracked set. It was not tracked.`,
-              {contextId},
+              `Audio Context could not be removed from the tracked set.` +
+                `It was not tracked.`,
+              {
+                contextId,
+              },
             );
           }
           return EMPTY;
