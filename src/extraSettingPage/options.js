@@ -14,7 +14,6 @@ document.addEventListener(
      */
     function saveOptions() {
       const checkboxValue = document.getElementById('showDebugInfo').checked;
-      // eslint-disable-next-line
       localStorage.setItem('isShownExtraDebugLog', checkboxValue);
     }
 
@@ -22,8 +21,8 @@ document.addEventListener(
      * Function to restore the options from storage
      */
     function restoreOptions() {
-      // eslint-disable-next-line
-      document.getElementById('showDebugInfo').checked = localStorage.getItem('isShownExtraDebugLog') === 'true';
+      document.getElementById('showDebugInfo').checked =
+          localStorage.getItem('isShownExtraDebugLog') === 'true';
     }
 
     /**
