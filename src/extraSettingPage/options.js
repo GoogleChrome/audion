@@ -14,7 +14,7 @@ document.addEventListener(
      */
     function saveOptions() {
       const checkboxValue = document.getElementById('showDebugInfo').checked;
-      localStorage.setItem('isShownExtraDebugLog', checkboxValue);
+      localStorage.setItem('showExtraDebugLog', checkboxValue);
     }
 
     /**
@@ -22,7 +22,7 @@ document.addEventListener(
      */
     function restoreOptions() {
       document.getElementById('showDebugInfo').checked =
-          localStorage.getItem('isShownExtraDebugLog') === 'true';
+          localStorage.getItem('showExtraDebugLog') === 'true';
     }
 
     /**

@@ -12,7 +12,9 @@ import {integrateWebAudioGraph} from './WebAudioGraphIntegrator';
 // eslint-disable-next-line max-len
 import * as oscillatorGainFixture from '../../fixtures/oscillatorGainParam';
 
-// prettier-ignore
+// Node.js environment doesn't provide some browser-specific APIs
+// EX: performance.now, localStorage.getItem and localStorage.setItem
+// Mocking these ensures no errors are thrown when running tests.
 global.performance = {
   now: jest.fn(() => Date.now()),
 };
@@ -20,8 +22,6 @@ global.performance = {
 const localStorageMock = {
   getItem: jest.fn(),
   setItem: jest.fn(),
-  clear: jest.fn(),
-  removeItem: jest.fn(),
 };
 global.localStorage = localStorageMock;
 
