@@ -13,7 +13,7 @@ import {integrateWebAudioGraph} from './WebAudioGraphIntegrator';
 import * as oscillatorGainFixture from '../../fixtures/oscillatorGainParam';
 
 // Node.js environment doesn't provide some browser-specific APIs
-// EX: performance.now, localStorage.getItem and localStorage.setItem
+// (e.g. performance.now(), localStorage.getItem and localStorage.setItem)
 // Mocking these ensures no errors are thrown when running tests.
 global.performance = {
   now: jest.fn(() => Date.now()),
