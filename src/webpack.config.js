@@ -1,4 +1,5 @@
 const {resolve} = require('path');
+const CopyPlugin = require('copy-webpack-plugin');
 
 module.exports = (env, argv) => ({
   context: __dirname,
@@ -14,6 +15,14 @@ module.exports = (env, argv) => ({
   resolve: {
     extensions: ['', '.webpack.js', '.web.js', '.ts', '.tsx', '.js'],
   },
+  plugins: [
+    new CopyPlugin({
+      patterns: [
+        {from: './extraSettingPage/options.html', to: 'options.html'},
+        {from: './extraSettingPage/options.js', to: 'options.js'},
+      ],
+    }),
+  ],
   module: {
     rules: [
       {

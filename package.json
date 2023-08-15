@@ -34,6 +34,7 @@
     "@types/dagre": "^0.7.46",
     "@types/graphlib": "^2.1.8",
     "babel-jest": "^29.5.0",
+    "copy-webpack-plugin": "^11.0.0",
     "css-loader": "^6.6.0",
     "devtools-protocol": "^0.0.924232",
     "eslint": "^8.40.0",

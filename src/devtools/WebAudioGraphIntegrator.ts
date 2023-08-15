@@ -1,6 +1,7 @@
 import * as dagre from 'dagre';
 import * as graphlib from 'graphlib';
 import {ProtocolMapping} from 'devtools-protocol/types/protocol-mapping';
+import {DLOG} from '../utils/dlog';
 import {
   EMPTY,
   isObservable,
@@ -43,8 +44,8 @@ import {
 } from '../chrome/DebuggerPageDomain';
 
 enum GraphContextDestroyReasonMessage {
-  RECEIVE_WILL_DESTROY_EVENT = 'ReceiveWillDestroyEvent',
-  CANNOT_FIND_REALTIME_DATA = 'CannotFindRealtimeData',
+  RECEIVE_WILL_DESTROY_EVENT = `ReceiveWillDestroyEvent`,
+  CANNOT_FIND_REALTIME_DATA = `CannotFindRealtimeData`,
 }
 
 type MutableContexts = {
@@ -88,6 +89,10 @@ type EventHandlers =
       ) => Observable<Audion.GraphContext> | Audion.GraphContext | void;
     };
 
+export const getTimestampAsString = () => {
+  return '[' + performance.now().toFixed(2) + '] ';
+};
+
 const EVENT_HANDLERS: Partial<EventHandlers> = {
   [WebAudioDebuggerEvent.audioNodeCreated]: (
     helpers,
@@ -101,14 +106,19 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       return;
     }
 
+    DLOG(`A new AudioNode has been created.`, {
+      contextId,
+      nodeId,
+    });
+
     const context = space.graphContext;
     context.eventCount += 1;
 
     if (context.nodes[nodeId]) {
-      console.warn(
-        `Duplicate ${WebAudioDebuggerEvent.audioNodeCreated} event.`,
-        audioNodeCreated,
-      );
+      DLOG(`Duplicate WebAudio.audioNodeCreated event`, {
+        contextId,
+        nodeId,
+      });
       return;
     }
 
@@ -134,6 +144,12 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     audioNodeDestroyed,
   ) => {
     const {contextId, nodeId} = audioNodeDestroyed;
+
+    DLOG(`An existing AudioNode has been destroyed.`, {
+      contextId,
+      nodeId,
+    });
+
     const space = contexts[contextId];
     if (!space) {
       return;
@@ -160,6 +176,13 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
   ) => {
     const {param} = audioParamCreated;
     const {contextId, nodeId, paramId: paramIdCreated} = param;
+
+    DLOG(`A new AudioParam has been created.`, {
+      contextId,
+      nodeId,
+      paramIdCreated,
+    });
+
     const space = contexts[contextId];
     if (!space) {
       return;
@@ -174,10 +197,11 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     }
 
     if (node.params.some(({paramId}) => paramId === paramIdCreated)) {
-      console.warn(
-        `Duplicate ${WebAudioDebuggerEvent.audioParamCreated} event.`,
-        audioParamCreated,
-      );
+      DLOG(`Duplicate WebAudio.audioParamCreated event`, {
+        contextId,
+        nodeId,
+        paramIdCreated,
+      });
       return;
     }
 
@@ -196,6 +220,12 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
       nodeId,
       paramId: paramIdCreated,
     } = audioParamWillBeDestroyed;
+
+    DLOG(`An existing AudioParam has been destroyed.`, {
+      contextId,
+      nodeId,
+      paramIdCreated,
+    });
 
     const space = contexts[contextId];
     if (!space) {
@@ -221,19 +251,53 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     const {contextId} = contextChanged.context;
     const space = contexts[contextId];
     if (!space) {
-      console.warn(
-        `Unexpected ${
-          WebAudioDebuggerEvent.contextChanged
-        } event. Did not receive an event when Audio Context ${contextId.slice(
-          -6,
-        )} was created.`,
+      DLOG(
+        `Unexpected WebAudio.contextChanged event.` +
+          `Did not receive an event when Audio Context was created`,
+        {
+          contextId,
+        },
       );
       return;
     }
 
+    DLOG(
+      `Some properties in BaseAudioContext have changed.` +
+        `properties (id stays the same)`,
+      {
+        contextId,
+      },
+    );
+
     space.graphContext.context = contextChanged.context;
     space.graphContext.eventCount += 1;
     return space.graphContext;
+  },
+
+  [WebAudioDebuggerEvent.audioListenerCreated]: (
+    helpers,
+    contexts,
+    contextChanged,
+  ) => {
+    const {contextId} = contextChanged.listener;
+
+    DLOG(`An AudioListener has been created.`, {
+      contextId,
+    });
+    return;
+  },
+
+  [WebAudioDebuggerEvent.audioListenerWillBeDestroyed]: (
+    helpers,
+    contexts,
+    contextChanged,
+  ) => {
+    const {contextId} = contextChanged;
+
+    DLOG(`An AudioListener will be destroyed.`, {
+      contextId,
+    });
+    return;
   },
 
   [WebAudioDebuggerEvent.contextCreated]: (
@@ -242,18 +306,20 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
     contextCreated,
   ) => {
     const {contextId, contextType} = contextCreated.context;
+
     if (contexts[contextId]) {
       // Duplicate or out of order context created event.
       console.warn(
-        `Duplicate ${WebAudioDebuggerEvent.contextCreated} event.`,
+        getTimestampAsString() +
+          `Duplicate ${WebAudioDebuggerEvent.contextCreated} event.`,
         contextCreated,
       );
       return;
     } else {
       console.debug(
-        `Audio Context (${contextId.slice(
-          -6,
-        )}-${contextType}) created. Adding the context to the tracked set.`,
+        getTimestampAsString() +
+          `Audio Context (${contextId.slice(-6)}-${contextType}) created.` +
+          `Adding the context to the tracked set.`,
       );
     }
 
@@ -293,10 +359,13 @@ const EVENT_HANDLERS: Partial<EventHandlers> = {
           );
 
           if (!space) {
-            console.warn(
-              `Error requesting realtime data for context '${contextId}'.
-Context was likely cleaned up during request for realtime data.
-"${reason.message}"`,
+            DLOG(
+              `Error requesting realtime data for context,` +
+                `Context was likely cleaned up during requests for real time data.`,
+              {
+                reason,
+                contextId,
+              },
             );
           }
 
@@ -306,11 +375,11 @@ Context was likely cleaned up during request for realtime data.
           // produce this error when that data is requested.
         } else {
           console.error(
-            `Unexpected error requesting realtime data for context '${contextId}'.
-"${WebAudioRealtimeDataReason.toString(reason)}"`,
+            getTimestampAsString() +
+              `Unexpected error requesting realtime data for context '${contextId}'.` +
+              `"${WebAudioRealtimeDataReason.toString(reason)}"`,
           );
         }
-
         // Redirect back to the caught observable. We want to keep receiving
         // realtime data values or errors until we receive CANNOT_FIND error.
         return caught;
@@ -346,19 +415,23 @@ Context was likely cleaned up during request for realtime data.
             message ===
             GraphContextDestroyReasonMessage.CANNOT_FIND_REALTIME_DATA
           ) {
-            console.debug(
-              `Audio Context (${contextId.slice(
-                -6,
-              )}-${contextType}) cannot be found. Removing the context from the tracked set.`,
+            DLOG(
+              `Audio Context cannot be found. ` +
+                `Removing the context from the tracked set.`,
+              {
+                contextId,
+              },
             );
           } else if (
             message ===
             GraphContextDestroyReasonMessage.RECEIVE_WILL_DESTROY_EVENT
           ) {
-            console.debug(
-              `Audio Context (${contextId.slice(
-                -6,
-              )}-${contextType}) will be destroyed. Removing the context from the tracked set.`,
+            DLOG(
+              `Audio Context will be destroyed.` +
+                `Removing the context from the tracked set.`,
+              {
+                contextId,
+              },
             );
           }
 
@@ -375,10 +448,12 @@ Context was likely cleaned up during request for realtime data.
               graph: null,
             });
           } else {
-            console.warn(
-              `Audio Context (${contextId.slice(
-                -6,
-              )}-${contextType}) could not be removed from tracked set. It was not tracked.`,
+            DLOG(
+              `Audio Context could not be removed from the tracked set.` +
+                `It was not tracked.`,
+              {
+                contextId,
+              },
             );
           }
           return EMPTY;
@@ -398,6 +473,10 @@ Context was likely cleaned up during request for realtime data.
     space?.graphContextDestroyed$?.next(
       GraphContextDestroyReasonMessage.RECEIVE_WILL_DESTROY_EVENT,
     );
+
+    DLOG(`A BaseAudioContext will be destroyed.`, {
+      contextId,
+    });
   },
 
   [WebAudioDebuggerEvent.nodeParamConnected]: (
@@ -411,6 +490,12 @@ Context was likely cleaned up during request for realtime data.
       sourceOutputIndex = 0,
       destinationId: destinationParamId,
     } = nodeParamConnected;
+
+    DLOG(`An AudioNode is connected to an AudioParam.`, {
+      contextId,
+      sourceNodeId,
+      destinationParamId,
+    });
 
     const space = contexts[contextId];
     if (!space) {
@@ -458,10 +543,17 @@ Context was likely cleaned up during request for realtime data.
   ) => {
     const {
       contextId,
-      sourceId,
+      sourceId: sourceNodeId,
       sourceOutputIndex = 0,
-      destinationId,
+      destinationId: destinationParamId,
     } = nodesDisconnected;
+
+    DLOG(`An AudioNode is disconnected to an AudioParam.`, {
+      contextId,
+      sourceNodeId,
+      destinationParamId,
+    });
+
     const space = contexts[contextId];
     if (!space) {
       return;
@@ -470,7 +562,7 @@ Context was likely cleaned up during request for realtime data.
     const context = space.graphContext;
     context.eventCount += 1;
 
-    const sourceNode = context.nodes[sourceId];
+    const sourceNode = context.nodes[sourceNodeId];
     if (!sourceNode) {
       return;
     }
@@ -479,12 +571,12 @@ Context was likely cleaned up during request for realtime data.
     removeAll(
       edges,
       (edge) =>
-        edge.destinationId === destinationId &&
+        edge.destinationId === destinationParamId &&
         edge.sourceOutputIndex === sourceOutputIndex,
     );
     context.graph.removeEdge(
-      sourceId,
-      destinationId,
+      sourceNodeId,
+      destinationParamId,
       sourceOutputIndex.toString(),
     );
     return context;
@@ -502,6 +594,12 @@ Context was likely cleaned up during request for realtime data.
       destinationId,
       destinationInputIndex = 0,
     } = nodesConnected;
+
+    DLOG(`Two AudioNodes are connected.`, {
+      contextId,
+      sourceId,
+      destinationId,
+    });
 
     const space = contexts[contextId];
     if (!space) {
@@ -547,6 +645,13 @@ Context was likely cleaned up during request for realtime data.
       destinationInputIndex = 0,
     } = nodesDisconnected;
 
+    DLOG(
+      `Notifies AudioNodes is disconnected. The destination` +
+        `can be null, and it means all the outgoing connections` +
+        `from the source are disconnected.`,
+      {contextId, sourceId, destinationId},
+    );
+
     const space = contexts[contextId];
     if (!space) {
       return;
@@ -578,9 +683,10 @@ Context was likely cleaned up during request for realtime data.
 
   [PageDebuggerEvent.frameNavigated]: (helpers, contexts) => {
     console.debug(
-      `Checking if tracked Audio Contexts (${Object.keys(contexts)
-        .map((contextId) => contextId.slice(-6))
-        .join(', ')}) exist after frame navigated.`,
+      getTimestampAsString() +
+        `Checking if tracked Audio Contexts (${Object.keys(contexts)
+          .map((contextId) => contextId.slice(-6))
+          .join(`, `)}) exist after frame navigated.`,
     );
 
     return ensureContextsExist(contexts, helpers);
@@ -588,9 +694,10 @@ Context was likely cleaned up during request for realtime data.
 
   [PageDebuggerEvent.loadEventFired]: (helpers, contexts) => {
     console.debug(
-      `Checking if tracked Audio Contexts (${Object.keys(contexts)
-        .map((contextId) => contextId.slice(-6))
-        .join(', ')}) exist after load event.`,
+      getTimestampAsString() +
+        `Checking if tracked Audio Contexts (${Object.keys(contexts)
+          .map((contextId) => contextId.slice(-6))
+          .join(`, `)}) exist after load event.`,
     );
 
     return ensureContextsExist(contexts, helpers);
@@ -601,13 +708,14 @@ Context was likely cleaned up during request for realtime data.
     contexts,
     debuggerDetached,
   ) => {
-    if (debuggerDetached.reason === 'target_closed') {
+    if (debuggerDetached.reason === `target_closed`) {
       console.debug(
-        `Checking if tracked Audio Contexts (${Object.keys(contexts)
-          .map((contextId) => contextId.slice(-6))
-          .join(
-            ', ',
-          )}) exist after debugger detached because target was closed.`,
+        getTimestampAsString() +
+          `Checking if tracked Audio Contexts (${Object.keys(contexts)
+            .map((contextId) => contextId.slice(-6))
+            .join(
+              `, `,
+            )}) exist after debugger detached because target was closed.`,
       );
 
       return ensureContextsExist(contexts, helpers);
@@ -637,8 +745,12 @@ function ensureContextsExist(
           } else if (WebAudioRealtimeDataReason.isRealtimeOnlyReason(reason)) {
             // OfflineAudioContexts emit this error if they are still alive.
           } else {
-            console.error(`Unexpected error determining if context '${contextId}' is stale with devtools protocol WebAudio.getRealtimeData.
-"${WebAudioRealtimeDataReason.toString(reason)}"`);
+            console.error(
+              getTimestampAsString() +
+                `Unexpected error determining if context "${contextId}" is ` +
+                `stale with devtools protocol WebAudio.getRealtimeData.` +
+                `"${WebAudioRealtimeDataReason.toString(reason)}"`,
+            );
           }
 
           return EMPTY;
