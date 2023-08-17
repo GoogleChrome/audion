@@ -1,7 +1,7 @@
 {
   "name": "audion",
   "private": true,
-  "version": "3.0.6",
+  "version": "3.0.9",
   "description": "A Chrome DevTools extension traces Web Audio API calls and visualizes in the DevTools.",
   "repository": {
     "type": "git",
