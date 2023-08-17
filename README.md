@@ -58,9 +58,11 @@ Soon you will be able to install the extension from Chrome Web Store page.
 ## Acknowledgments
 
 Special thanks to [Chi Zeng](https://github.com/chihuahua) (Google),
-[Gaoping Huang](https://github.com/gaopinghuang0), and
+[Gaoping Huang](https://github.com/gaopinghuang0),
 [Michael "Z" Goddard](https://github.com/mzgoddard)
-([Bocoup](https://bocoup.com/)) for their contribution on this project.
+([Bocoup](https://bocoup.com/)) and
+[Tenghui Zhang](https://github.com/TenghuiZhang) for their contribution on this
+project.
 
 ## Contribution
 
