@@ -13,15 +13,15 @@ Soon you will be able to install the extension from Chrome Web Store page.
 1. [Install the extension](https://chrome.google.com/webstore/detail/audion/cmhomipkklckpomafalojobppmmidlgl)
    from Chrome Web Store.
    1. Alternatively, you can clone this repository and build the extension
-   locally. Follow
-   [this instruction](https://developer.chrome.com/docs/extensions/mv3/faq/#faq-dev-01)
-   to load the local build.
+      locally. Follow
+      [this instruction](https://developer.chrome.com/docs/extensions/mv3/faq/#faq-dev-01)
+      to load the local build.
 1. [Open Chrome Developer Tools](https://developer.chrome.com/docs/devtools/open/).
    You should be able to find “Web Audio” panel in the top. Select the panel.
 1. Visit or reload a page that uses Web Audio API. If the page is loaded before
    opening Developer Tools, you need to reload the page for the extension to
    work correctly.
-1. You can pan and zom with the mouse and wheel. Click the “autofit” button to
+1. You can pan and zoom with the mouse and wheel. Click the “autofit” button to
    fit the graph within the panel.
 
 ## Development
@@ -47,6 +47,13 @@ Soon you will be able to install the extension from Chrome Web Store page.
 1. Make changes to the extension and rebuild with `npm test` or `npm run build`.
 1. Open `chrome://extensions`, click `Update` to reload the rebuilt extension.
    Close and reopen any tab and inspector to get the rebuilt extension's panel.
+
+### Use extra debugging information
+
+1. Open the extension option panel and check "Click here to show more debug
+   info".
+2. Right click the visualizer panel and click "Inspect" to the extension's
+   DevTools panel, and see the console for the extra debugging information.
 
 ## Acknowledgments
 
