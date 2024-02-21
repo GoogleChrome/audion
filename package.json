@@ -42,7 +42,7 @@
     "file-loader": "^6.2.0",
     "husky": ">=6",
     "jest": "^27.0.6",
-    "jest-puppeteer": "^5.0.4",
+    "jest-puppeteer": "^10.0.1",
     "jsdoc": "^4.0.2",
     "lint-staged": ">=10",
     "mustache": "^4.2.0",
