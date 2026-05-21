@@ -41,7 +41,7 @@
     "eslint-config-google": "^0.14.0",
     "file-loader": "^6.2.0",
     "husky": ">=6",
-    "jest": "^27.0.6",
+    "jest": "^30.4.2",
     "jest-puppeteer": "^5.0.4",
     "jsdoc": "^4.0.2",
     "lint-staged": ">=10",
